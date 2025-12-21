@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuron</title>
+    <title>Neuron Mobile</title>
     <style>
         /* --- BASE --- */
         body {
@@ -15,20 +15,23 @@
             height: 100vh; width: 100vw; overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none; -webkit-user-select: none;
-            touch-action: none;
+            touch-action: none; /* Crucial para gestos manuais */
             perspective: 1000px;
+            overscroll-behavior: none;
         }
 
         #app-logo {
             position: fixed; top: 25px; left: 25px;
             width: 130px; height: auto; z-index: 500;
             pointer-events: none; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.1));
+            transition: width 0.3s, top 0.3s, left 0.3s;
         }
 
         /* --- MUNDO INFINITO --- */
         #viewport {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             overflow: hidden; cursor: grab; transition: filter 0.5s; z-index: 0;
+            touch-action: none;
         }
         #viewport:active { cursor: grabbing; }
         #viewport.blurred { filter: blur(15px) grayscale(40%); pointer-events: none !important; }
@@ -37,10 +40,17 @@
         .lines-layer { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; z-index: 1; }
         .connection-line { fill: none; stroke-width: 2.5px; stroke-linecap: round; opacity: 0.8; filter: drop-shadow(0 0 3px rgba(0,0,0,0.1)); vector-effect: non-scaling-stroke; }
         
-        .circle-wrapper { position: absolute; width: 28px; height: 28px; z-index: 10; transform: translate(-50%, -50%); }
+        .circle-wrapper { position: absolute; width: 28px; height: 28px; z-index: 10; transform: translate(-50%, -50%); -webkit-tap-highlight-color: transparent; }
         .neon-circle { width: 100%; height: 100%; border-radius: 50%; cursor: pointer; animation-name: floatVertical; animation-timing-function: ease-in-out; animation-iteration-count: infinite; transition: background-color 0.5s, box-shadow 0.5s; }
         @keyframes floatVertical { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
-        .message-tooltip { position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 12px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.2s; backdrop-filter: blur(2px); }
+        
+        .message-tooltip { 
+            position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); 
+            background: rgba(0,0,0,0.7); color: #fff; padding: 4px 10px; border-radius: 20px; 
+            font-size: 12px; white-space: nowrap; pointer-events: none; opacity: 0; 
+            transition: opacity 0.2s; backdrop-filter: blur(2px); z-index: 20;
+        }
+        /* No mobile, não usamos hover, mas mantemos para desktop. A lógica de tap pode ativar */
         .circle-wrapper:hover .message-tooltip { opacity: 1; }
         .zoom-out .message-tooltip { display: none !important; }
 
@@ -49,11 +59,13 @@
             position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
             z-index: 1000; display: flex; align-items: center; gap: 20px;
             transition: opacity 0.3s, transform 0.3s;
+            width: auto;
+            max-width: 100%;
         }
         .hidden-ui { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(50px); }
 
         .dock-btn {
-            width: 50px; height: 50px; border-radius: 50%;
+            width: 50px; height: 50px; border-radius: 50%; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
             background: rgba(255, 255, 255, 0.25);
             backdrop-filter: blur(15px) saturate(180%);
@@ -72,24 +84,41 @@
             transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1); cursor: pointer;
             box-shadow: inset 0 0 10px rgba(255,255,255,0.8), 0 15px 35px rgba(0,0,0,0.15), 
                         -3px -3px 15px rgba(41, 250, 16, 0.4), 3px 3px 15px rgba(242, 56, 57, 0.4);
+            overflow: hidden; /* Importante para animação */
         }
         .morph-dock:not(.open):hover { transform: scale(1.1); background: rgba(255, 255, 255, 0.5); }
-        .morph-dock.open { width: 380px; height: 70px; border-radius: 50px; background: rgba(255, 255, 255, 0.6); cursor: default; box-shadow: 0 20px 50px rgba(0,0,0,0.15), inset 0 0 20px rgba(255,255,255,0.5); }
+        .morph-dock.open { 
+            width: 380px; height: 70px; border-radius: 50px; 
+            background: rgba(255, 255, 255, 0.85); /* Mais opaco no mobile */
+            cursor: default; box-shadow: 0 20px 50px rgba(0,0,0,0.15), inset 0 0 20px rgba(255,255,255,0.5); 
+        }
 
-        .color-list { display: flex; gap: 25px; opacity: 0; pointer-events: none; transform: scale(0.8); transition: all 0.4s ease 0.1s; }
+        .color-list { 
+            display: flex; gap: 25px; opacity: 0; pointer-events: none; 
+            transform: scale(0.8); transition: all 0.4s ease 0.1s; 
+            width: 100%; justify-content: center; align-items: center;
+        }
         .morph-dock.open .color-list { opacity: 1; pointer-events: auto; transform: scale(1); }
-        .color-option-container { position: relative; }
-        .color-option { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; }
-        .color-option:hover { transform: scale(1.2); }
+        
+        .color-option-container { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .color-option { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; flex-shrink: 0; }
+        .color-option:active { transform: scale(0.9); }
         .color-option.selected { transform: scale(1.1); border-color: #555; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .area-label { position: absolute; bottom: 55px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 5px 10px; border-radius: 8px; font-size: 11px; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.2s; pointer-events: none; }
+        
+        .area-label { 
+            position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); 
+            background: rgba(0,0,0,0.8); color: #fff; padding: 5px 10px; border-radius: 8px; 
+            font-size: 11px; white-space: nowrap; opacity: 0; visibility: hidden; 
+            transition: opacity 0.2s; pointer-events: none; 
+        }
+        /* Labels visíveis ao segurar no mobile ou hover no desktop */
         .color-option-container:hover .area-label { opacity: 1; visibility: visible; }
 
         .symbiosis-btn.searching { background: rgba(255, 255, 255, 0.8); border-color: #29FA10; animation: pulse-green 1.5s infinite; }
         .symbiosis-btn.searching svg { fill: #29FA10; }
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(41, 250, 16, 0); } 100% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0); } }
 
-        /* --- DASHBOARD PERFIL COMPLETO --- */
+        /* --- DASHBOARD PERFIL --- */
         #profile-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(220, 225, 235, 0.8);
@@ -101,7 +130,8 @@
         #profile-overlay.active { display: flex; opacity: 1; }
 
         .profile-modal {
-            width: 95vw; height: 90vh;
+            width: 90vw; height: 85vh; /* Ajuste mobile */
+            max-width: 1000px;
             background: rgba(255, 255, 255, 0.9);
             border-radius: 40px;
             box-shadow: 0 20px 80px rgba(0,0,0,0.15);
@@ -110,36 +140,35 @@
         }
 
         .close-profile {
-            position: absolute; top: 20px; right: 20px; z-index: 10;
+            position: absolute; top: 15px; right: 15px; z-index: 20;
             width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.05);
             display: flex; align-items: center; justify-content: center; cursor: pointer;
             font-size: 20px; color: #555; transition: 0.2s;
         }
-        .close-profile:hover { background: #ffcccc; color: #d32f2f; }
+        .close-profile:hover, .close-profile:active { background: #ffcccc; color: #d32f2f; }
 
-        /* Coluna Esquerda: Identidade */
         .profile-sidebar {
             width: 300px; background: rgba(240, 245, 250, 0.5);
-            padding: 40px 30px; display: flex; flex-direction: column; gap: 30px;
-            border-right: 1px solid rgba(0,0,0,0.05);
+            padding: 40px 30px; display: flex; flex-direction: column; gap: 20px;
+            border-right: 1px solid rgba(0,0,0,0.05); overflow-y: auto;
         }
 
         .profile-identity { text-align: center; }
         .avatar-large {
-            width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px;
+            width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 15px;
             background: linear-gradient(135deg, #37617A, #29FA10);
             display: flex; align-items: center; justify-content: center;
-            font-size: 48px; font-weight: 700; color: #fff;
+            font-size: 40px; font-weight: 700; color: #fff;
             box-shadow: 0 10px 30px rgba(41, 250, 16, 0.2); position: relative;
         }
         .avatar-edit {
-            position: absolute; bottom: 0; right: 0; width: 32px; height: 32px;
+            position: absolute; bottom: 0; right: 0; width: 30px; height: 30px;
             background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;
             cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 14px;
         }
-        .identity-name { font-size: 22px; font-weight: 800; color: #333; margin: 0; }
-        .identity-handle { font-size: 14px; color: #777; margin-bottom: 15px; display: block; }
-        .identity-bio { font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 20px; }
+        .identity-name { font-size: 20px; font-weight: 800; color: #333; margin: 0; }
+        .identity-handle { font-size: 13px; color: #777; margin-bottom: 10px; display: block; }
+        .identity-bio { font-size: 13px; color: #555; line-height: 1.4; margin-bottom: 10px; }
 
         .xp-container { background: #fff; padding: 15px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
         .xp-label { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #37617A; margin-bottom: 8px; }
@@ -147,124 +176,218 @@
         .xp-bar-fill { height: 100%; background: #29FA10; border-radius: 4px; width: 45%; }
 
         .sidebar-stats { display: flex; justify-content: space-between; text-align: center; margin-top: 10px; }
-        .s-stat h4 { margin: 0; font-size: 18px; color: #333; }
-        .s-stat span { font-size: 11px; color: #999; text-transform: uppercase; }
+        .s-stat h4 { margin: 0; font-size: 16px; color: #333; }
+        .s-stat span { font-size: 10px; color: #999; text-transform: uppercase; }
 
-        /* Coluna Direita: Conteúdo */
         .profile-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         
         .profile-nav {
-            display: flex; gap: 30px; padding: 30px 40px;
+            display: flex; gap: 20px; padding: 20px 30px;
             border-bottom: 1px solid rgba(0,0,0,0.05);
+            overflow-x: auto; /* Scroll horizontal para abas em telas pequenas */
+            white-space: nowrap;
         }
         .nav-item {
             font-size: 14px; font-weight: 700; color: #999; cursor: pointer;
             padding-bottom: 10px; border-bottom: 3px solid transparent; transition: 0.3s;
         }
         .nav-item.active { color: #333; border-color: #29FA10; }
-        .nav-item:hover { color: #555; }
 
-        .tab-content-area { padding: 40px; overflow-y: auto; flex: 1; }
-        
+        .tab-content-area { padding: 30px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
         .tab-pane { display: none; animation: fadeIn 0.3s; }
         .tab-pane.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* GRID DE IDEIAS (Tab 1) */
-        .neural-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+        /* GRID IDEIAS */
+        .neural-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding-bottom: 20px; }
         .thought-card {
-            aspect-ratio: 1/1; background: #fff; border-radius: 20px; padding: 20px; cursor: pointer;
+            aspect-ratio: 1/1; background: #fff; border-radius: 20px; padding: 15px; cursor: pointer;
             position: relative; overflow: hidden; transition: all 0.3s; border: 2px solid transparent;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;
         }
-        .thought-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); }
-        .card-preview-text { font-size: 14px; color: #333; font-weight: 500; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
-        .card-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #999; font-weight: 700; }
-        .empty-state { text-align: center; color: #999; font-style: italic; padding: 40px; width: 100%; }
+        .thought-card:active { transform: scale(0.98); }
+        .card-preview-text { font-size: 13px; color: #333; font-weight: 500; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+        .card-meta { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #999; font-weight: 700; }
+        .empty-state { text-align: center; color: #999; font-style: italic; padding: 20px; width: 100%; }
 
-        /* FORMULÁRIO DE EDIÇÃO (Tab 2) */
-        .edit-form { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
-        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        /* FORM */
+        .edit-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
         .form-group.full { grid-column: span 2; }
-        .form-label { font-size: 12px; font-weight: 700; color: #777; text-transform: uppercase; }
+        .form-label { font-size: 11px; font-weight: 700; color: #777; text-transform: uppercase; }
         .form-input {
-            padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd;
+            padding: 12px; border-radius: 12px; border: 1px solid #ddd;
             background: #fafafa; font-size: 14px; color: #333; outline: none; transition: 0.2s;
+            -webkit-appearance: none; /* Mobile reset */
         }
-        .form-input:focus { border-color: #29FA10; background: #fff; box-shadow: 0 0 0 3px rgba(41,250,16,0.1); }
+        .form-input:focus { border-color: #29FA10; background: #fff; }
         .save-btn {
             background: #333; color: #fff; padding: 15px; border-radius: 15px; border: none;
             font-weight: 700; cursor: pointer; grid-column: span 2; margin-top: 10px;
-            transition: 0.2s;
+            transition: 0.2s; font-size: 16px;
         }
-        .save-btn:hover { background: #29FA10; color: #000; box-shadow: 0 5px 15px rgba(41,250,16,0.4); }
+        .save-btn:active { transform: scale(0.98); }
 
-        /* CONFIGURAÇÕES (Tab 3) */
-        .settings-list { display: flex; flex-direction: column; gap: 20px; }
+        /* SETTINGS */
+        .settings-list { display: flex; flex-direction: column; gap: 15px; }
         .setting-item {
             display: flex; justify-content: space-between; align-items: center;
-            background: #fff; padding: 20px; border-radius: 15px; border: 1px solid #eee;
+            background: #fff; padding: 15px; border-radius: 15px; border: 1px solid #eee;
         }
-        .setting-info h4 { margin: 0; color: #333; }
-        .setting-info p { margin: 5px 0 0 0; font-size: 12px; color: #888; }
+        .setting-info h4 { margin: 0; color: #333; font-size: 14px; }
+        .setting-info p { margin: 5px 0 0 0; font-size: 11px; color: #888; }
         
-        /* Toggle Switch */
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #29FA10; }
-        input:checked + .slider:before { transform: translateX(24px); }
+        input:checked + .slider:before { transform: translateX(18px); }
 
-
-        /* --- OUTROS --- */
-        #symbiosis-dimension { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #10151a 0%, #000000 100%); z-index: 2000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.5s ease; }
+        /* --- SIMBIOSE & OVERLAYS --- */
+        #symbiosis-dimension { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: radial-gradient(circle at center, #10151a 0%, #000000 100%); 
+            z-index: 2000; display: none; justify-content: center; align-items: center; 
+            opacity: 0; transition: opacity 0.5s ease; 
+        }
         #symbiosis-dimension.active { display: flex; opacity: 1; pointer-events: auto; }
-        .symbiosis-header { position: absolute; top: 30px; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 40px; box-sizing: border-box; pointer-events: none; z-index: 2001; }
-        .symbiosis-title { color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 3px; font-weight: 700; font-size: 14px; }
-        .header-btn { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 15px; border-radius: 20px; cursor: pointer; backdrop-filter: blur(5px); font-weight: 600; font-size: 12px; pointer-events: auto; }
-        #sphere-view { perspective: 1000px; display: flex; align-items: center; justify-content: center; cursor: grab; position: absolute; width: 100%; height: 100%; }
+        
+        .symbiosis-header { 
+            position: absolute; top: 30px; left: 0; width: 100%; 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 0 20px; box-sizing: border-box; pointer-events: none; z-index: 2001; 
+        }
+        .symbiosis-title { color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; font-size: 12px; }
+        .header-btn { 
+            background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); 
+            padding: 8px 12px; border-radius: 20px; cursor: pointer; backdrop-filter: blur(5px); 
+            font-weight: 600; font-size: 11px; pointer-events: auto; margin-left: 5px;
+        }
+
+        #sphere-view { perspective: 1000px; display: flex; align-items: center; justify-content: center; cursor: grab; position: absolute; width: 100%; height: 100%; overflow: hidden; }
         #neural-sphere { position: relative; width: 0; height: 0; transform-style: preserve-3d; }
         .sphere-node { position: absolute; width: 14px; height: 14px; border-radius: 50%; top: 0; left: 0; transform: translate(-50%, -50%); box-shadow: 0 0 15px currentColor; will-change: transform, opacity; }
-        .sphere-text { position: absolute; top: 0; left: 0; color: white; font-size: 20px; font-weight: 300; transform: translate(-50%, -50%); text-shadow: 0 0 20px rgba(41, 250, 16, 0.8); pointer-events: none; opacity: 0.8; letter-spacing: 5px; }
+        .sphere-text { 
+            position: absolute; top: 0; left: 0; color: white; font-size: 16px; 
+            font-weight: 300; transform: translate(-50%, -50%); text-align: center;
+            text-shadow: 0 0 20px rgba(41, 250, 16, 0.8); pointer-events: none; opacity: 0.8; letter-spacing: 3px; 
+            width: 100%;
+        }
+        
         #symbiosis-map-container { position: absolute; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
         #symbiosis-map-container.active-view { opacity: 1; pointer-events: auto; }
         #sphere-view.hidden-view { opacity: 0; pointer-events: none; }
 
-        #nearby-users-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(220, 220, 230, 0.4); backdrop-filter: blur(8px); z-index: 1500; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; }
+        /* Lista de Usuários */
+        #nearby-users-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(220, 220, 230, 0.4); backdrop-filter: blur(8px); 
+            z-index: 1500; display: none; justify-content: center; align-items: center; 
+            opacity: 0; transition: opacity 0.3s; 
+        }
         #nearby-users-overlay.active { display: flex; opacity: 1; }
-        .users-list-card { width: 380px; max-height: 80vh; overflow-y: auto; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(25px); border-radius: 30px; padding: 30px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
-        .user-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 20px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
-        
-        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(220, 220, 230, 0.3); backdrop-filter: blur(5px); z-index: 2000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; }
+        .users-list-card { 
+            width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; 
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(25px); 
+            border-radius: 30px; padding: 25px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); 
+        }
+        .user-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(255,255,255,0.6); border-radius: 20px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+        .user-item:active { transform: scale(0.98); background: rgba(255,255,255,0.9); }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; flex-shrink: 0; }
+        .user-info { display: flex; flex-direction: column; overflow: hidden; }
+        .user-name { font-weight: 700; color: #333; font-size: 14px; }
+        .user-meta { font-size: 11px; color: #777; }
+
+        /* Popup de Ideia */
+        .popup-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(220, 220, 230, 0.3); backdrop-filter: blur(5px); 
+            z-index: 2000; display: none; justify-content: center; align-items: center; 
+            opacity: 0; transition: opacity 0.3s; 
+        }
         .popup-overlay.active { display: flex; opacity: 1; }
-        .popup-card { width: 360px; padding: 35px; border-radius: 30px; text-align: center; background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); border-top: 4px solid transparent; }
+        
+        .popup-card { 
+            width: 85%; max-width: 360px; padding: 30px; border-radius: 30px; text-align: center; 
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(30px); 
+            border: 1px solid rgba(255, 255, 255, 0.5); 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); border-top: 4px solid transparent; 
+            /* Ajuste para teclado mobile */
+            position: relative;
+            transform: translateY(0);
+        }
+        
+        .popup-title { margin: 0 0 10px 0; font-size: 18px; }
+        .ai-badge { display: inline-block; font-size: 10px; background: #eee; padding: 4px 8px; border-radius: 10px; color: #777; margin-bottom: 15px; }
+        #popupInput {
+            width: 100%; height: 80px; border: 1px solid #ddd; border-radius: 15px;
+            padding: 15px; box-sizing: border-box; font-family: inherit; font-size: 14px;
+            resize: none; outline: none; background: rgba(255,255,255,0.5); margin-bottom: 20px;
+        }
+        #popupInput:focus { background: #fff; border-color: #ccc; }
+
         .popup-actions { display: flex; gap: 15px; }
         .btn { padding: 12px 0; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; flex: 1; transition: all 0.2s; font-size: 14px; }
         .btn-save { color: #fff; box-shadow: 0 10px 20px -5px rgba(0,0,0,0.2); }
         .btn-delete { background: rgba(255,235,238, 0.8); color: #d32f2f; }
+        .btn:active { transform: scale(0.95); }
 
         .radar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 400; display: none; align-items: center; justify-content: center; }
         .radar-overlay.active { display: flex; }
         .radar-ring { position: absolute; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.1); width: 100px; height: 100px; animation: radar-expand 3s linear infinite; }
         .radar-ring:nth-child(2) { animation-delay: 1s; } .radar-ring:nth-child(3) { animation-delay: 2s; }
-        @keyframes radar-expand { 0% { width: 0; height: 0; opacity: 0.5; border-color: rgba(41, 250, 16, 0.8); } 100% { width: 100vw; height: 100vw; opacity: 0; border-color: rgba(41, 250, 16, 0); } }
+        @keyframes radar-expand { 0% { width: 0; height: 0; opacity: 0.5; border-color: rgba(41, 250, 16, 0.8); } 100% { width: 150vw; height: 150vw; opacity: 0; border-color: rgba(41, 250, 16, 0); } }
 
-        .toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 12px 25px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 3000; font-weight: 600; color: #333; transition: transform 0.5s; display: flex; align-items: center; gap: 10px; }
+        .toast { 
+            position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-100px); 
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 12px 25px; 
+            border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 3000; 
+            font-weight: 600; color: #333; transition: transform 0.5s; display: flex; align-items: center; gap: 10px;
+            width: max-content; max-width: 90%; font-size: 13px;
+        }
         .toast.show { transform: translateX(-50%) translateY(0); }
-        .toast-icon { width: 10px; height: 10px; background: #29FA10; border-radius: 50%; box-shadow: 0 0 10px #29FA10; }
+        .toast-icon { width: 10px; height: 10px; background: #29FA10; border-radius: 50%; box-shadow: 0 0 10px #29FA10; flex-shrink: 0; }
 
+        /* --- MEDIA QUERIES PARA MOBILE --- */
         @media (max-width: 600px) {
-            #app-logo { width: 100px; top: 20px; left: 20px; }
-            .bottom-ui-container { width: 100%; justify-content: center; gap: 10px; bottom: 30px; }
-            .morph-dock.open { width: 60%; height: 70px; }
-            .users-list-card, .profile-modal { width: 95%; height: 90vh; }
-            .profile-modal { flex-direction: column; overflow-y: auto; }
-            .profile-sidebar { width: 100%; padding: 20px; border-right: none; border-bottom: 1px solid #eee; }
-            .profile-nav { overflow-x: auto; padding: 20px; }
-            .neural-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+            #app-logo { width: 90px; top: 15px; left: 15px; }
+            
+            .bottom-ui-container { 
+                width: 100%; justify-content: center; gap: 15px; bottom: 25px; 
+                padding: 0 10px; box-sizing: border-box;
+            }
+            
+            .morph-dock.open { 
+                width: calc(100vw - 40px); height: 70px; 
+                justify-content: flex-start; /* Para scroll funcionar */
+                padding: 0;
+            }
+            .morph-dock.open .color-list {
+                padding: 0 20px;
+                width: auto;
+                justify-content: flex-start;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .color-option { margin-right: 5px; } /* Espaço no scroll */
+
+            .profile-modal { flex-direction: column; overflow-y: auto; height: 90vh; }
+            .profile-sidebar { width: 100%; padding: 30px 20px; border-right: none; border-bottom: 1px solid #eee; box-sizing: border-box; height: auto; flex-shrink: 0; }
+            .profile-content { overflow: visible; } /* Permite scroll da modal inteira */
+            .profile-nav { overflow-x: auto; padding: 15px 20px; justify-content: flex-start; }
+            
+            .neural-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            
             .edit-form { grid-template-columns: 1fr; }
             .form-group.full { grid-column: span 1; }
+
+            /* Ajuste de popup para teclado */
+            .popup-card { margin-top: -20%; } /* Sobe um pouco para evitar teclado */
+
+            /* Ajuste esfera 3D */
+            #sphere-view { transform: scale(0.8); }
+            .sphere-text { font-size: 14px; letter-spacing: 2px; }
         }
     </style>
 </head>
@@ -389,7 +512,7 @@
 
     <div id="nearby-users-overlay">
         <div class="users-list-card" id="usersListContainer">
-            <h3 class="users-title">Mentes Próximas <span class="close-users" id="closeUsers">×</span></h3>
+            <h3 class="users-title" style="margin-top:0; display:flex; justify-content:space-between; align-items:center;">Mentes Próximas <span class="close-users" id="closeUsers" style="cursor:pointer; font-size:24px;">×</span></h3>
             <div id="users-list-content"></div>
         </div>
     </div>
@@ -505,6 +628,10 @@
         let currentSymbiosisView = 'sphere';
         let worldX = 0, worldY = 0, scale = 1, isPanning = false, startPanX = 0, startPanY = 0;
 
+        // Variáveis para Zoom de Pinça (Mobile)
+        let initialPinchDist = 0;
+        let initialScale = 1;
+
         function updateWorldTransform() {
             world.style.transform = `translate(${worldX}px, ${worldY}px) scale(${scale})`;
             if (scale < 0.6) document.body.classList.add('zoom-out'); else document.body.classList.remove('zoom-out');
@@ -604,7 +731,7 @@
         }
 
 
-        // --- ZOOM & PAN (SOLO) ---
+        // --- ZOOM & PAN (SOLO) & PINCH ZOOM MOBILE ---
         viewport.addEventListener('wheel', (e) => {
             if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
             e.preventDefault(); const delta = e.deltaY < 0 ? 1 : -1;
@@ -616,6 +743,7 @@
 
         function getEventPos(e) { return (e.touches && e.touches.length > 0) ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY }; }
 
+        // Mouse Drag (Desktop)
         viewport.addEventListener('mousedown', (e) => {
             if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
             if (e.target === viewport || e.target === world || e.target.id === 'solo-lines') {
@@ -623,13 +751,76 @@
                 viewport.style.cursor = 'grabbing';
             }
         });
+
+        // Touch Drag & Pinch (Mobile)
+        viewport.addEventListener('touchstart', (e) => {
+             if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
+             if (e.target !== viewport && e.target !== world && e.target.id !== 'solo-lines') return;
+
+             if (e.touches.length === 2) {
+                 // Pinch Start
+                 isPanning = false;
+                 initialScale = scale;
+                 initialPinchDist = Math.hypot(
+                     e.touches[0].pageX - e.touches[1].pageX,
+                     e.touches[0].pageY - e.touches[1].pageY
+                 );
+             } else if (e.touches.length === 1) {
+                 // Pan Start
+                 isPanning = true; 
+                 const pos = getEventPos(e); 
+                 startPanX = pos.x - worldX; 
+                 startPanY = pos.y - worldY;
+             }
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if(profileOverlay.classList.contains('active')) return;
+            
+            if (e.touches.length === 2 && initialPinchDist > 0) {
+                // Pinch Logic
+                e.preventDefault();
+                const currentDist = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                const zoomFactor = currentDist / initialPinchDist;
+                const newScale = Math.min(Math.max(0.1, initialScale * zoomFactor), 5);
+                
+                // Zoom centralizado (simplificado para mobile)
+                const centerX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
+                const centerY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
+                const mouseX = centerX - worldX; 
+                const mouseY = centerY - worldY;
+                
+                worldX -= mouseX * (newScale / scale - 1); 
+                worldY -= mouseY * (newScale / scale - 1);
+                scale = newScale; 
+                updateWorldTransform();
+                
+            } else if (isPanning && !isSymbiosisActive && e.touches.length === 1) {
+                // Pan Logic
+                e.preventDefault(); 
+                const pos = getEventPos(e); 
+                worldX = pos.x - startPanX; 
+                worldY = pos.y - startPanY;
+                updateWorldTransform();
+            }
+        }, { passive: false });
+
         window.addEventListener('mousemove', (e) => {
             if (isPanning && !isSymbiosisActive) {
                 e.preventDefault(); const pos = getEventPos(e); worldX = pos.x - startPanX; worldY = pos.y - startPanY;
                 updateWorldTransform();
             }
         });
+        
         window.addEventListener('mouseup', () => { isPanning = false; viewport.style.cursor = 'grab'; });
+        window.addEventListener('touchend', (e) => { 
+            if(e.touches.length < 2) initialPinchDist = 0;
+            if(e.touches.length === 0) isPanning = false; 
+        });
+
 
         // --- DISCOVERY LOGIC ---
         symbiosisBtn.addEventListener('click', () => { if (isSymbiosisActive) return; startDiscovery(); });
@@ -691,12 +882,12 @@
             spherePoints = [];
             
             const count = symbiosisBubblesArray.length;
-            const radius = 180;
+            const radius = window.innerWidth < 600 ? 140 : 180; // Menor no mobile
 
             symbiosisBubblesArray.forEach((bubble, i) => {
                 const node = document.createElement('div');
                 node.classList.add('sphere-node');
-                node.setAttribute('data-text', bubble.tooltip.innerText);
+                // node.setAttribute('data-text', bubble.tooltip.innerText); // Pesado no mobile renderizar attr css
                 node.style.backgroundColor = bubble.area.color;
                 node.style.color = bubble.area.color;
 
@@ -810,18 +1001,37 @@
 
         function setupSimpleDrag(wrapper) {
             let isDragging = false; let startX, startY, initX, initY;
-            wrapper.addEventListener('mousedown', (e) => {
+            
+            const startDrag = (e) => {
                 e.stopPropagation(); isDragging = true;
-                startX = e.clientX; startY = e.clientY;
+                const pos = getEventPos(e);
+                startX = pos.x; startY = pos.y;
                 initX = parseInt(wrapper.style.left); initY = parseInt(wrapper.style.top);
-                const move = (evt) => {
-                    if(!isDragging) return;
-                    wrapper.style.left = `${initX + (evt.clientX - startX)}px`;
-                    wrapper.style.top = `${initY + (evt.clientY - startY)}px`;
+                
+                if(e.type === 'mousedown') {
+                    window.addEventListener('mousemove', moveDrag);
+                    window.addEventListener('mouseup', endDrag);
+                } else {
+                    window.addEventListener('touchmove', moveDrag, {passive:false});
+                    window.addEventListener('touchend', endDrag);
                 }
-                const up = () => { isDragging = false; window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); }
-                window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
-            });
+            };
+
+            const moveDrag = (e) => {
+                if(!isDragging) return;
+                const pos = getEventPos(e);
+                wrapper.style.left = `${initX + (pos.x - startX)}px`;
+                wrapper.style.top = `${initY + (pos.y - startY)}px`;
+            };
+
+            const endDrag = (e) => {
+                isDragging = false;
+                window.removeEventListener('mousemove', moveDrag); window.removeEventListener('mouseup', endDrag);
+                window.removeEventListener('touchmove', moveDrag); window.removeEventListener('touchend', endDrag);
+            };
+
+            wrapper.addEventListener('mousedown', startDrag);
+            wrapper.addEventListener('touchstart', startDrag, {passive: false});
         }
 
         // --- SOLO LOGIC (Mantida) ---
@@ -839,10 +1049,45 @@
         function setupInteraction(bubbleObj) {
             let isDraggingBubble = false; let dragStartX, dragStartY, initialBubbleLeft, initialBubbleTop;
             const wrapper = bubbleObj.wrapper;
-            function onBubbleStart(e) { e.stopPropagation(); isDraggingBubble = false; const pos = getEventPos(e); dragStartX = pos.x; dragStartY = pos.y; initialBubbleLeft = parseInt(wrapper.style.left||0); initialBubbleTop = parseInt(wrapper.style.top||0); if(e.type === 'mousedown') { window.addEventListener('mousemove', onBubbleMove); window.addEventListener('mouseup', onBubbleEnd); } else { window.addEventListener('touchmove', onBubbleMove, {passive: false}); window.addEventListener('touchend', onBubbleEnd); } }
-            function onBubbleMove(e) { isDraggingBubble = true; e.preventDefault(); const pos = getEventPos(e); const dx = (pos.x - dragStartX)/scale; const dy = (pos.y - dragStartY)/scale; wrapper.style.left = `${initialBubbleLeft + dx}px`; wrapper.style.top = `${initialBubbleTop + dy}px`; }
-            function onBubbleEnd(e) { if(e.type === 'mouseup') { window.removeEventListener('mousemove', onBubbleMove); window.removeEventListener('mouseup', onBubbleEnd); } else { window.removeEventListener('touchmove', onBubbleMove); window.removeEventListener('touchend', onBubbleEnd); } if(!isDraggingBubble) openPopup(bubbleObj); else saveData(); }
-            wrapper.addEventListener('mousedown', onBubbleStart); wrapper.addEventListener('touchstart', onBubbleStart, {passive: false});
+            
+            function onBubbleStart(e) { 
+                e.stopPropagation(); 
+                isDraggingBubble = false; 
+                const pos = getEventPos(e); 
+                dragStartX = pos.x; 
+                dragStartY = pos.y; 
+                initialBubbleLeft = parseInt(wrapper.style.left||0); 
+                initialBubbleTop = parseInt(wrapper.style.top||0); 
+                if(e.type === 'mousedown') { 
+                    window.addEventListener('mousemove', onBubbleMove); 
+                    window.addEventListener('mouseup', onBubbleEnd); 
+                } else { 
+                    window.addEventListener('touchmove', onBubbleMove, {passive: false}); 
+                    window.addEventListener('touchend', onBubbleEnd); 
+                } 
+            }
+            function onBubbleMove(e) { 
+                isDraggingBubble = true; 
+                e.preventDefault(); 
+                const pos = getEventPos(e); 
+                const dx = (pos.x - dragStartX)/scale; 
+                const dy = (pos.y - dragStartY)/scale; 
+                wrapper.style.left = `${initialBubbleLeft + dx}px`; 
+                wrapper.style.top = `${initialBubbleTop + dy}px`; 
+            }
+            function onBubbleEnd(e) { 
+                if(e.type === 'mouseup') { 
+                    window.removeEventListener('mousemove', onBubbleMove); 
+                    window.removeEventListener('mouseup', onBubbleEnd); 
+                } else { 
+                    window.removeEventListener('touchmove', onBubbleMove); 
+                    window.removeEventListener('touchend', onBubbleEnd); 
+                } 
+                if(!isDraggingBubble) openPopup(bubbleObj); 
+                else saveData(); 
+            }
+            wrapper.addEventListener('mousedown', onBubbleStart); 
+            wrapper.addEventListener('touchstart', onBubbleStart, {passive: false});
         }
 
         function openPopup(bubbleObj) { currentBubble = bubbleObj; popupInput.value = bubbleObj.tooltip.innerText; updatePopupStyle(bubbleObj.area); popupOverlay.classList.add('active'); setTimeout(() => popupInput.focus(), 100); }
@@ -856,21 +1101,39 @@
         function saveData() { const data = bubblesArray.map(b => ({ id: b.id, x: parseInt(b.wrapper.style.left), y: parseInt(b.wrapper.style.top), text: b.tooltip.innerText, areaId: b.area.id, scores: b.scores })); localStorage.setItem('neuralNexusProData', JSON.stringify(data)); }
         function loadData() { const data = localStorage.getItem('neuralNexusProData'); if (data) { const parsed = JSON.parse(data); parsed.forEach(item => { const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0]; createBubble(item.x, item.y, area, item.text, item.id, item.scores); }); } }
         window.addEventListener('load', () => { loadData(); loadProfileData(); });
-        morphDock.addEventListener('click', () => morphDock.classList.toggle('open'));
+        
+        // DOCK MOBILE ADJUST
+        morphDock.addEventListener('click', () => {
+            morphDock.classList.toggle('open');
+            // Fechar ao clicar fora poderia ser útil no mobile, mas vamos manter simples
+        });
+        
         lifeAreas.forEach((area, index) => { const container = document.createElement('div'); container.classList.add('color-option-container'); const dot = document.createElement('div'); dot.classList.add('color-option'); dot.style.backgroundColor = area.color; const label = document.createElement('div'); label.classList.add('area-label'); label.innerText = area.name; if(index === 0) { dot.classList.add('selected'); activeArea = area; } dot.addEventListener('click', (e) => { e.stopPropagation(); document.querySelectorAll('.color-option').forEach(d => d.classList.remove('selected')); dot.classList.add('selected'); activeArea = area; }); container.appendChild(label); container.appendChild(dot); colorList.appendChild(container); });
         
         let lastTap = 0;
         function handleCreateGesture(e) {
             if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
             if(e.target !== viewport && e.target !== world && e.target.id !== 'solo-lines') return;
-            const currentTime = new Date().getTime(); const tapLength = currentTime - lastTap;
+            
+            const currentTime = new Date().getTime(); 
+            const tapLength = currentTime - lastTap;
+            
+            // Double tap logic
             if (e.type === 'dblclick' || (e.type === 'touchend' && tapLength < 300 && tapLength > 0)) {
-                e.preventDefault(); const pos = getEventPos(e.changedTouches ? e.changedTouches[0] : e);
-                const realX = (pos.x - worldX) / scale; const realY = (pos.y - worldY) / scale;
-                createBubble(realX, realY, activeArea); saveData();
-            } lastTap = currentTime;
+                e.preventDefault(); 
+                const pos = getEventPos(e.changedTouches ? e.changedTouches[0] : e);
+                const realX = (pos.x - worldX) / scale; 
+                const realY = (pos.y - worldY) / scale;
+                createBubble(realX, realY, activeArea); 
+                saveData();
+                lastTap = 0; // reset
+            } else {
+                lastTap = currentTime;
+            }
         }
-        viewport.addEventListener('dblclick', handleCreateGesture); viewport.addEventListener('touchend', handleCreateGesture);
+        viewport.addEventListener('dblclick', handleCreateGesture); 
+        viewport.addEventListener('touchend', handleCreateGesture);
+        
         function showToast(msg) { toastText.innerText = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 4000); }
 
         function updateLinesGeneric(targetArray, linesLayerRef, defsLayerRef, containerElement, useScale) {
