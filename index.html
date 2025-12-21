@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neural Nexus - Symbiosis Sphere</title>
+    <title>Neuron</title>
     <style>
         /* --- BASE --- */
         body {
@@ -16,7 +16,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none; -webkit-user-select: none;
             touch-action: none;
-            perspective: 1000px; /* Necessário para o 3D */
+            perspective: 1000px;
         }
 
         #app-logo {
@@ -25,143 +25,26 @@
             pointer-events: none; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.1));
         }
 
-        /* --- MUNDO INFINITO (SOLO) --- */
+        /* --- MUNDO INFINITO --- */
         #viewport {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            overflow: hidden; cursor: grab; transition: filter 0.5s;
+            overflow: hidden; cursor: grab; transition: filter 0.5s; z-index: 0;
         }
-        #viewport.blurred { filter: blur(8px) grayscale(80%); pointer-events: none; }
+        #viewport:active { cursor: grabbing; }
+        #viewport.blurred { filter: blur(15px) grayscale(40%); pointer-events: none !important; }
         
-        #world {
-            position: absolute; top: 0; left: 0; width: 0; height: 0;
-            transform-origin: 0 0; will-change: transform;
-        }
-
-        .lines-layer {
-            position: absolute; top: 0; left: 0; 
-            width: 1px; height: 1px; overflow: visible; 
-            pointer-events: none; z-index: 1;
-        }
-
-        .connection-line {
-            fill: none; stroke-width: 2.5px; stroke-linecap: round;
-            opacity: 0.8; filter: drop-shadow(0 0 3px rgba(0,0,0,0.1));
-            vector-effect: non-scaling-stroke; 
-        }
-
-        /* --- BOLINHAS --- */
-        .circle-wrapper {
-            position: absolute; width: 28px; height: 28px; z-index: 10;
-            transform: translate(-50%, -50%); 
-        }
-
-        .neon-circle {
-            width: 100%; height: 100%; border-radius: 50%; cursor: pointer;
-            animation-name: floatVertical; animation-timing-function: ease-in-out;
-            animation-iteration-count: infinite; transition: background-color 0.5s, box-shadow 0.5s;
-        }
-
-        @keyframes floatVertical {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); } 
-        }
-
-        .message-tooltip {
-            position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.7); color: #fff; padding: 4px 10px; border-radius: 20px;
-            font-size: 12px; white-space: nowrap; pointer-events: none; opacity: 0;
-            transition: opacity 0.2s; backdrop-filter: blur(2px);
-        }
+        #world { position: absolute; top: 0; left: 0; width: 0; height: 0; transform-origin: 0 0; will-change: transform; }
+        .lines-layer { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; z-index: 1; }
+        .connection-line { fill: none; stroke-width: 2.5px; stroke-linecap: round; opacity: 0.8; filter: drop-shadow(0 0 3px rgba(0,0,0,0.1)); vector-effect: non-scaling-stroke; }
+        
+        .circle-wrapper { position: absolute; width: 28px; height: 28px; z-index: 10; transform: translate(-50%, -50%); }
+        .neon-circle { width: 100%; height: 100%; border-radius: 50%; cursor: pointer; animation-name: floatVertical; animation-timing-function: ease-in-out; animation-iteration-count: infinite; transition: background-color 0.5s, box-shadow 0.5s; }
+        @keyframes floatVertical { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+        .message-tooltip { position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 12px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.2s; backdrop-filter: blur(2px); }
         .circle-wrapper:hover .message-tooltip { opacity: 1; }
         .zoom-out .message-tooltip { display: none !important; }
 
-
-        /* --- DIMENSÃO DE SIMBIOSE --- */
-        #symbiosis-dimension {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, #10151a 0%, #000000 100%);
-            z-index: 2000; 
-            display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.8s ease;
-        }
-        #symbiosis-dimension.active { opacity: 1; pointer-events: auto; }
-
-        /* Header da Simbiose */
-        .symbiosis-header {
-            position: absolute; top: 30px; left: 0; width: 100%;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 40px; box-sizing: border-box; pointer-events: none; z-index: 2001;
-        }
-        .symbiosis-title {
-            color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 3px; font-weight: 700; font-size: 14px;
-            text-shadow: 0 0 10px rgba(255,255,255,0.3);
-        }
-        
-        .header-actions { display: flex; gap: 15px; pointer-events: auto; }
-
-        /* Botões do Header */
-        .header-btn {
-            background: rgba(255, 255, 255, 0.1); color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 15px; border-radius: 20px;
-            cursor: pointer; backdrop-filter: blur(5px); transition: all 0.3s; font-weight: 600; font-size: 12px;
-            display: flex; align-items: center; gap: 5px;
-        }
-        .header-btn:hover { background: rgba(255, 255, 255, 0.25); box-shadow: 0 0 15px rgba(255,255,255,0.1); }
-        
-        #close-symbiosis { border-color: rgba(255, 50, 50, 0.4); color: #ff5555; }
-        #close-symbiosis:hover { background: rgba(255, 50, 50, 0.3); box-shadow: 0 0 15px rgba(255,0,0,0.2); }
-
-        /* --- VIEWS DA SIMBIOSE (MAPA VS ESFERA) --- */
-        
-        /* Container Genérico */
-        .symbiosis-view {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0; pointer-events: none; transition: opacity 0.8s ease, transform 0.8s ease;
-        }
-        .symbiosis-view.active-view { opacity: 1; pointer-events: auto; transform: scale(1); }
-        .symbiosis-view.hidden-view { opacity: 0; pointer-events: none; transform: scale(1.5); }
-
-        /* Mapa 2D */
-        #symbiosis-map-container { overflow: hidden; }
-        #symbiosis-world {
-            position: absolute; top: 50%; left: 50%; width: 0; height: 0;
-            transform: translate(-50%, -50%);
-        }
-
-        /* --- ESFERA 3D CSS --- */
-        #sphere-view {
-            perspective: 1200px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; /* Indica que pode clicar para entrar */
-        }
-        
-        #neural-sphere {
-            position: relative; width: 400px; height: 400px;
-            transform-style: preserve-3d;
-            animation: spin 20s infinite linear;
-        }
-
-        @keyframes spin {
-            from { transform: rotateY(0) rotateX(20deg); }
-            to { transform: rotateY(360deg) rotateX(20deg); }
-        }
-
-        .sphere-node {
-            position: absolute; width: 12px; height: 12px; border-radius: 50%;
-            background: #fff; top: 50%; left: 50%;
-            box-shadow: 0 0 15px currentColor;
-            backface-visibility: visible;
-        }
-        
-        /* Texto flutuando na esfera (opcional, para efeito) */
-        .sphere-text {
-            position: absolute; top: 50%; left: 50%; color: white; font-size: 24px; font-weight: 300;
-            transform: translate(-50%, -50%); text-shadow: 0 0 20px rgba(41, 250, 16, 0.8);
-            pointer-events: none; opacity: 0.8; letter-spacing: 5px;
-        }
-
-
-        /* --- UI INFERIOR --- */
+        /* --- UI INFERIOR (DOCK) --- */
         .bottom-ui-container {
             position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
             z-index: 1000; display: flex; align-items: center; gap: 20px;
@@ -169,71 +52,30 @@
         }
         .hidden-ui { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(50px); }
 
-        /* Sidebar */
+        .dock-btn {
+            width: 50px; height: 50px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(15px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .dock-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.45); }
+        .dock-btn svg { width: 22px; height: 22px; fill: #444; transition: fill 0.3s; }
+
         .morph-dock {
             position: relative; width: 60px; height: 60px; border-radius: 60px;
             display: flex; align-items: center; justify-content: center;
             background: rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(20px) saturate(200%); -webkit-backdrop-filter: blur(20px) saturate(200%);
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px) saturate(200%); border: 1px solid rgba(255, 255, 255, 0.7);
             transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1); cursor: pointer;
             box-shadow: inset 0 0 10px rgba(255,255,255,0.8), 0 15px 35px rgba(0,0,0,0.15), 
                         -3px -3px 15px rgba(41, 250, 16, 0.4), 3px 3px 15px rgba(242, 56, 57, 0.4);
         }
         .morph-dock:not(.open):hover { transform: scale(1.1); background: rgba(255, 255, 255, 0.5); }
-        .morph-dock.open {
-            width: 380px; height: 70px; border-radius: 50px;
-            background: rgba(255, 255, 255, 0.6); cursor: default;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15), inset 0 0 20px rgba(255,255,255,0.5);
-        }
+        .morph-dock.open { width: 380px; height: 70px; border-radius: 50px; background: rgba(255, 255, 255, 0.6); cursor: default; box-shadow: 0 20px 50px rgba(0,0,0,0.15), inset 0 0 20px rgba(255,255,255,0.5); }
 
-        /* Botão Simbiose */
-        .symbiosis-btn {
-            width: 50px; height: 50px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.5); cursor: pointer;
-            transition: all 0.3s ease; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-        .symbiosis-btn svg { width: 24px; height: 24px; fill: #555; transition: fill 0.3s; }
-        .symbiosis-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.4); }
-        .symbiosis-btn.searching { background: rgba(255, 255, 255, 0.8); border-color: #29FA10; animation: pulse-green 1.5s infinite; }
-        .symbiosis-btn.searching svg { fill: #29FA10; }
-        @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(41, 250, 16, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0); }
-        }
-
-        /* Radar Overlay */
-        .radar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 400; display: none; align-items: center; justify-content: center;
-        }
-        .radar-overlay.active { display: flex; }
-        .radar-ring {
-            position: absolute; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.1);
-            width: 100px; height: 100px; animation: radar-expand 3s linear infinite;
-        }
-        .radar-ring:nth-child(2) { animation-delay: 1s; } .radar-ring:nth-child(3) { animation-delay: 2s; }
-        @keyframes radar-expand {
-            0% { width: 0; height: 0; opacity: 0.5; border-color: rgba(41, 250, 16, 0.8); }
-            100% { width: 100vw; height: 100vw; opacity: 0; border-color: rgba(41, 250, 16, 0); }
-        }
-
-        /* Notification */
-        .toast {
-            position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-100px);
-            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
-            padding: 12px 25px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 3000; font-weight: 600; color: #333; transition: transform 0.5s;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .toast.show { transform: translateX(-50%) translateY(0); }
-        .toast-icon { width: 10px; height: 10px; background: #29FA10; border-radius: 50%; box-shadow: 0 0 10px #29FA10; }
-
-        /* UI Elements */
         .color-list { display: flex; gap: 25px; opacity: 0; pointer-events: none; transform: scale(0.8); transition: all 0.4s ease 0.1s; }
         .morph-dock.open .color-list { opacity: 1; pointer-events: auto; transform: scale(1); }
         .color-option-container { position: relative; }
@@ -243,32 +85,186 @@
         .area-label { position: absolute; bottom: 55px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 5px 10px; border-radius: 8px; font-size: 11px; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.2s; pointer-events: none; }
         .color-option-container:hover .area-label { opacity: 1; visibility: visible; }
 
-        /* Popup */
+        .symbiosis-btn.searching { background: rgba(255, 255, 255, 0.8); border-color: #29FA10; animation: pulse-green 1.5s infinite; }
+        .symbiosis-btn.searching svg { fill: #29FA10; }
+        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(41, 250, 16, 0); } 100% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0); } }
+
+        /* --- DASHBOARD PERFIL COMPLETO --- */
+        #profile-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(220, 225, 235, 0.8);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.4s ease;
+        }
+        #profile-overlay.active { display: flex; opacity: 1; }
+
+        .profile-modal {
+            width: 95vw; height: 90vh;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 40px;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.9);
+            display: flex; overflow: hidden; position: relative;
+        }
+
+        .close-profile {
+            position: absolute; top: 20px; right: 20px; z-index: 10;
+            width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.05);
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            font-size: 20px; color: #555; transition: 0.2s;
+        }
+        .close-profile:hover { background: #ffcccc; color: #d32f2f; }
+
+        /* Coluna Esquerda: Identidade */
+        .profile-sidebar {
+            width: 300px; background: rgba(240, 245, 250, 0.5);
+            padding: 40px 30px; display: flex; flex-direction: column; gap: 30px;
+            border-right: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .profile-identity { text-align: center; }
+        .avatar-large {
+            width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px;
+            background: linear-gradient(135deg, #37617A, #29FA10);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 48px; font-weight: 700; color: #fff;
+            box-shadow: 0 10px 30px rgba(41, 250, 16, 0.2); position: relative;
+        }
+        .avatar-edit {
+            position: absolute; bottom: 0; right: 0; width: 32px; height: 32px;
+            background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 14px;
+        }
+        .identity-name { font-size: 22px; font-weight: 800; color: #333; margin: 0; }
+        .identity-handle { font-size: 14px; color: #777; margin-bottom: 15px; display: block; }
+        .identity-bio { font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 20px; }
+
+        .xp-container { background: #fff; padding: 15px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
+        .xp-label { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #37617A; margin-bottom: 8px; }
+        .xp-bar-bg { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+        .xp-bar-fill { height: 100%; background: #29FA10; border-radius: 4px; width: 45%; }
+
+        .sidebar-stats { display: flex; justify-content: space-between; text-align: center; margin-top: 10px; }
+        .s-stat h4 { margin: 0; font-size: 18px; color: #333; }
+        .s-stat span { font-size: 11px; color: #999; text-transform: uppercase; }
+
+        /* Coluna Direita: Conteúdo */
+        .profile-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        
+        .profile-nav {
+            display: flex; gap: 30px; padding: 30px 40px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .nav-item {
+            font-size: 14px; font-weight: 700; color: #999; cursor: pointer;
+            padding-bottom: 10px; border-bottom: 3px solid transparent; transition: 0.3s;
+        }
+        .nav-item.active { color: #333; border-color: #29FA10; }
+        .nav-item:hover { color: #555; }
+
+        .tab-content-area { padding: 40px; overflow-y: auto; flex: 1; }
+        
+        .tab-pane { display: none; animation: fadeIn 0.3s; }
+        .tab-pane.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* GRID DE IDEIAS (Tab 1) */
+        .neural-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+        .thought-card {
+            aspect-ratio: 1/1; background: #fff; border-radius: 20px; padding: 20px; cursor: pointer;
+            position: relative; overflow: hidden; transition: all 0.3s; border: 2px solid transparent;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .thought-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); }
+        .card-preview-text { font-size: 14px; color: #333; font-weight: 500; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+        .card-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #999; font-weight: 700; }
+        .empty-state { text-align: center; color: #999; font-style: italic; padding: 40px; width: 100%; }
+
+        /* FORMULÁRIO DE EDIÇÃO (Tab 2) */
+        .edit-form { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group.full { grid-column: span 2; }
+        .form-label { font-size: 12px; font-weight: 700; color: #777; text-transform: uppercase; }
+        .form-input {
+            padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd;
+            background: #fafafa; font-size: 14px; color: #333; outline: none; transition: 0.2s;
+        }
+        .form-input:focus { border-color: #29FA10; background: #fff; box-shadow: 0 0 0 3px rgba(41,250,16,0.1); }
+        .save-btn {
+            background: #333; color: #fff; padding: 15px; border-radius: 15px; border: none;
+            font-weight: 700; cursor: pointer; grid-column: span 2; margin-top: 10px;
+            transition: 0.2s;
+        }
+        .save-btn:hover { background: #29FA10; color: #000; box-shadow: 0 5px 15px rgba(41,250,16,0.4); }
+
+        /* CONFIGURAÇÕES (Tab 3) */
+        .settings-list { display: flex; flex-direction: column; gap: 20px; }
+        .setting-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #fff; padding: 20px; border-radius: 15px; border: 1px solid #eee;
+        }
+        .setting-info h4 { margin: 0; color: #333; }
+        .setting-info p { margin: 5px 0 0 0; font-size: 12px; color: #888; }
+        
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #29FA10; }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+
+        /* --- OUTROS --- */
+        #symbiosis-dimension { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #10151a 0%, #000000 100%); z-index: 2000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.5s ease; }
+        #symbiosis-dimension.active { display: flex; opacity: 1; pointer-events: auto; }
+        .symbiosis-header { position: absolute; top: 30px; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 40px; box-sizing: border-box; pointer-events: none; z-index: 2001; }
+        .symbiosis-title { color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 3px; font-weight: 700; font-size: 14px; }
+        .header-btn { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 15px; border-radius: 20px; cursor: pointer; backdrop-filter: blur(5px); font-weight: 600; font-size: 12px; pointer-events: auto; }
+        #sphere-view { perspective: 1000px; display: flex; align-items: center; justify-content: center; cursor: grab; position: absolute; width: 100%; height: 100%; }
+        #neural-sphere { position: relative; width: 0; height: 0; transform-style: preserve-3d; }
+        .sphere-node { position: absolute; width: 14px; height: 14px; border-radius: 50%; top: 0; left: 0; transform: translate(-50%, -50%); box-shadow: 0 0 15px currentColor; will-change: transform, opacity; }
+        .sphere-text { position: absolute; top: 0; left: 0; color: white; font-size: 20px; font-weight: 300; transform: translate(-50%, -50%); text-shadow: 0 0 20px rgba(41, 250, 16, 0.8); pointer-events: none; opacity: 0.8; letter-spacing: 5px; }
+        #symbiosis-map-container { position: absolute; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+        #symbiosis-map-container.active-view { opacity: 1; pointer-events: auto; }
+        #sphere-view.hidden-view { opacity: 0; pointer-events: none; }
+
+        #nearby-users-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(220, 220, 230, 0.4); backdrop-filter: blur(8px); z-index: 1500; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; }
+        #nearby-users-overlay.active { display: flex; opacity: 1; }
+        .users-list-card { width: 380px; max-height: 80vh; overflow-y: auto; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(25px); border-radius: 30px; padding: 30px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
+        .user-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 20px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+        
         .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(220, 220, 230, 0.3); backdrop-filter: blur(5px); z-index: 2000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; }
-        .popup-card { width: 360px; padding: 35px; border-radius: 30px; text-align: center; transform: scale(0.9); transition: transform 0.3s; background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(30px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); border-top: 4px solid transparent; }
         .popup-overlay.active { display: flex; opacity: 1; }
-        .popup-overlay.active .popup-card { transform: scale(1); }
-        .popup-title { margin: 0 0 5px 0; color: #444; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-        .ai-badge { font-size: 11px; color: #666; margin-bottom: 20px; display: block; font-weight: 500; opacity: 0.7; }
-        textarea { width: 100%; height: 110px; padding: 15px; border-radius: 15px; border: none; background: rgba(255,255,255,0.5); box-shadow: inset 0 2px 10px rgba(0,0,0,0.05); font-family: inherit; resize: none; outline: none; box-sizing: border-box; margin-bottom: 25px; font-size: 16px; color: #333; }
-        textarea:focus { background: rgba(255,255,255,0.85); }
+        .popup-card { width: 360px; padding: 35px; border-radius: 30px; text-align: center; background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); border-top: 4px solid transparent; }
         .popup-actions { display: flex; gap: 15px; }
         .btn { padding: 12px 0; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; flex: 1; transition: all 0.2s; font-size: 14px; }
-        .btn:hover { opacity: 0.9; transform: translateY(-2px); filter: brightness(1.1); }
         .btn-save { color: #fff; box-shadow: 0 10px 20px -5px rgba(0,0,0,0.2); }
         .btn-delete { background: rgba(255,235,238, 0.8); color: #d32f2f; }
 
+        .radar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 400; display: none; align-items: center; justify-content: center; }
+        .radar-overlay.active { display: flex; }
+        .radar-ring { position: absolute; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.1); width: 100px; height: 100px; animation: radar-expand 3s linear infinite; }
+        .radar-ring:nth-child(2) { animation-delay: 1s; } .radar-ring:nth-child(3) { animation-delay: 2s; }
+        @keyframes radar-expand { 0% { width: 0; height: 0; opacity: 0.5; border-color: rgba(41, 250, 16, 0.8); } 100% { width: 100vw; height: 100vw; opacity: 0; border-color: rgba(41, 250, 16, 0); } }
+
+        .toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 12px 25px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 3000; font-weight: 600; color: #333; transition: transform 0.5s; display: flex; align-items: center; gap: 10px; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast-icon { width: 10px; height: 10px; background: #29FA10; border-radius: 50%; box-shadow: 0 0 10px #29FA10; }
+
         @media (max-width: 600px) {
             #app-logo { width: 100px; top: 20px; left: 20px; }
-            .morph-dock.open { width: 85vw; height: 80px; }
-            .color-list { gap: 15px; }
-            .color-option { width: 40px; height: 40px; }
-            .popup-card { width: 85%; padding: 25px; }
-            .message-tooltip { display: none; }
-            .bottom-ui-container { width: 100%; justify-content: center; gap: 15px; bottom: 30px; }
-            .symbiosis-header { padding: 0 20px; }
-            .sphere-text { font-size: 18px; }
-            #neural-sphere { width: 250px; height: 250px; }
+            .bottom-ui-container { width: 100%; justify-content: center; gap: 10px; bottom: 30px; }
+            .morph-dock.open { width: 60%; height: 70px; }
+            .users-list-card, .profile-modal { width: 95%; height: 90vh; }
+            .profile-modal { flex-direction: column; overflow-y: auto; }
+            .profile-sidebar { width: 100%; padding: 20px; border-right: none; border-bottom: 1px solid #eee; }
+            .profile-nav { overflow-x: auto; padding: 20px; }
+            .neural-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+            .edit-form { grid-template-columns: 1fr; }
+            .form-group.full { grid-column: span 1; }
         }
     </style>
 </head>
@@ -282,7 +278,7 @@
 
     <div class="toast" id="toast">
         <div class="toast-icon"></div>
-        <span id="toastText">Simbiose Concluída</span>
+        <span id="toastText">Ação Concluída</span>
     </div>
 
     <div id="viewport">
@@ -293,39 +289,137 @@
         </div>
     </div>
 
-    <div id="symbiosis-dimension">
-        <div class="symbiosis-header">
-            <div class="symbiosis-title">Fusão Neural</div>
-            <div class="header-actions">
-                <button id="toggle-view" class="header-btn">
-                    <span>Alternar Visão</span>
-                </button>
-                <button id="close-symbiosis" class="header-btn">Encerrar</button>
-            </div>
-        </div>
-        
-        <div id="sphere-view" class="symbiosis-view">
-            <div id="neural-sphere">
+    <div id="profile-overlay">
+        <div class="profile-modal">
+            <div class="close-profile" id="closeProfileBtn">×</div>
+            
+            <div class="profile-sidebar">
+                <div class="profile-identity">
+                    <div class="avatar-large">
+                        <span id="p-avatar-letter">U</span>
+                        <div class="avatar-edit">✎</div>
+                    </div>
+                    <h2 class="identity-name" id="p-name">Usuário Nexus</h2>
+                    <span class="identity-handle" id="p-handle">@viajante_neural</span>
+                    <p class="identity-bio" id="p-bio">Explorando o cosmos das ideias, uma conexão de cada vez.</p>
                 </div>
-            <div class="sphere-text">CONEXÃO ATIVA</div>
-        </div>
 
-        <div id="symbiosis-map-container" class="symbiosis-view">
-            <div id="symbiosis-world">
-                <svg class="lines-layer" id="symbiosis-lines">
-                    <defs id="grad-defs-symbiosis"></defs>
-                </svg>
+                <div class="xp-container">
+                    <div class="xp-label"><span>NÍVEL 42</span> <span>85%</span></div>
+                    <div class="xp-bar-bg"><div class="xp-bar-fill"></div></div>
+                </div>
+
+                <div class="sidebar-stats">
+                    <div class="s-stat"><h4 id="stat-count-ideas">0</h4><span>Ideias</span></div>
+                    <div class="s-stat"><h4>12</h4><span>Conexões</span></div>
+                    <div class="s-stat"><h4>5</h4><span>Simbioses</span></div>
+                </div>
+            </div>
+
+            <div class="profile-content">
+                <div class="profile-nav">
+                    <div class="nav-item active" onclick="switchTab('overview')">Mente (Grid)</div>
+                    <div class="nav-item" onclick="switchTab('edit')">Editar Perfil</div>
+                    <div class="nav-item" onclick="switchTab('settings')">Configurações</div>
+                </div>
+
+                <div class="tab-content-area">
+                    
+                    <div id="tab-overview" class="tab-pane active">
+                        <div class="neural-grid" id="neural-grid">
+                            </div>
+                    </div>
+
+                    <div id="tab-edit" class="tab-pane">
+                        <div class="edit-form">
+                            <div class="form-group full">
+                                <label class="form-label">Nome Completo</label>
+                                <input type="text" class="form-input" id="input-name" value="Usuário Nexus">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Usuário (@)</label>
+                                <input type="text" class="form-input" id="input-handle" value="@viajante_neural">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Cargo / Tag</label>
+                                <input type="text" class="form-input" id="input-job" value="Explorador">
+                            </div>
+                            <div class="form-group full">
+                                <label class="form-label">Bio</label>
+                                <input type="text" class="form-input" id="input-bio" value="Explorando o cosmos das ideias, uma conexão de cada vez.">
+                            </div>
+                            <div class="form-group full">
+                                <label class="form-label">Localização</label>
+                                <input type="text" class="form-input" id="input-location" value="São Paulo, BR">
+                            </div>
+                            <button class="save-btn" id="saveProfileBtn">Salvar Alterações</button>
+                        </div>
+                    </div>
+
+                    <div id="tab-settings" class="tab-pane">
+                        <div class="settings-list">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <h4>Modo Fantasma</h4>
+                                    <p>Ocultar meu sinal do radar de outros usuários.</p>
+                                </div>
+                                <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <h4>Notificações de Simbiose</h4>
+                                    <p>Receber alerta quando alguém quiser conectar.</p>
+                                </div>
+                                <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <h4>Backup Local</h4>
+                                    <p>Seus dados são salvos apenas neste dispositivo.</p>
+                                </div>
+                                <button class="btn" style="background:#eee; width:auto; padding:0 20px;">Exportar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>
 
+    <div id="nearby-users-overlay">
+        <div class="users-list-card" id="usersListContainer">
+            <h3 class="users-title">Mentes Próximas <span class="close-users" id="closeUsers">×</span></h3>
+            <div id="users-list-content"></div>
+        </div>
+    </div>
+
+    <div id="symbiosis-dimension">
+        <div class="symbiosis-header">
+            <div class="symbiosis-title">Fusão Neural</div>
+            <div class="header-actions">
+                <button id="toggle-view" class="header-btn"><span>Alternar Visão</span></button>
+                <button id="close-symbiosis" class="header-btn">Encerrar</button>
+            </div>
+        </div>
+        <div id="sphere-view" class="symbiosis-view active-view"><div id="neural-sphere"></div><div class="sphere-text">CONEXÃO ATIVA</div></div>
+        <div id="symbiosis-map-container" class="symbiosis-view hidden-view"><div id="symbiosis-world"><svg class="lines-layer" id="symbiosis-lines"><defs id="grad-defs-symbiosis"></defs></svg></div></div>
+    </div>
+
     <div class="bottom-ui-container" id="mainUI">
+        
+        <div class="dock-btn" id="homeBtn" title="Meu Perfil">
+            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        </div>
+
         <div class="morph-dock" id="morphDock">
             <div class="color-list" id="colorList"></div>
         </div>
-        <div class="symbiosis-btn" id="symbiosisBtn" title="Ativar Simbiose">
+
+        <div class="dock-btn" id="symbiosisBtn" title="Simbiose">
             <svg viewBox="0 0 24 24"><path d="M18,6C15.6,6 13.8,7.3 12.5,9C11.2,7.3 9.4,6 7,6C3.9,6 1.5,8.2 1.5,11.5C1.5,14.8 4.2,17.5 7.5,17.5C9.6,17.5 11.2,16.2 12.5,14.5C13.8,16.2 15.4,17.5 17.5,17.5C20.8,17.5 23.5,14.8 23.5,11.5C23.5,8.2 21.1,6 18,6ZM7.5,15.5C5.3,15.5 3.5,13.7 3.5,11.5C3.5,9.3 5.3,7.5 7.5,7.5C9.2,7.5 10.3,8.7 11.1,9.8C10.3,13.3 9.2,15.5 7.5,15.5ZM17.5,15.5C15.8,15.5 14.7,13.3 13.9,9.8C14.7,8.7 15.8,7.5 17.5,7.5C19.7,7.5 21.5,9.3 21.5,11.5C21.5,13.7 19.7,15.5 17.5,15.5Z"/></svg>
         </div>
+
     </div>
 
     <div class="popup-overlay" id="popupOverlay">
@@ -342,31 +436,19 @@
 
     <script>
         const lifeAreas = [
-            { id: 'health', name: 'Saúde & Físico', color: '#29FA10', keywords: ['saude', 'saúde', 'corpo', 'academia', 'treino', 'dieta', 'comer', 'água', 'sono', 'médico', 'remédio', 'dor', 'doente', 'hospital', 'corrida', 'estresse'] },
-            { id: 'mind', name: 'Mente & Intelecto', color: '#37617A', keywords: ['estudar', 'livro', 'ler', 'curso', 'faculdade', 'escola', 'aprender', 'inteligencia', 'foco', 'ideia', 'pensar', 'raciocinio', 'criatividade', 'escrever'] },
-            { id: 'social', name: 'Relacionamentos', color: '#f23839', keywords: ['amor', 'namorado', 'casamento', 'mae', 'pai', 'filho', 'familia', 'amigo', 'festa', 'encontro', 'sexo', 'carinho', 'abraço', 'conversa', 'pessoas', 'briga'] },
-            { id: 'career', name: 'Carreira & Finanças', color: '#f2ca50', keywords: ['trabalho', 'emprego', 'dinheiro', 'salario', 'pagar', 'boleto', 'conta', 'banco', 'chefe', 'projeto', 'meta', 'venda', 'empresa', 'carreira'] },
-            { id: 'spirit', name: 'Espiritual & Emocional', color: '#378c4b', keywords: ['deus', 'fé', 'orar', 'meditar', 'paz', 'alma', 'espirito', 'gratidão', 'triste', 'feliz', 'ansiedade', 'sentimento', 'emoção', 'propósito', 'vibe'] }
+            { id: 'health', name: 'Saúde & Físico', color: '#29FA10', keywords: ['saude', 'saúde', 'corpo', 'academia', 'treino'] },
+            { id: 'mind', name: 'Mente & Intelecto', color: '#37617A', keywords: ['estudar', 'livro', 'ler', 'curso', 'faculdade'] },
+            { id: 'social', name: 'Relacionamentos', color: '#f23839', keywords: ['amor', 'namorado', 'casamento', 'mae', 'pai'] },
+            { id: 'career', name: 'Carreira & Finanças', color: '#f2ca50', keywords: ['trabalho', 'emprego', 'dinheiro', 'salario'] },
+            { id: 'spirit', name: 'Espiritual & Emocional', color: '#378c4b', keywords: ['deus', 'fé', 'orar', 'meditar', 'paz'] }
         ];
 
-        // REFS GERAIS
+        // VARS
         const viewport = document.getElementById('viewport');
         const world = document.getElementById('world');
         const soloLinesLayer = document.getElementById('solo-lines');
         const gradDefsSolo = document.getElementById('grad-defs-solo');
         
-        // REFS SIMBIOSE
-        const symbiosisDimension = document.getElementById('symbiosis-dimension');
-        const sphereView = document.getElementById('sphere-view');
-        const neuralSphere = document.getElementById('neural-sphere');
-        const symbiosisMapContainer = document.getElementById('symbiosis-map-container');
-        const symbiosisWorld = document.getElementById('symbiosis-world');
-        const symbiosisLinesLayer = document.getElementById('symbiosis-lines');
-        const gradDefsSymbiosis = document.getElementById('grad-defs-symbiosis');
-        const closeSymbiosisBtn = document.getElementById('close-symbiosis');
-        const toggleViewBtn = document.getElementById('toggle-view');
-        
-        // UI
         const mainUI = document.getElementById('mainUI');
         const morphDock = document.getElementById('morphDock');
         const colorList = document.getElementById('colorList');
@@ -377,19 +459,50 @@
         const popupInput = document.getElementById('popupInput');
         const btnSave = document.getElementById('btnSave');
         const btnDelete = document.getElementById('btnDelete');
-        const symbiosisBtn = document.getElementById('symbiosisBtn');
-        const radarOverlay = document.getElementById('radarOverlay');
         const toast = document.getElementById('toast');
         const toastText = document.getElementById('toastText');
 
+        // DASHBOARD
+        const homeBtn = document.getElementById('homeBtn');
+        const profileOverlay = document.getElementById('profile-overlay');
+        const closeProfileBtn = document.getElementById('closeProfileBtn');
+        const neuralGrid = document.getElementById('neural-grid');
+        const statCountIdeas = document.getElementById('stat-count-ideas');
+        
+        // PROFILE EDIT
+        const saveProfileBtn = document.getElementById('saveProfileBtn');
+        const inputName = document.getElementById('input-name');
+        const inputHandle = document.getElementById('input-handle');
+        const inputBio = document.getElementById('input-bio');
+        const pName = document.getElementById('p-name');
+        const pHandle = document.getElementById('p-handle');
+        const pBio = document.getElementById('p-bio');
+        const pAvatarLetter = document.getElementById('p-avatar-letter');
+
+        // SIMBIOSE
+        const symbiosisBtn = document.getElementById('symbiosisBtn');
+        const radarOverlay = document.getElementById('radarOverlay');
+        const symbiosisDimension = document.getElementById('symbiosis-dimension');
+        const sphereView = document.getElementById('sphere-view');
+        const neuralSphere = document.getElementById('neural-sphere');
+        const symbiosisMapContainer = document.getElementById('symbiosis-map-container');
+        const symbiosisWorld = document.getElementById('symbiosis-world');
+        const symbiosisLinesLayer = document.getElementById('symbiosis-lines');
+        const gradDefsSymbiosis = document.getElementById('grad-defs-symbiosis');
+        const closeSymbiosisBtn = document.getElementById('close-symbiosis');
+        const toggleViewBtn = document.getElementById('toggle-view');
+        const nearbyUsersOverlay = document.getElementById('nearby-users-overlay');
+        const usersListContent = document.getElementById('users-list-content');
+        const closeUsersBtn = document.getElementById('closeUsers');
+
+        // ESTADO
         let bubblesArray = [];
         let symbiosisBubblesArray = [];
+        let spherePoints = [];
         let activeArea = lifeAreas[0];
         let currentBubble = null;
         let isSymbiosisActive = false;
-        let currentSymbiosisView = 'sphere'; // 'sphere' ou 'map'
-
-        // --- ZOOM & PAN (SOLO) ---
+        let currentSymbiosisView = 'sphere';
         let worldX = 0, worldY = 0, scale = 1, isPanning = false, startPanX = 0, startPanY = 0;
 
         function updateWorldTransform() {
@@ -397,8 +510,103 @@
             if (scale < 0.6) document.body.classList.add('zoom-out'); else document.body.classList.remove('zoom-out');
         }
 
-        viewport.addEventListener('wheel', (e) => {
+        // --- DASHBOARD LOGIC ---
+        
+        // Tab Switcher
+        window.switchTab = function(tabName) {
+            // UI Update
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Content Update
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        };
+
+        // Open Profile
+        homeBtn.addEventListener('click', () => {
             if(isSymbiosisActive) return;
+            loadProfileData(); // Carrega dados do localstorage
+            renderDashboard();
+            profileOverlay.classList.add('active');
+            viewport.classList.add('blurred');
+        });
+
+        closeProfileBtn.addEventListener('click', () => {
+            profileOverlay.classList.remove('active');
+            viewport.classList.remove('blurred');
+        });
+
+        // Save Profile Logic
+        saveProfileBtn.addEventListener('click', () => {
+            const profileData = {
+                name: inputName.value,
+                handle: inputHandle.value,
+                bio: inputBio.value
+            };
+            localStorage.setItem('nexusProfile', JSON.stringify(profileData));
+            loadProfileData(); // Atualiza UI
+            showToast("Perfil Atualizado");
+        });
+
+        function loadProfileData() {
+            const data = JSON.parse(localStorage.getItem('nexusProfile'));
+            if(data) {
+                pName.innerText = data.name;
+                pHandle.innerText = data.handle;
+                pBio.innerText = data.bio;
+                pAvatarLetter.innerText = data.name[0].toUpperCase();
+                
+                // Popula inputs se estiverem vazios
+                if(inputName.value === "Usuário Nexus") inputName.value = data.name;
+                if(inputHandle.value === "@viajante_neural") inputHandle.value = data.handle;
+            }
+        }
+
+        function renderDashboard() {
+            statCountIdeas.innerText = bubblesArray.length;
+            neuralGrid.innerHTML = '';
+
+            if(bubblesArray.length === 0) {
+                neuralGrid.innerHTML = '<div class="empty-state">Nenhuma ideia criada ainda. Dê um duplo clique no mundo para começar.</div>';
+                return;
+            }
+
+            bubblesArray.forEach(bubble => {
+                let connectionCount = 0;
+                bubblesArray.forEach(other => {
+                    if (bubble === other) return;
+                    if(bubble.area.id === other.area.id) { connectionCount++; return; }
+                    const hasContext = (bubble.scores && bubble.scores[other.area.id] > 0) || (other.scores && other.scores[bubble.area.id] > 0);
+                    if(hasContext) connectionCount++;
+                });
+
+                const card = document.createElement('div');
+                card.classList.add('thought-card');
+                card.style.borderColor = bubble.area.color;
+                
+                card.innerHTML = `
+                    <div class="card-preview-text">${bubble.tooltip.innerText || "Sem texto..."}</div>
+                    <div class="card-meta">
+                        <span style="color:${bubble.area.color}">${bubble.area.name}</span>
+                        <div style="color:${bubble.area.color}">${connectionCount} conexões</div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    profileOverlay.classList.remove('active');
+                    viewport.classList.remove('blurred');
+                    openPopup(bubble);
+                });
+
+                neuralGrid.appendChild(card);
+            });
+        }
+
+
+        // --- ZOOM & PAN (SOLO) ---
+        viewport.addEventListener('wheel', (e) => {
+            if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
             e.preventDefault(); const delta = e.deltaY < 0 ? 1 : -1;
             const newScale = Math.min(Math.max(0.1, scale + (delta * 0.1)), 5);
             const mouseX = e.clientX - worldX; const mouseY = e.clientY - worldY;
@@ -409,7 +617,7 @@
         function getEventPos(e) { return (e.touches && e.touches.length > 0) ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY }; }
 
         viewport.addEventListener('mousedown', (e) => {
-            if(isSymbiosisActive) return;
+            if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
             if (e.target === viewport || e.target === world || e.target.id === 'solo-lines') {
                 isPanning = true; const pos = getEventPos(e); startPanX = pos.x - worldX; startPanY = pos.y - worldY;
                 viewport.style.cursor = 'grabbing';
@@ -423,119 +631,163 @@
         });
         window.addEventListener('mouseup', () => { isPanning = false; viewport.style.cursor = 'grab'; });
 
-        // --- SIMBIOSE ---
-        symbiosisBtn.addEventListener('click', () => {
-            if (isSymbiosisActive) return;
-            symbiosisBtn.classList.add('searching'); radarOverlay.classList.add('active');
-            setTimeout(() => { activateSymbiosisMode(); }, 3000);
-        });
+        // --- DISCOVERY LOGIC ---
+        symbiosisBtn.addEventListener('click', () => { if (isSymbiosisActive) return; startDiscovery(); });
 
-        function activateSymbiosisMode() {
+        function startDiscovery() {
+            symbiosisBtn.classList.add('searching'); radarOverlay.classList.add('active');
+            showToast("Buscando sinais neurais próximos...");
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => { setTimeout(() => { showNearbyUsers(position.coords.latitude, position.coords.longitude); }, 2500); },
+                    (error) => { setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 2500); }
+                );
+            } else { setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 2500); }
+        }
+
+        function showNearbyUsers(userLat, userLon) {
             symbiosisBtn.classList.remove('searching'); radarOverlay.classList.remove('active');
+            const mockUsers = [
+                { id: 1, name: "Alice_Nexus", area: "mind", color: "#37617A", distance: 15 },
+                { id: 2, name: "Bob_Builder", area: "career", color: "#f2ca50", distance: 42 },
+                { id: 3, name: "Zen_Master", area: "spirit", color: "#378c4b", distance: 120 }
+            ];
+            usersListContent.innerHTML = '';
+            mockUsers.forEach(user => {
+                const item = document.createElement('div');
+                item.classList.add('user-item');
+                item.innerHTML = `
+                    <div class="user-avatar" style="background:${user.color}">${user.name[0]}</div>
+                    <div class="user-info">
+                        <span class="user-name">${user.name}</span>
+                        <span class="user-meta">Foco: ${user.area.toUpperCase()} <span class="user-dist">• ${user.distance}m</span></span>
+                    </div>
+                `;
+                item.addEventListener('click', () => { closeUsersList(); activateSymbiosisMode(user); });
+                usersListContent.appendChild(item);
+            });
+            nearbyUsersOverlay.classList.add('active');
+        }
+        function closeUsersList() { nearbyUsersOverlay.classList.remove('active'); }
+        closeUsersBtn.addEventListener('click', closeUsersList);
+
+        // --- ACTIVATE FUSION ---
+        function activateSymbiosisMode(targetUser) {
             isSymbiosisActive = true;
             viewport.classList.add('blurred'); symbiosisDimension.classList.add('active');
             mainUI.classList.add('hidden-ui');
-            showToast("Sinal Encontrado: Fusão Realizada");
-            
-            // Inicia na ESFERA
+            showToast(`Conectado com ${targetUser.name}`);
             switchSymbiosisView('sphere');
-            generateSymbiosisData(); // Gera dados
-            generateSphereVisuals(); // Gera visual 3D
+            generateSymbiosisData(targetUser); 
+            initSphereRotation();
         }
 
-        // --- VISUAL ESFERA 3D ---
-        function generateSphereVisuals() {
+        // --- VISUAL 3D (BILLBOARDING JS) ---
+        let sphereRotationY = 0;
+        let sphereAnimationFrame;
+
+        function initSphereRotation() {
             neuralSphere.innerHTML = '';
-            // Gera 50 nós na esfera
-            const count = 50;
-            for (let i = 0; i < count; i++) {
+            spherePoints = [];
+            
+            const count = symbiosisBubblesArray.length;
+            const radius = 180;
+
+            symbiosisBubblesArray.forEach((bubble, i) => {
                 const node = document.createElement('div');
                 node.classList.add('sphere-node');
-                
-                // Distribuição esférica (Fibonacci Sphere algorithm simplificado para CSS)
-                // Usando transformações rotateY e rotateX
+                node.setAttribute('data-text', bubble.tooltip.innerText);
+                node.style.backgroundColor = bubble.area.color;
+                node.style.color = bubble.area.color;
+
                 const y = 1 - (i / (count - 1)) * 2;
-                const radius = Math.sqrt(1 - y * y);
-                const theta = i * 2.4; // Golden angle increment
-                
-                const r = 200; // Raio da esfera em px
-                const xPos = Math.cos(theta) * radius * r;
-                const yPos = y * r;
-                const zPos = Math.sin(theta) * radius * r;
+                const r = Math.sqrt(1 - y * y);
+                const theta = i * 2.4; 
 
-                node.style.transform = `translate3d(${xPos}px, ${yPos}px, ${zPos}px)`;
-                
-                // Cores aleatórias das áreas
-                const randomArea = lifeAreas[Math.floor(Math.random() * lifeAreas.length)];
-                node.style.backgroundColor = randomArea.color;
-                node.style.color = randomArea.color; // Para o box-shadow usar currentColor
+                const x = Math.cos(theta) * r * radius;
+                const yPos = y * radius;
+                const z = Math.sin(theta) * r * radius;
 
+                spherePoints.push({ element: node, x, y: yPos, z });
                 neuralSphere.appendChild(node);
-            }
+            });
+
+            animateSphere();
         }
 
-        // --- TROCA DE VISÃO (ESFERA <-> MAPA) ---
+        function animateSphere() {
+            if (!isSymbiosisActive || currentSymbiosisView !== 'sphere') {
+                cancelAnimationFrame(sphereAnimationFrame);
+                return;
+            }
+
+            sphereRotationY += 0.005; 
+
+            spherePoints.forEach(point => {
+                const cos = Math.cos(sphereRotationY);
+                const sin = Math.sin(sphereRotationY);
+                
+                const rotatedX = point.x * cos - point.z * sin;
+                const rotatedZ = point.x * sin + point.z * cos;
+
+                const scale = (rotatedZ + 400) / 400; 
+                const opacity = (rotatedZ + 200) / 400; 
+                const zIndex = Math.floor(rotatedZ);
+
+                point.element.style.transform = `translate3d(${rotatedX}px, ${point.y}px, ${rotatedZ}px) scale(${scale})`;
+                point.element.style.opacity = Math.max(0.2, opacity);
+                point.element.style.zIndex = zIndex + 1000;
+            });
+
+            sphereAnimationFrame = requestAnimationFrame(animateSphere);
+        }
+
         function switchSymbiosisView(viewType) {
             currentSymbiosisView = viewType;
             if (viewType === 'sphere') {
-                sphereView.classList.remove('hidden-view');
-                sphereView.classList.add('active-view');
-                symbiosisMapContainer.classList.remove('active-view');
-                symbiosisMapContainer.classList.add('hidden-view');
+                sphereView.classList.remove('hidden-view'); sphereView.classList.add('active-view');
+                symbiosisMapContainer.classList.remove('active-view'); symbiosisMapContainer.classList.add('hidden-view');
                 toggleViewBtn.innerHTML = '<span>Ver Mapa</span>';
+                initSphereRotation();
             } else {
-                sphereView.classList.remove('active-view');
-                sphereView.classList.add('hidden-view');
-                symbiosisMapContainer.classList.remove('hidden-view');
-                symbiosisMapContainer.classList.add('active-view');
+                sphereView.classList.remove('active-view'); sphereView.classList.add('hidden-view');
+                symbiosisMapContainer.classList.remove('hidden-view'); symbiosisMapContainer.classList.add('active-view');
                 toggleViewBtn.innerHTML = '<span>Ver Esfera</span>';
+                cancelAnimationFrame(sphereAnimationFrame);
             }
         }
-
-        // CLIQUE NA ESFERA PARA ENTRAR NO MAPA
         sphereView.addEventListener('click', () => switchSymbiosisView('map'));
-        
-        // BOTÃO TOGGLE
-        toggleViewBtn.addEventListener('click', () => {
-            switchSymbiosisView(currentSymbiosisView === 'sphere' ? 'map' : 'sphere');
-        });
+        toggleViewBtn.addEventListener('click', () => switchSymbiosisView(currentSymbiosisView === 'sphere' ? 'map' : 'sphere'));
 
-        // BOTÃO FECHAR
         closeSymbiosisBtn.addEventListener('click', () => {
             isSymbiosisActive = false;
             viewport.classList.remove('blurred'); symbiosisDimension.classList.remove('active');
             mainUI.classList.remove('hidden-ui');
-            
-            // Limpa dados
             while (symbiosisLinesLayer.querySelectorAll('line').length > 0) symbiosisLinesLayer.removeChild(symbiosisLinesLayer.lastChild);
             gradDefsSymbiosis.innerHTML = '';
             const oldBubbles = symbiosisWorld.querySelectorAll('.circle-wrapper');
             oldBubbles.forEach(b => b.remove());
             symbiosisBubblesArray = [];
+            cancelAnimationFrame(sphereAnimationFrame);
+            viewport.style.pointerEvents = 'auto';
         });
 
-        function generateSymbiosisData() {
+        function generateSymbiosisData(targetUser) {
             symbiosisBubblesArray = [];
-            
-            // Clona dados do user
             bubblesArray.forEach(b => {
-                createSymbiosisBubble(
-                    parseInt(b.wrapper.style.left) - 200, 
-                    parseInt(b.wrapper.style.top), 
-                    b.area, b.tooltip.innerText, b.scores
-                );
+                createSymbiosisBubble(parseInt(b.wrapper.style.left) - 200, parseInt(b.wrapper.style.top), b.area, b.tooltip.innerText, b.scores);
             });
-            // Cria parceiro
-            const partnerData = [
-                { t: "Estudar IA", a: "mind", x: 200, y: 0 },
-                { t: "Maratona", a: "health", x: 250, y: 150 },
-                { t: "Comprar Casa", a: "career", x: 150, y: -100 },
-                { t: "Yoga", a: "spirit", x: 300, y: -50 }
-            ];
-            partnerData.forEach(p => {
+            let partnerBubbles = [];
+            if(targetUser.area === "mind") partnerBubbles = [ {t: "Filosofia Quântica", a: "mind"}, {t: "Lógica Fuzzy", a: "mind"}, {t: "Café sem açúcar", a: "health"} ];
+            else if (targetUser.area === "career") partnerBubbles = [ {t: "Startup Unicórnio", a: "career"}, {t: "Networking", a: "social"}, {t: "Investimento Anjo", a: "career"} ];
+            else partnerBubbles = [ {t: "Meditação", a: "spirit"}, {t: "Yoga no Parque", a: "health"}, {t: "Paz Interior", a: "spirit"} ];
+
+            partnerBubbles.forEach(p => {
                 const area = lifeAreas.find(a => a.id === p.a);
                 const scores = analyzeFullContext(p.t).scores;
-                createSymbiosisBubble(p.x, p.y, area, p.t, scores);
+                const rx = (Math.random() * 400) - 100;
+                const ry = (Math.random() * 400) - 200;
+                createSymbiosisBubble(rx, ry, area, p.t, scores);
             });
         }
 
@@ -551,12 +803,8 @@
             const tooltip = document.createElement('div');
             tooltip.classList.add('message-tooltip'); tooltip.innerText = text;
             circle.appendChild(tooltip); wrapper.appendChild(circle); symbiosisWorld.appendChild(wrapper);
-            
-            // Adiciona ao array de simbiose
-            const bubbleObj = { wrapper, circle, area, scores, id: Math.random() };
+            const bubbleObj = { wrapper, circle, area, scores, id: Math.random(), tooltip }; 
             symbiosisBubblesArray.push(bubbleObj);
-            
-            // APENAS ARRASTAR (SEM CLICK PARA EDITAR)
             setupSimpleDrag(wrapper);
         }
 
@@ -576,18 +824,11 @@
             });
         }
 
-        // --- SOLO LOGIC ---
+        // --- SOLO LOGIC (Mantida) ---
         function createBubble(x, y, area, text = "", existingId = null, existingScores = {}) {
-            const wrapper = document.createElement('div');
-            wrapper.classList.add('circle-wrapper');
-            wrapper.style.left = `${x}px`; wrapper.style.top = `${y}px`;
-            const circle = document.createElement('div');
-            circle.classList.add('neon-circle');
-            circle.style.backgroundColor = area.color;
-            circle.style.boxShadow = `0 0 10px ${area.color}, 0 0 25px ${area.color}90`;
-            circle.style.animationDuration = `${(Math.random()*3+4).toFixed(2)}s`;
-            const tooltip = document.createElement('div');
-            tooltip.classList.add('message-tooltip'); tooltip.innerText = text;
+            const wrapper = document.createElement('div'); wrapper.classList.add('circle-wrapper'); wrapper.style.left=`${x}px`; wrapper.style.top=`${y}px`;
+            const circle = document.createElement('div'); circle.classList.add('neon-circle'); circle.style.backgroundColor=area.color; circle.style.boxShadow=`0 0 10px ${area.color}, 0 0 25px ${area.color}90`; circle.style.animationDuration=`${(Math.random()*3+4).toFixed(2)}s`;
+            const tooltip = document.createElement('div'); tooltip.classList.add('message-tooltip'); tooltip.innerText=text;
             circle.appendChild(tooltip); wrapper.appendChild(circle); world.appendChild(wrapper);
             const bubbleObj = { id: existingId || (Date.now()+Math.random()), wrapper, circle, area, tooltip, scores: existingScores };
             bubblesArray.push(bubbleObj);
@@ -604,26 +845,23 @@
             wrapper.addEventListener('mousedown', onBubbleStart); wrapper.addEventListener('touchstart', onBubbleStart, {passive: false});
         }
 
-        function openPopup(bubbleObj) {
-            currentBubble = bubbleObj; popupInput.value = bubbleObj.tooltip.innerText; updatePopupStyle(bubbleObj.area); popupOverlay.classList.add('active'); setTimeout(() => popupInput.focus(), 100);
-        }
+        function openPopup(bubbleObj) { currentBubble = bubbleObj; popupInput.value = bubbleObj.tooltip.innerText; updatePopupStyle(bubbleObj.area); popupOverlay.classList.add('active'); setTimeout(() => popupInput.focus(), 100); }
         function updatePopupStyle(area) { popupCard.style.borderTopColor = area.color; popupTitle.style.color = area.color; popupTitle.innerText = area.name; aiBadge.innerText = `Contexto: ${area.name}`; btnSave.style.backgroundColor = area.color; }
         function closePopup() { popupOverlay.classList.remove('active'); currentBubble = null; }
         btnSave.addEventListener('click', () => { if (currentBubble) { const text = popupInput.value.trim(); currentBubble.tooltip.innerText = text; const result = analyzeFullContext(text); currentBubble.scores = result.scores; if (result.dominant && result.dominant.id !== currentBubble.area.id) { currentBubble.area = result.dominant; currentBubble.circle.style.backgroundColor = result.dominant.color; currentBubble.circle.style.boxShadow = `0 0 10px ${result.dominant.color}, 0 0 25px ${result.dominant.color}90`; } saveData(); } closePopup(); });
         popupInput.addEventListener('input', (e) => { const result = analyzeFullContext(e.target.value); if(result.dominant) updatePopupStyle(result.dominant); });
         btnDelete.addEventListener('click', () => { if (currentBubble) { currentBubble.wrapper.remove(); bubblesArray = bubblesArray.filter(b => b.id !== currentBubble.id); saveData(); } closePopup(); });
         popupOverlay.addEventListener('click', (e) => { if (e.target === popupOverlay) closePopup(); });
-        
         function analyzeFullContext(text) { if (!text) return { dominant: null, scores: {} }; const cleanText = text.toLowerCase(); let scores = {}; let maxScore = 0; let dominantArea = null; lifeAreas.forEach(area => scores[area.id] = 0); lifeAreas.forEach(area => { area.keywords.forEach(word => { if (cleanText.includes(word)) scores[area.id] += 1; }); if (scores[area.id] > maxScore) { maxScore = scores[area.id]; dominantArea = area; } }); return { dominant: dominantArea, scores: scores }; }
         function saveData() { const data = bubblesArray.map(b => ({ id: b.id, x: parseInt(b.wrapper.style.left), y: parseInt(b.wrapper.style.top), text: b.tooltip.innerText, areaId: b.area.id, scores: b.scores })); localStorage.setItem('neuralNexusProData', JSON.stringify(data)); }
         function loadData() { const data = localStorage.getItem('neuralNexusProData'); if (data) { const parsed = JSON.parse(data); parsed.forEach(item => { const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0]; createBubble(item.x, item.y, area, item.text, item.id, item.scores); }); } }
-        window.addEventListener('load', loadData);
+        window.addEventListener('load', () => { loadData(); loadProfileData(); });
         morphDock.addEventListener('click', () => morphDock.classList.toggle('open'));
         lifeAreas.forEach((area, index) => { const container = document.createElement('div'); container.classList.add('color-option-container'); const dot = document.createElement('div'); dot.classList.add('color-option'); dot.style.backgroundColor = area.color; const label = document.createElement('div'); label.classList.add('area-label'); label.innerText = area.name; if(index === 0) { dot.classList.add('selected'); activeArea = area; } dot.addEventListener('click', (e) => { e.stopPropagation(); document.querySelectorAll('.color-option').forEach(d => d.classList.remove('selected')); dot.classList.add('selected'); activeArea = area; }); container.appendChild(label); container.appendChild(dot); colorList.appendChild(container); });
         
         let lastTap = 0;
         function handleCreateGesture(e) {
-            if(isSymbiosisActive) return;
+            if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
             if(e.target !== viewport && e.target !== world && e.target.id !== 'solo-lines') return;
             const currentTime = new Date().getTime(); const tapLength = currentTime - lastTap;
             if (e.type === 'dblclick' || (e.type === 'touchend' && tapLength < 300 && tapLength > 0)) {
@@ -635,64 +873,30 @@
         viewport.addEventListener('dblclick', handleCreateGesture); viewport.addEventListener('touchend', handleCreateGesture);
         function showToast(msg) { toastText.innerText = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 4000); }
 
-        // --- SISTEMA DE CONEXÃO GENÉRICO (COM GRADIENTES) ---
         function updateLinesGeneric(targetArray, linesLayerRef, defsLayerRef, containerElement, useScale) {
             while (linesLayerRef.querySelectorAll('line').length > 0) linesLayerRef.removeChild(linesLayerRef.lastChild);
             defsLayerRef.innerHTML = ''; 
-            
-            const rectRef = containerElement.getBoundingClientRect(); 
-            const currentScale = useScale ? scale : 1;
-
+            const rectRef = containerElement.getBoundingClientRect(); const currentScale = useScale ? scale : 1;
             for (let i = 0; i < targetArray.length; i++) {
-                const b1 = targetArray[i];
-                let targetBubble = null;
-
-                for (let j = i + 1; j < targetArray.length; j++) {
-                    const candidate = targetArray[j];
-                    if (b1.area.id === candidate.area.id) { targetBubble = candidate; break; }
-                }
-                if (!targetBubble) {
-                    for (let j = i + 1; j < targetArray.length; j++) {
-                        const candidate = targetArray[j];
-                        const b1HasContext = (b1.scores && b1.scores[candidate.area.id] > 0);
-                        const b2HasContext = (candidate.scores && candidate.scores[b1.area.id] > 0);
-                        const shared = lifeAreas.some(a => b1.scores && candidate.scores && b1.scores[a.id]>0 && candidate.scores[a.id]>0);
-                        if (b1HasContext || b2HasContext || shared) { targetBubble = candidate; break; }
-                    }
-                }
-
+                const b1 = targetArray[i]; let targetBubble = null;
+                for (let j = i + 1; j < targetArray.length; j++) { const candidate = targetArray[j]; if (b1.area.id === candidate.area.id) { targetBubble = candidate; break; } }
+                if (!targetBubble) { for (let j = i + 1; j < targetArray.length; j++) { const candidate = targetArray[j]; const b1HasContext = (b1.scores && b1.scores[candidate.area.id] > 0); const b2HasContext = (candidate.scores && candidate.scores[b1.area.id] > 0); const shared = lifeAreas.some(a => b1.scores && candidate.scores && b1.scores[a.id]>0 && candidate.scores[a.id]>0); if (b1HasContext || b2HasContext || shared) { targetBubble = candidate; break; } } }
                 if (targetBubble) {
                     const b2 = targetBubble;
-                    const rect1 = b1.circle.getBoundingClientRect();
-                    const rect2 = b2.circle.getBoundingClientRect();
-
-                    const x1 = (rect1.left - rectRef.left + (rect1.width/2)) / currentScale;
-                    const y1 = (rect1.top - rectRef.top + (rect1.height/2)) / currentScale;
-                    const x2 = (rect2.left - rectRef.left + (rect2.width/2)) / currentScale;
-                    const y2 = (rect2.top - rectRef.top + (rect2.height/2)) / currentScale;
-
+                    const rect1 = b1.circle.getBoundingClientRect(); const rect2 = b2.circle.getBoundingClientRect();
+                    const x1 = (rect1.left - rectRef.left + (rect1.width/2)) / currentScale; const y1 = (rect1.top - rectRef.top + (rect1.height/2)) / currentScale;
+                    const x2 = (rect2.left - rectRef.left + (rect2.width/2)) / currentScale; const y2 = (rect2.top - rectRef.top + (rect2.height/2)) / currentScale;
                     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                     line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
                     line.classList.add('connection-line');
-                    
-                    if (b1.area.id === b2.area.id) { 
-                        line.setAttribute('stroke', b1.area.color); 
-                    } else { 
-                        const gradId = `grad-${Math.random().toString(36).substr(2, 9)}`;
-                        const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-                        gradient.setAttribute('id', gradId);
-                        gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
-                        gradient.setAttribute('x1', x1); gradient.setAttribute('y1', y1);
-                        gradient.setAttribute('x2', x2); gradient.setAttribute('y2', y2);
-                        
-                        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                        stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', b1.area.color);
-                        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                        stop2.setAttribute('offset', '100%'); stop2.setAttribute('stop-color', b2.area.color);
-                        
-                        gradient.appendChild(stop1); gradient.appendChild(stop2);
-                        defsLayerRef.appendChild(gradient);
-                        line.setAttribute('stroke', `url(#${gradId})`);
+                    if (b1.area.id === b2.area.id) { line.setAttribute('stroke', b1.area.color); } 
+                    else { 
+                        const gradId = `grad-${Math.random().toString(36).substr(2, 9)}`; const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                        gradient.setAttribute('id', gradId); gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
+                        gradient.setAttribute('x1', x1); gradient.setAttribute('y1', y1); gradient.setAttribute('x2', x2); gradient.setAttribute('y2', y2);
+                        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop'); stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', b1.area.color);
+                        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop'); stop2.setAttribute('offset', '100%'); stop2.setAttribute('stop-color', b2.area.color);
+                        gradient.appendChild(stop1); gradient.appendChild(stop2); defsLayerRef.appendChild(gradient); line.setAttribute('stroke', `url(#${gradId})`);
                     }
                     linesLayerRef.appendChild(line);
                 }
@@ -703,7 +907,6 @@
             if (!isSymbiosisActive) {
                 updateLinesGeneric(bubblesArray, soloLinesLayer, gradDefsSolo, world, true);
             } else {
-                // Só desenha linhas se estiver na visão de MAPA (não na esfera)
                 if(currentSymbiosisView === 'map') {
                     updateLinesGeneric(symbiosisBubblesArray, symbiosisLinesLayer, gradDefsSymbiosis, symbiosisWorld, false);
                 }
@@ -711,7 +914,6 @@
             requestAnimationFrame(gameLoop);
         }
         requestAnimationFrame(gameLoop);
-
     </script>
 </body>
 </html>
