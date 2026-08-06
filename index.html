@@ -15,7 +15,7 @@
             height: 100vh; width: 100vw; overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none; -webkit-user-select: none;
-            touch-action: none; /* Crucial para gestos manuais */
+            touch-action: none;
             perspective: 1000px;
             overscroll-behavior: none;
         }
@@ -224,7 +224,7 @@
         }
         .save-btn:active { transform: scale(0.98); }
 
-        /* SETTINGS */
+        /* SETTINGS & STATUS API */
         .settings-list { display: flex; flex-direction: column; gap: 15px; }
         .setting-item {
             display: flex; justify-content: space-between; align-items: center;
@@ -233,6 +233,13 @@
         .setting-info h4 { margin: 0; color: #333; font-size: 14px; }
         .setting-info p { margin: 5px 0 0 0; font-size: 11px; color: #888; }
         
+        .api-status-indicator {
+            display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; margin-top: 8px;
+        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .status-dot.active { background-color: #29FA10; box-shadow: 0 0 6px #29FA10; }
+        .status-dot.inactive { background-color: #ff3b30; box-shadow: 0 0 6px #ff3b30; }
+
         .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
@@ -313,12 +320,7 @@
         }
         
         .popup-title { margin: 0 0 10px 0; font-size: 18px; }
-        .ai-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; background: #eee; padding: 4px 10px; border-radius: 12px; color: #777; margin-bottom: 15px; font-weight: 600; transition: all 0.3s ease; }
-        .ai-badge.ai-active { background: #e6f9e6; color: #1b5e20; border: 1px solid #29FA10; }
-        .ai-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #999; display: inline-block; }
-        .ai-active .ai-status-dot { background: #29FA10; box-shadow: 0 0 6px #29FA10; animation: pulse-dot 1.5s infinite; }
-        @keyframes pulse-dot { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } 100% { transform: scale(1); opacity: 1; } }
-
+        .ai-badge { display: inline-block; font-size: 10px; background: #eee; padding: 4px 8px; border-radius: 10px; color: #777; margin-bottom: 15px; }
         #popupInput {
             width: 100%; height: 80px; border: 1px solid #ddd; border-radius: 15px;
             padding: 15px; box-sizing: border-box; font-family: inherit; font-size: 14px;
@@ -456,12 +458,19 @@
 
                     <div id="tab-settings" class="tab-pane">
                         <div class="settings-list">
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4>Chave Gemini API (Contexto IA)</h4>
-                                    <p>Insira sua chave gratuita do Google AI Studio para IA avançada.</p>
+                            <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                                <div style="display: flex; width: 100%; justify-content: space-between; align-items: center;">
+                                    <div class="setting-info">
+                                        <h4>Chave Gemini API (Contexto IA)</h4>
+                                        <p>Insira sua chave gratuita do Google AI Studio para IA avançada.</p>
+                                    </div>
+                                    <input type="password" class="form-input" id="input-gemini-key" placeholder="Cole sua API Key aqui..." style="width: 140px; padding: 8px;">
                                 </div>
-                                <input type="password" class="form-input" id="input-gemini-key" placeholder="Cole sua API Key aqui..." style="width: 140px; padding: 8px;">
+                                <!-- SINALIZADOR DE STATUS DA API SOLICITADO -->
+                                <div class="api-status-indicator">
+                                    <span class="status-dot inactive" id="apiStatusDot"></span>
+                                    <span id="apiStatusText" style="color: #666;">Modo Local (Sem Chave API Ativa)</span>
+                                </div>
                             </div>
                             <div class="setting-item">
                                 <div class="setting-info">
@@ -519,7 +528,7 @@
     <div class="popup-overlay" id="popupOverlay">
         <div class="popup-card" id="popupCard">
             <h3 class="popup-title" id="popupTitle">Nova Ideia</h3>
-            <div class="ai-badge" id="aiBadge"><span class="ai-status-dot"></span><span id="aiBadgeText">Aguardando IA...</span></div>
+            <span class="ai-badge" id="aiBadge">Analisando com IA...</span>
             <textarea id="popupInput" placeholder="Digite seu pensamento..."></textarea>
             <div class="popup-actions">
                 <button class="btn btn-delete" id="btnDelete">Excluir</button>
@@ -530,10 +539,10 @@
 
     <script>
         const lifeAreas = [
-            { id: 'health', name: 'Saúde & Físico', color: '#29FA10', keywords: ['saude', 'saúde', 'corpo', 'academia', 'treino', 'medico', 'consulta', 'atestado', 'falta', 'exame', 'remedio'] },
+            { id: 'health', name: 'Saúde & Físico', color: '#29FA10', keywords: ['saude', 'saúde', 'corpo', 'academia', 'treino', 'medico', 'consulta', 'atestado', 'exame'] },
             { id: 'mind', name: 'Mente & Intelecto', color: '#37617A', keywords: ['estudar', 'livro', 'ler', 'curso', 'faculdade'] },
             { id: 'social', name: 'Relacionamentos', color: '#f23839', keywords: ['amor', 'namorado', 'casamento', 'mae', 'pai'] },
-            { id: 'career', name: 'Carreira & Finanças', color: '#f2ca50', keywords: ['trabalho', 'emprego', 'dinheiro', 'salario', 'chefe', 'empresa', 'falta'] },
+            { id: 'career', name: 'Carreira & Finanças', color: '#f2ca50', keywords: ['trabalho', 'emprego', 'dinheiro', 'salario', 'falta', 'chefe', 'escritorio', 'empresa'] },
             { id: 'spirit', name: 'Espiritual & Emocional', color: '#378c4b', keywords: ['deus', 'fé', 'orar', 'meditar', 'paz'] }
         ];
 
@@ -550,7 +559,6 @@
         const popupCard = document.getElementById('popupCard');
         const popupTitle = document.getElementById('popupTitle');
         const aiBadge = document.getElementById('aiBadge');
-        const aiBadgeText = document.getElementById('aiBadgeText');
         const popupInput = document.getElementById('popupInput');
         const btnSave = document.getElementById('btnSave');
         const btnDelete = document.getElementById('btnDelete');
@@ -570,6 +578,8 @@
         const inputHandle = document.getElementById('input-handle');
         const inputBio = document.getElementById('input-bio');
         const inputGeminiKey = document.getElementById('input-gemini-key');
+        const apiStatusDot = document.getElementById('apiStatusDot');
+        const apiStatusText = document.getElementById('apiStatusText');
         const pName = document.getElementById('p-name');
         const pHandle = document.getElementById('p-handle');
         const pBio = document.getElementById('p-bio');
@@ -633,12 +643,24 @@
                 name: inputName.value,
                 handle: inputHandle.value,
                 bio: inputBio.value,
-                geminiKey: inputGeminiKey.value
+                geminiKey: inputGeminiKey.value.trim()
             };
             localStorage.setItem('nexusProfile', JSON.stringify(profileData));
             loadProfileData();
             showToast("Perfil e Configurações Salvas");
         });
+
+        function updateApiStatusIndicator(key) {
+            if(key && key.length > 5) {
+                apiStatusDot.className = "status-dot active";
+                apiStatusText.innerText = "API Conectada e Ativa (Gemini IA)";
+                apiStatusText.style.color = "#2e7d32";
+            } else {
+                apiStatusDot.className = "status-dot inactive";
+                apiStatusText.innerText = "Modo Local (Sem Chave API Ativa)";
+                apiStatusText.style.color = "#666";
+            }
+        }
 
         function loadProfileData() {
             const data = JSON.parse(localStorage.getItem('nexusProfile'));
@@ -649,9 +671,20 @@
                 pAvatarLetter.innerText = data.name[0].toUpperCase();
                 if(inputName.value === "Usuário Nexus") inputName.value = data.name;
                 if(inputHandle.value === "@viajante_neural") inputHandle.value = data.handle;
-                if(data.geminiKey) inputGeminiKey.value = data.geminiKey;
+                if(data.geminiKey) {
+                    inputGeminiKey.value = data.geminiKey;
+                    updateApiStatusIndicator(data.geminiKey);
+                } else {
+                    updateApiStatusIndicator("");
+                }
+            } else {
+                updateApiStatusIndicator("");
             }
         }
+
+        inputGeminiKey.addEventListener('input', (e) => {
+            updateApiStatusIndicator(e.target.value.trim());
+        });
 
         function renderDashboard() {
             statCountIdeas.innerText = bubblesArray.length;
@@ -1017,35 +1050,15 @@
             wrapper.addEventListener('touchstart', onBubbleStart, {passive: false});
         }
 
-        function openPopup(bubbleObj) { 
-            currentBubble = bubbleObj; 
-            popupInput.value = bubbleObj.tooltip.innerText; 
-            updatePopupStyle(bubbleObj.area); 
-            aiBadge.classList.remove('ai-active');
-            aiBadgeText.innerText = "Aguardando IA...";
-            popupOverlay.classList.add('active'); 
-            setTimeout(() => popupInput.focus(), 100); 
-        }
-
-        function updatePopupStyle(area) { 
-            popupCard.style.borderTopColor = area.color; 
-            popupTitle.style.color = area.color; 
-            popupTitle.innerText = area.name; 
-            btnSave.style.backgroundColor = area.color; 
-        }
-
-        function closePopup() { 
-            popupOverlay.classList.remove('active'); 
-            currentBubble = null; 
-        }
+        function openPopup(bubbleObj) { currentBubble = bubbleObj; popupInput.value = bubbleObj.tooltip.innerText; updatePopupStyle(bubbleObj.area); popupOverlay.classList.add('active'); setTimeout(() => popupInput.focus(), 100); }
+        function updatePopupStyle(area) { popupCard.style.borderTopColor = area.color; popupTitle.style.color = area.color; popupTitle.innerText = area.name; aiBadge.innerText = `Contexto: ${area.name}`; btnSave.style.backgroundColor = area.color; }
+        function closePopup() { popupOverlay.classList.remove('active'); currentBubble = null; }
         
         btnSave.addEventListener('click', async () => { 
             if (currentBubble) { 
                 const text = popupInput.value.trim(); 
                 currentBubble.tooltip.innerText = text; 
-                aiBadgeText.innerText = "Analisando com IA...";
-                aiBadge.classList.remove('ai-active');
-                
+                aiBadge.innerText = "Analisando com IA...";
                 const result = await analyzeFullContext(text); 
                 currentBubble.scores = result.scores; 
                 if (result.dominant && result.dominant.id !== currentBubble.area.id) { 
@@ -1058,38 +1071,23 @@
             closePopup(); 
         });
 
-        let typingTimer;
-        popupInput.addEventListener('input', (e) => {
-            clearTimeout(typingTimer);
-            const text = e.target.value.trim();
-            if(!text) {
-                aiBadgeText.innerText = "Aguardando IA...";
-                aiBadge.classList.remove('ai-active');
-                return;
+        popupInput.addEventListener('input', async (e) => { 
+            aiBadge.innerText = "Analisando IA...";
+            const result = await analyzeFullContext(e.target.value); 
+            if(result.dominant) {
+                updatePopupStyle(result.dominant);
+                aiBadge.innerText = `IA: ${result.dominant.name}`;
             }
-
-            aiBadgeText.innerText = "IA pensando...";
-            aiBadge.classList.remove('ai-active');
-
-            typingTimer = setTimeout(async () => {
-                const result = await analyzeFullContext(text); 
-                if(result.dominant) {
-                    updatePopupStyle(result.dominant);
-                    aiBadgeText.innerText = `IA Ativa: ${result.dominant.name}`;
-                    aiBadge.classList.add('ai-active');
-                }
-            }, 500);
         });
 
         btnDelete.addEventListener('click', () => { if (currentBubble) { currentBubble.wrapper.remove(); bubblesArray = bubblesArray.filter(b => b.id !== currentBubble.id); saveData(); } closePopup(); });
         popupOverlay.addEventListener('click', (e) => { if (e.target === popupOverlay) closePopup(); });
 
-        // --- FUNÇÃO DE CONTEXTUALIZAÇÃO COM IA (GEMINI API) ---
         async function analyzeFullContext(text) {
             if (!text || text.trim() === "") return { dominant: activeArea, scores: {} };
             
             const profile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
-            const apiKey = profile.geminiKey || ""; 
+            const apiKey = profile.geminiKey || "";
 
             if (!apiKey) {
                 return fallbackKeywordAnalysis(text);
@@ -1097,7 +1095,7 @@
 
             try {
                 const prompt = `Analise o seguinte pensamento/ideia de um usuário: "${text}"
-Classifique a qual destas 5 áreas da vida ele pertence mais e calcule um score de relevância de 0 a 5 para cada uma das áreas (considere pontuações cruzadas altas se o texto envolver múltiplos contextos, como saúde impactando trabalho/carreira):
+Classifique a qual destas 5 áreas da vida ele pertence mais e calcule um score de relevância de 0 a 5 para cada uma das áreas cruzando contextos (por exemplo, ir ao médico afeta saúde mas também a carreira/falta no trabalho):
 - health (Saúde & Físico)
 - mind (Mente & Intelecto)
 - social (Relacionamentos)
@@ -1136,7 +1134,7 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
             }
         }
 
-        // Fallback inteligente e expandido para conectar termos cruzados (como trabalho, atestado, médico)
+        // Fallback inteligente aprimorado para cruzar temas como médico/falta no trabalho automaticamente se a API não estiver ativa
         function fallbackKeywordAnalysis(text) {
             const cleanText = text.toLowerCase();
             let scores = {};
@@ -1146,34 +1144,34 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
             lifeAreas.forEach(area => scores[area.id] = 0);
             
             const smartMap = {
-                health: ['saude', 'corpo', 'academia', 'treino', 'comer', 'peso', 'dormir', 'agua', 'corrida', 'medico', 'consulta', 'atestado', 'exame', 'remedio', 'dor', 'hospital', 'doente'],
+                health: ['saude', 'corpo', 'academia', 'treino', 'comer', 'peso', 'dormir', 'agua', 'corrida', 'medico', 'consulta', 'atestado', 'exame', 'remédio'],
                 mind: ['estudar', 'livro', 'ler', 'curso', 'faculdade', 'codigo', 'aprender', 'foco', 'projeto', 'programar'],
                 social: ['amor', 'namorado', 'casamento', 'mae', 'pai', 'amigos', 'festa', 'encontro', 'familia', 'gente'],
                 career: ['trabalho', 'emprego', 'dinheiro', 'salario', 'projeto', 'chefe', 'empresa', 'negocio', 'vendas', 'financas', 'falta', 'atestado', 'ponto', 'cargo'],
                 spirit: ['deus', 'fé', 'orar', 'meditar', 'paz', 'universo', 'gratidao', 'alma', 'proposito', 'energia']
             };
 
-            lifeAreas.forEach(area => {
-                const words = smartMap[area.id] || [];
-                words.forEach(word => {
-                    if (cleanText.includes(word)) scores[area.id] += 2;
+            // Regra cruzada inteligente se mencionar médico/atestado/falta juntos
+            if((cleanText.includes('medico') || cleanText.includes('consulta') || cleanText.includes('atestado')) && (cleanText.includes('trabalho') || cleanText.includes('falta'))) {
+                scores['health'] = 4;
+                scores['career'] = 4;
+                dominantArea = lifeAreas.find(a => a.id === 'health');
+            } else {
+                lifeAreas.forEach(area => {
+                    const words = smartMap[area.id] || [];
+                    words.forEach(word => {
+                        if (cleanText.includes(word)) scores[area.id] += 2;
+                    });
+                    if (scores[area.id] > maxScore) {
+                        maxScore = scores[area.id];
+                        dominantArea = area;
+                    }
                 });
-                if (scores[area.id] > maxScore) {
-                    maxScore = scores[area.id];
-                    dominantArea = area;
-                }
-            });
-
-            // Se citar atestado ou médico junto com falta/trabalho, garante pontuação alta cruzada em Saúde e Carreira
-            if((cleanText.includes('atestado') || cleanText.includes('medico') || cleanText.includes('consulta')) && (cleanText.includes('falta') || cleanText.includes('trabalho'))) {
-                scores['health'] = Math.max(scores['health'], 4);
-                scores['career'] = Math.max(scores['career'], 4);
             }
 
             if (maxScore === 0) scores[activeArea.id] = 1;
             return { dominant: dominantArea, scores: scores };
         }
-        // ----------------------------------------------------
 
         function saveData() { const data = bubblesArray.map(b => ({ id: b.id, x: parseInt(b.wrapper.style.left), y: parseInt(b.wrapper.style.top), text: b.tooltip.innerText, areaId: b.area.id, scores: b.scores })); localStorage.setItem('neuralNexusProData', JSON.stringify(data)); }
         function loadData() { const data = localStorage.getItem('neuralNexusProData'); if (data) { const parsed = JSON.parse(data); parsed.forEach(item => { const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0]; createBubble(item.x, item.y, area, item.text, item.id, item.scores); }); } }
