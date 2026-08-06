@@ -260,7 +260,7 @@
         }
         .save-btn:active { transform: scale(0.98); }
 
-        /* SETTINGS */
+        /* SETTINGS & API FEEDBACK */
         .settings-list { display: flex; flex-direction: column; gap: 15px; }
         .setting-item {
             display: flex; justify-content: space-between; align-items: center;
@@ -269,6 +269,19 @@
         .setting-info h4 { margin: 0; color: #333; font-size: 14px; }
         .setting-info p { margin: 5px 0 0 0; font-size: 11px; color: #888; }
         
+        .api-status-box { display: flex; flex-direction: column; gap: 8px; width: 180px; }
+        .api-feedback-badge {
+            font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 8px; text-align: center;
+            background: #eee; color: #666; transition: all 0.3s;
+        }
+        .api-feedback-badge.success { background: #e6f9e6; color: #1b5e20; border: 1px solid #29FA10; }
+        .api-feedback-badge.error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        
+        .test-api-btn {
+            background: #37617A; color: white; border: none; border-radius: 8px; font-size: 11px; padding: 6px; cursor: pointer; font-weight: 600; transition: 0.2s;
+        }
+        .test-api-btn:active { transform: scale(0.95); }
+
         .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
@@ -498,7 +511,11 @@
                                     <h4>Chave Gemini API (Contexto IA)</h4>
                                     <p>Insira sua chave gratuita do Google AI Studio para IA avançada.</p>
                                 </div>
-                                <input type="password" class="form-input" id="input-gemini-key" placeholder="Cole sua API Key aqui..." style="width: 140px; padding: 8px;">
+                                <div class="api-status-box">
+                                    <input type="password" class="form-input" id="input-gemini-key" placeholder="Cole sua API Key aqui..." style="width: 100%; padding: 8px; box-sizing: border-box;">
+                                    <div id="apiFeedbackBadge" class="api-feedback-badge">Status: Não testada</div>
+                                    <button class="test-api-btn" id="testApiBtn">Testar Conexão</button>
+                                </div>
                             </div>
                             <div class="setting-item">
                                 <div class="setting-info">
@@ -615,12 +632,14 @@
         const neuralGrid = document.getElementById('neural-grid');
         const statCountIdeas = document.getElementById('stat-count-ideas');
         
-        // PROFILE EDIT
+        // PROFILE EDIT & API FEEDBACK
         const saveProfileBtn = document.getElementById('saveProfileBtn');
         const inputName = document.getElementById('input-name');
         const inputHandle = document.getElementById('input-handle');
         const inputBio = document.getElementById('input-bio');
         const inputGeminiKey = document.getElementById('input-gemini-key');
+        const testApiBtn = document.getElementById('testApiBtn');
+        const apiFeedbackBadge = document.getElementById('apiFeedbackBadge');
         const pName = document.getElementById('p-name');
         const pHandle = document.getElementById('p-handle');
         const pBio = document.getElementById('p-bio');
@@ -702,7 +721,6 @@
             const apiKey = profile.geminiKey || ""; 
 
             if (!apiKey) {
-                // Resposta baseada nas próprias informações locais caso não tenha API Key
                 const matching = bubblesArray.filter(b => b.tooltip.innerText.toLowerCase().includes(query.toLowerCase()));
                 if(matching.length > 0) {
                     showToast(`Encontrado: ${matching[0].tooltip.innerText}`);
@@ -728,10 +746,7 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
                 const data = await response.json();
                 const rawText = data.candidates[0].content.parts[0].text;
                 
-                // Exibe a resposta via Toast ou abre um popup elegante se preferir. Usaremos o Toast persistente ou o modal de popup adaptado.
                 showToast(rawText.substring(0, 100) + "...");
-                
-                // Opcional: Criar uma bolinha automática com a resposta ou mostrar em um card flutuante
                 console.log("Resposta da IA:", rawText);
 
             } catch (error) {
@@ -770,6 +785,47 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
             showToast("Perfil e Configurações Salvas");
         });
 
+        // --- TESTAR API E FEEDBACK VISUAL ---
+        async function testGeminiApiKey() {
+            const apiKey = inputGeminiKey.value.trim();
+            if(!apiKey) {
+                apiFeedbackBadge.innerText = "Status: Chave vazia";
+                apiFeedbackBadge.className = "api-feedback-badge error";
+                return;
+            }
+
+            apiFeedbackBadge.innerText = "Status: Testando...";
+            apiFeedbackBadge.className = "api-feedback-badge";
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
+                });
+
+                if(response.ok) {
+                    apiFeedbackBadge.innerText = "Status: Chave Funcionando! ✔";
+                    apiFeedbackBadge.className = "api-feedback-badge success";
+                    showToast("Conexão com a IA estabelecida com sucesso!");
+                } else {
+                    const errData = await response.json();
+                    apiFeedbackBadge.innerText = "Status: Chave Inválida / Erro";
+                    apiFeedbackBadge.className = "api-feedback-badge error";
+                    showToast("Falha: Verifique se sua chave está correta.");
+                }
+            } catch(e) {
+                apiFeedbackBadge.innerText = "Status: Erro de Conexão";
+                apiFeedbackBadge.className = "api-feedback-badge error";
+                showToast("Erro de rede ao testar a chave.");
+            }
+        }
+
+        testApiBtn.addEventListener('click', () => {
+            testGeminiApiKey();
+        });
+        // ------------------------------------
+
         function loadProfileData() {
             const data = JSON.parse(localStorage.getItem('nexusProfile'));
             if(data) {
@@ -779,7 +835,10 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
                 pAvatarLetter.innerText = data.name[0].toUpperCase();
                 if(inputName.value === "Usuário Nexus") inputName.value = data.name;
                 if(inputHandle.value === "@viajante_neural") inputHandle.value = data.handle;
-                if(data.geminiKey) inputGeminiKey.value = data.geminiKey;
+                if(data.geminiKey) {
+                    inputGeminiKey.value = data.geminiKey;
+                    testGeminiApiKey(); // Testa automaticamente ao carregar se houver chave salva
+                }
             }
         }
 
