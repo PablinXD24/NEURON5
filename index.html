@@ -117,13 +117,10 @@
             backdrop-filter: blur(20px) saturate(200%); 
             transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1); cursor: pointer;
             
-            /* Variável para o brilho e borda adaptáveis */
             --dock-glow: #29FA10; 
             border: 1px solid var(--dock-glow);
             box-shadow: inset 0 0 10px rgba(255,255,255,0.8), 0 15px 35px rgba(0,0,0,0.15), 
                         0 0 15px var(--dock-glow);
-            
-            /* Removido o hidden para permitir que os textos dos rótulos apareçam sem serem cortados */
             overflow: visible; 
         }
         .morph-dock:not(.open):hover { transform: scale(1.1); background: rgba(255, 255, 255, 0.5); }
@@ -145,7 +142,6 @@
         .color-option-container { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .color-option { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s, box-shadow 0.3s; flex-shrink: 0; }
         .color-option:active { transform: scale(0.9); }
-        /* Ajuste do brilho da bolinha selecionada com base na própria cor */
         .color-option.selected { transform: scale(1.1); border-color: currentColor; box-shadow: 0 0 15px currentColor; }
         
         .area-label { 
@@ -154,7 +150,6 @@
             font-size: 11px; white-space: nowrap; opacity: 0; visibility: hidden; 
             transition: opacity 0.2s; pointer-events: none; z-index: 100;
         }
-        /* Mostra o rótulo da área no hover E quando está ativa */
         .color-option-container:hover .area-label,
         .color-option-container.active-container .area-label { opacity: 1; visibility: visible; }
 
@@ -192,7 +187,7 @@
         .close-profile:hover, .close-profile:active { background: #ffcccc; color: #d32f2f; }
 
         .profile-sidebar {
-            width: 300px; background: rgba(240, 245, 250, 0.5);
+            width: 320px; background: rgba(240, 245, 250, 0.5);
             padding: 40px 30px; display: flex; flex-direction: column; gap: 20px;
             border-right: 1px solid rgba(0,0,0,0.05); overflow-y: auto;
         }
@@ -223,6 +218,21 @@
         .s-stat h4 { margin: 0; font-size: 16px; color: #333; }
         .s-stat span { font-size: 10px; color: #999; text-transform: uppercase; }
 
+        /* NOTÍCIAS SIDEBAR */
+        .sidebar-news-section { margin-top: 15px; display: flex; flex-direction: column; gap: 15px; }
+        .sidebar-news-title { font-size: 12px; font-weight: 700; color: #777; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar-news-list { display: flex; flex-direction: column; gap: 10px; }
+        .s-news-card {
+            display: flex; gap: 10px; background: #fff; border-radius: 12px;
+            padding: 10px; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            transition: 0.2s; border: 1px solid transparent; align-items: center;
+        }
+        .s-news-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-color: #eee; }
+        .s-news-img { width: 45px; height: 45px; border-radius: 8px; flex-shrink: 0; background-size: cover; background-position: center; background-color: #f0f0f0; }
+        .s-news-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; flex: 1; }
+        .s-news-text { font-size: 11px; color: #333; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .s-news-date { font-size: 9px; color: #999; margin-top: 4px; }
+
         .profile-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         
         .profile-nav {
@@ -241,7 +251,7 @@
         .tab-pane.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* GRID IDEIAS */
+        /* MENTE GRID (Original Restaurado) */
         .neural-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding-bottom: 20px; }
         .thought-card {
             aspect-ratio: 1/1; background: #fff; border-radius: 20px; padding: 15px; cursor: pointer;
@@ -251,7 +261,7 @@
         .thought-card:active { transform: scale(0.98); }
         .card-preview-text { font-size: 13px; color: #333; font-weight: 500; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
         .card-meta { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #999; font-weight: 700; }
-        .empty-state { text-align: center; color: #999; font-style: italic; padding: 20px; width: 100%; }
+        .empty-state { text-align: center; color: #999; font-style: italic; padding: 20px; width: 100%; grid-column: 1 / -1; }
 
         /* FORM */
         .edit-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -474,6 +484,15 @@
                     <div class="s-stat"><h4>12</h4><span>Conexões</span></div>
                     <div class="s-stat"><h4>5</h4><span>Simbioses</span></div>
                 </div>
+
+                <!-- SEÇÃO DE NOTÍCIAS SIDEBAR -->
+                <div class="sidebar-news-section">
+                    <h4 class="sidebar-news-title">Mundo Real</h4>
+                    <div class="sidebar-news-list" id="sidebar-news-list">
+                        <!-- Noticias injetadas aqui -->
+                    </div>
+                </div>
+
             </div>
 
             <div class="profile-content">
@@ -486,7 +505,9 @@
                 <div class="tab-content-area">
                     
                     <div id="tab-overview" class="tab-pane active">
-                        <div class="neural-grid" id="neural-grid"></div>
+                        <div class="neural-grid" id="neural-grid">
+                            <!-- O Grid de Ideias será renderizado aqui -->
+                        </div>
                     </div>
 
                     <div id="tab-edit" class="tab-pane">
@@ -696,10 +717,59 @@
             document.getElementById(`tab-${tabName}`).classList.add('active');
         };
 
+        // --- SISTEMA DE NOTÍCIAS REAL NA SIDEBAR ---
+        async function fetchNews() {
+            const newsContainer = document.getElementById('sidebar-news-list');
+            if(!newsContainer) return;
+            if(newsContainer.children.length > 0 && !newsContainer.querySelector('.empty-state')) return;
+            
+            newsContainer.innerHTML = '<div class="empty-state" style="padding:10px; font-size:11px;">Buscando sinais...</div>';
+            
+            try {
+                // Utilizando API pública RSS to JSON com o Feed G1
+                const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://g1.globo.com/rss/g1/');
+                const data = await res.json();
+                
+                if(data.status === 'ok' && data.items.length > 0) {
+                    newsContainer.innerHTML = '';
+                    
+                    // Limitando a 5 notícias para não poluir demais a barra lateral
+                    data.items.slice(0, 5).forEach(item => {
+                        const card = document.createElement('a');
+                        card.href = item.link;
+                        card.target = "_blank";
+                        card.classList.add('s-news-card');
+                        
+                        let imgUrl = item.enclosure?.link || item.thumbnail;
+                        if(!imgUrl && item.description.includes('<img')) {
+                            const match = item.description.match(/src="([^"]+)"/);
+                            if(match) imgUrl = match[1];
+                        }
+                        if(!imgUrl) imgUrl = 'https://via.placeholder.com/100?text=News';
+
+                        card.innerHTML = `
+                            <div class="s-news-img" style="background-image: url('${imgUrl}')"></div>
+                            <div class="s-news-info">
+                                <div class="s-news-text">${item.title}</div>
+                                <div class="s-news-date">${new Date(item.pubDate).toLocaleDateString('pt-BR')}</div>
+                            </div>
+                        `;
+                        newsContainer.appendChild(card);
+                    });
+                } else {
+                    throw new Error("Falha na formatação da API");
+                }
+            } catch(e) {
+                console.error(e);
+                newsContainer.innerHTML = '<div class="empty-state" style="padding:10px; font-size:11px;">Mundo exterior inacessível.</div>';
+            }
+        }
+
         homeBtn.addEventListener('click', () => {
             if(isSymbiosisActive) return;
             loadProfileData();
-            renderDashboard();
+            renderDashboard(); 
+            fetchNews(); // Injeta notícias na sidebar
             profileOverlay.classList.add('active');
             viewport.classList.add('blurred');
         });
@@ -851,6 +921,7 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
             }
         }
 
+        // Restaura a função de renderizar o Grid de Ideias Original
         function renderDashboard() {
             statCountIdeas.innerText = bubblesArray.length;
             neuralGrid.innerHTML = '';
@@ -1383,7 +1454,7 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
             const container = document.createElement('div'); container.classList.add('color-option-container'); 
             const dot = document.createElement('div'); dot.classList.add('color-option'); 
             dot.style.backgroundColor = area.color; 
-            dot.style.color = area.color; /* Adicionado para permitir o brilho dinâmico */
+            dot.style.color = area.color; 
             const label = document.createElement('div'); label.classList.add('area-label'); label.innerText = area.name; 
             
             if(index === 0) { 
@@ -1401,7 +1472,7 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                 document.querySelectorAll('.color-option').forEach(d => d.classList.remove('selected')); 
                 dot.classList.add('selected'); 
                 activeArea = area; 
-                morphDock.style.setProperty('--dock-glow', area.color); /* Atualiza a cor global do sidebar */
+                morphDock.style.setProperty('--dock-glow', area.color); 
             }); 
             
             container.appendChild(label); container.appendChild(dot); colorList.appendChild(container); 
