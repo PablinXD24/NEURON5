@@ -751,6 +751,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+      import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyABMVB4pYyQMil8XaQu2zf6_siHlDMCgRE",
@@ -762,8 +763,32 @@
       };
       const app = initializeApp(firebaseConfig);
       const db = getDatabase(app);
+      const auth = getAuth(app);
+      const googleProvider = new GoogleAuthProvider();
 
+      let currentUserId = "default_user";
+
+      onAuthStateChanged(auth, (user) => {
+          if (user) {
+              currentUserId = user.uid;
+              document.getElementById('auth-overlay').classList.add('hidden');
+              loadData();
+              loadProfileData();
+          } else {
+              currentUserId = "default_user";
+              document.getElementById('auth-overlay').classList.remove('hidden');
+          }
+      });
+
+      window.firebaseAuthModules = { 
+          auth, 
+          createUserWithEmailAndPassword, 
+          signInWithEmailAndPassword, 
+          signInWithPopup, 
+          googleProvider 
+      };
       window.firebaseDbModules = { db, ref, set, onValue };
+      window.getCurrentUserId = () => currentUserId;
     </script>
 
     <script>
@@ -861,25 +886,36 @@
         }
         window.switchAuthMode = switchAuthMode;
 
-        function handleAuthSubmit() {
+        async function handleAuthSubmit() {
             const email = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value.trim();
             if(!email || !password) {
                 showToast("Preencha o e-mail e a senha.");
                 return;
             }
-            // Simulação de login/cadastro bem-sucedido mantendo a experiência fluida
-            showToast(authMode === 'login' ? "Login realizado com sucesso!" : "Conta criada com sucesso!");
-            document.getElementById('auth-overlay').classList.add('hidden');
+            try {
+                const { auth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = window.firebaseAuthModules;
+                if(authMode === 'login') {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    showToast("Login realizado com sucesso!");
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    showToast("Conta criada com sucesso!");
+                }
+            } catch (error) {
+                showToast("Erro: " + error.message);
+            }
         }
         window.handleAuthSubmit = handleAuthSubmit;
 
-        function handleGoogleLogin() {
-            showToast("Autenticando com o Google...");
-            setTimeout(() => {
+        async function handleGoogleLogin() {
+            try {
+                const { auth, signInWithPopup, googleProvider } = window.firebaseAuthModules;
+                await signInWithPopup(auth, googleProvider);
                 showToast("Login com Google realizado!");
-                document.getElementById('auth-overlay').classList.add('hidden');
-            }, 1000);
+            } catch (error) {
+                showToast("Erro no Google Login: " + error.message);
+            }
         }
         window.handleGoogleLogin = handleGoogleLogin;
 
@@ -896,8 +932,6 @@
         let initialScale = 1;
         let mainLoopId;
         let sphereAnimationFrame;
-
-        const userId = "default_user"; 
 
         function updateWorldTransform() {
             world.style.transform = `translate(${worldX}px, ${worldY}px) scale(${scale})`;
@@ -1458,7 +1492,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 initSphereRotation();
             } else {
                 sphereView.classList.remove('active-view'); sphereView.classList.add('hidden-view');
-                symbiosisMapContainer.classList.remove('hidden-view'); symbiosisMapContainer.classList.add('active-view');
+                symbiosisMapContainer.classList.remove('active-view'); symbiosisMapContainer.classList.add('active-view');
                 toggleViewBtn.innerHTML = '<span>Ver Esfera</span>';
                 getWin().cancelAnimationFrame(sphereAnimationFrame);
             }
@@ -1706,34 +1740,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
 
         async function analyzeFullContext(text) {
             if (!text || text.trim() === "") return { dominant: activeArea, scores: {} };
-            
-            try {
-                const formattedBubbles = bubblesArray.map(b => ({ id: b.id, text: b.tooltip.innerText, area: b.area.id }));
-                formattedBubbles.push({ id: 'current', text: text, area: activeArea.id });
-
-                const response = await fetch('http://localhost:5000/contextualize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ bubbles: formattedBubbles })
-                });
-
-                const data = await response.json();
-                if (!response.ok || data.error) {
-                    throw new Error(data.error || "Erro na resposta do Flask.");
-                }
-
-                if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                    const rawText = data.candidates[0].content.parts[0].text;
-                    const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-                    const parsed = JSON.parse(cleanJson);
-                }
-
-                return fallbackKeywordAnalysis(text);
-
-            } catch (error) {
-                console.warn("Flask indisponível ou erro na rota /contextualize. Usando análise local de suporte.", error);
-                return fallbackKeywordAnalysis(text);
-            }
+            return fallbackKeywordAnalysis(text);
         }
 
         function fallbackKeywordAnalysis(text) {
@@ -1770,11 +1777,13 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function saveData() {
             const data = bubblesArray.map(b => ({ id: b.id, x: parseInt(b.wrapper.style.left), y: parseInt(b.wrapper.style.top), text: b.tooltip.innerText, areaId: b.area.id, scores: b.scores }));
             const { db, ref, set } = window.firebaseDbModules;
+            const userId = window.getCurrentUserId();
             set(ref(db, 'users/' + userId + '/bubbles'), data);
         }
         
         function loadData() { 
             const { db, ref, onValue } = window.firebaseDbModules;
+            const userId = window.getCurrentUserId();
             onValue(ref(db, 'users/' + userId + '/bubbles'), (snapshot) => {
                 const data = snapshot.val();
                 world.querySelectorAll('.circle-wrapper').forEach(el => el.remove());
@@ -1789,7 +1798,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         }
 
         window.addEventListener('load', () => { 
-            loadData(); 
             loadProfileData(); 
             
             if(!allNewsFetched) {
