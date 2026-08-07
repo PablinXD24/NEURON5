@@ -731,6 +731,7 @@
         let spherePoints = [];
         let activeArea = lifeAreas[0];
         let currentBubble = null;
+        let pendingCreationCoords = null; // Variável para reter as coordenadas da bolinha em criação
         let isSymbiosisActive = false;
         let currentSymbiosisView = 'sphere';
         let worldX = 0, worldY = 0, scale = 1, isPanning = false, startPanX = 0, startPanY = 0;
@@ -1399,7 +1400,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             const bubbleObj = { id: existingId || (Date.now()+Math.random()), wrapper, circle, area, tooltip, scores: existingScores };
             bubblesArray.push(bubbleObj);
             setupInteraction(bubbleObj);
-            if (!text && !existingId) openPopup(bubbleObj);
+            return bubbleObj; // Retorna o objeto criado
         }
 
         function setupInteraction(bubbleObj) {
@@ -1454,8 +1455,8 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
 
         function openPopup(bubbleObj) { 
             currentBubble = bubbleObj; 
-            popupInput.value = bubbleObj.tooltip.innerText; 
-            updatePopupStyle(bubbleObj.area); 
+            popupInput.value = bubbleObj ? bubbleObj.tooltip.innerText : ""; 
+            updatePopupStyle(bubbleObj ? bubbleObj.area : activeArea); 
             aiBadge.classList.remove('ai-active');
             aiBadgeText.innerText = "Aguardando IA...";
             popupOverlay.classList.add('active'); 
@@ -1472,11 +1473,17 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function closePopup() { 
             popupOverlay.classList.remove('active'); 
             currentBubble = null; 
+            pendingCreationCoords = null;
         }
         
         btnSave.addEventListener('click', async () => { 
+            const text = popupInput.value.trim();
+            if (!text) {
+                showToast("Digite um assunto para salvar a ideia.");
+                return;
+            }
+
             if (currentBubble) { 
-                const text = popupInput.value.trim(); 
                 currentBubble.tooltip.innerText = text; 
                 aiBadgeText.innerText = "Analisando com IA...";
                 aiBadge.classList.remove('ai-active');
@@ -1489,7 +1496,22 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                     currentBubble.circle.style.boxShadow = `0 0 10px ${result.dominant.color}, 0 0 25px ${result.dominant.color}90`; 
                 } 
                 saveData(); 
-            } 
+            } else if (pendingCreationCoords) {
+                // Criação tardia da bolinha apenas após o texto estar preenchido
+                aiBadgeText.innerText = "Analisando com IA...";
+                aiBadge.classList.remove('ai-active');
+
+                const result = await analyzeFullContext(text);
+                const assignedArea = result.dominant || activeArea;
+                
+                const newBubble = createBubble(pendingCreationCoords.x, pendingCreationCoords.y, assignedArea, text, null, result.scores);
+                if (result.dominant) {
+                    newBubble.area = result.dominant;
+                    newBubble.circle.style.backgroundColor = result.dominant.color;
+                    newBubble.circle.style.boxShadow = `0 0 10px ${result.dominant.color}, 0 0 25px ${result.dominant.color}90`;
+                }
+                saveData();
+            }
             closePopup(); 
         });
 
@@ -1516,7 +1538,14 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             }, 500);
         });
 
-        btnDelete.addEventListener('click', () => { if (currentBubble) { currentBubble.wrapper.remove(); bubblesArray = bubblesArray.filter(b => b.id !== currentBubble.id); saveData(); } closePopup(); });
+        btnDelete.addEventListener('click', () => { 
+            if (currentBubble) { 
+                currentBubble.wrapper.remove(); 
+                bubblesArray = bubblesArray.filter(b => b.id !== currentBubble.id); 
+                saveData(); 
+            } 
+            closePopup(); 
+        });
         popupOverlay.addEventListener('click', (e) => { if (e.target === popupOverlay) closePopup(); });
 
         async function analyzeFullContext(text) {
@@ -1655,8 +1684,11 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 const pos = getEventPos(e.changedTouches ? e.changedTouches[0] : e);
                 const realX = (pos.x - worldX) / scale; 
                 const realY = (pos.y - worldY) / scale;
-                createBubble(realX, realY, activeArea); 
-                saveData();
+                
+                // Salva coordenadas pendentes e abre o popup sem registrar vazio no Firebase
+                pendingCreationCoords = { x: realX, y: realY };
+                openPopup(null);
+
                 lastTap = 0;
             } else {
                 lastTap = currentTime;
