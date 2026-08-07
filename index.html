@@ -641,6 +641,8 @@
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+      import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+
       const firebaseConfig = {
         apiKey: "AIzaSyABMVB4pYyQMil8XaQu2zf6_siHlDMCgRE",
         authDomain: "neuron5.firebaseapp.com",
@@ -650,6 +652,9 @@
         appId: "1:45038955818:web:856c83eaa31dfbc747c253"
       };
       const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+
+      window.firebaseDbModules = { db, ref, set, onValue };
     </script>
 
     <script>
@@ -733,6 +738,8 @@
         let initialScale = 1;
         let mainLoopId;
         let sphereAnimationFrame;
+
+        const userId = "default_user"; // ID padrão para sincronização com o Realtime Database
 
         function updateWorldTransform() {
             world.style.transform = `translate(${worldX}px, ${worldY}px) scale(${scale})`;
@@ -1516,7 +1523,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             if (!text || text.trim() === "") return { dominant: activeArea, scores: {} };
             
             try {
-                // Modificação solicitada: Chamando o backend Flask (/contextualize) centralizado em vez da API do Google diretamente
                 const formattedBubbles = bubblesArray.map(b => ({ id: b.id, text: b.tooltip.innerText, area: b.area.id }));
                 formattedBubbles.push({ id: 'current', text: text, area: activeArea.id });
 
@@ -1531,12 +1537,10 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                     throw new Error(data.error || "Erro na resposta do Flask.");
                 }
 
-                // Opcional: Persistir/atualizar conexões neurais baseadas nas relações retornadas
                 if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
                     const rawText = data.candidates[0].content.parts[0].text;
                     const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
                     const parsed = JSON.parse(cleanJson);
-                    // Se connections forem retornadas, podemos gerenciar atualizações dinâmicas
                 }
 
                 return fallbackKeywordAnalysis(text);
@@ -1578,17 +1582,25 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             return { dominant: dominantArea, scores: scores };
         }
 
-        function saveData() { const data = bubblesArray.map(b => ({ id: b.id, x: parseInt(b.wrapper.style.left), y: parseInt(b.wrapper.style.top), text: b.tooltip.innerText, areaId: b.area.id, scores: b.scores })); localStorage.setItem('neuralNexusProData', JSON.stringify(data)); }
+        function saveData() {
+            const data = bubblesArray.map(b => ({ id: b.id, x: parseInt(b.wrapper.style.left), y: parseInt(b.wrapper.style.top), text: b.tooltip.innerText, areaId: b.area.id, scores: b.scores }));
+            const { db, ref, set } = window.firebaseDbModules;
+            set(ref(db, 'users/' + userId + '/bubbles'), data);
+        }
         
         function loadData() { 
-            const data = localStorage.getItem('neuralNexusProData'); 
-            if (data) { 
-                const parsed = JSON.parse(data); 
-                parsed.forEach(item => { 
-                    const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0]; 
-                    createBubble(item.x, item.y, area, item.text, item.id, item.scores); 
-                }); 
-            } 
+            const { db, ref, onValue } = window.firebaseDbModules;
+            onValue(ref(db, 'users/' + userId + '/bubbles'), (snapshot) => {
+                const data = snapshot.val();
+                world.querySelectorAll('.circle-wrapper').forEach(el => el.remove());
+                bubblesArray = [];
+                if (data) {
+                    data.forEach(item => {
+                        const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
+                        createBubble(item.x, item.y, area, item.text, item.id, item.scores);
+                    });
+                }
+            });
         }
 
         window.addEventListener('load', () => { 
