@@ -218,28 +218,29 @@
         .s-stat h4 { margin: 0; font-size: 16px; color: #333; }
         .s-stat span { font-size: 10px; color: #999; text-transform: uppercase; }
 
-        /* NOTÍCIAS SIDEBAR ATUALIZADO PARA CARROSSEL SWIPE */
-        .sidebar-news-section { margin-top: 15px; display: flex; flex-direction: column; gap: 15px; }
-        .sidebar-news-title { font-size: 12px; font-weight: 700; color: #777; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        /* NOTÍCIAS SIDEBAR ATUALIZADO (MÚLTIPLOS CARROSSÉIS) */
+        #news-sections-container { display: flex; flex-direction: column; gap: 20px; margin-top: 15px; }
+        .sidebar-news-section { display: flex; flex-direction: column; gap: 15px; }
+        .sidebar-news-title { font-size: 12px; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
         
         .sidebar-news-carousel { display: flex; flex-direction: column; gap: 10px; width: 100%; overflow: hidden; }
-        #sidebar-news-content { 
+        .sidebar-news-content { 
             display: flex; 
             gap: 15px; 
             overflow-x: auto; 
             scroll-snap-type: x mandatory; 
             scroll-behavior: smooth;
-            -ms-overflow-style: none;  /* IE e Edge */
-            scrollbar-width: none;  /* Firefox */
-            padding-bottom: 5px; /* Sombra */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            padding-bottom: 5px;
         }
-        #sidebar-news-content::-webkit-scrollbar { display: none; } /* Chrome */
+        .sidebar-news-content::-webkit-scrollbar { display: none; }
         
         .s-news-card {
             display: flex; flex-direction: column; background: #fff; border-radius: 16px;
             text-decoration: none; box-shadow: 0 4px 15px rgba(0,0,0,0.04);
             transition: 0.3s; border: 1px solid #eee; overflow: hidden;
-            flex: 0 0 85%; /* Exibe 85% do atual e deixa 15% para a ponta do próximo */
+            flex: 0 0 85%;
             scroll-snap-align: start;
             box-sizing: border-box;
             min-height: 270px;
@@ -254,7 +255,7 @@
         .news-controls { display: flex; justify-content: space-between; align-items: center; padding: 0 5px; margin-top: 5px; }
         .news-controls button { background: #fff; border: 1px solid #ddd; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #555; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .news-controls button:active { background: #eee; transform: scale(0.9); }
-        #news-indicator { font-size: 11px; color: #777; font-weight: 700; letter-spacing: 1px; }
+        .news-indicator { font-size: 11px; color: #777; font-weight: 700; letter-spacing: 1px; }
 
         .profile-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         
@@ -508,19 +509,9 @@
                     <div class="s-stat"><h4>5</h4><span>Simbioses</span></div>
                 </div>
 
-                <!-- SEÇÃO DE NOTÍCIAS SIDEBAR -->
-                <div class="sidebar-news-section">
-                    <h4 class="sidebar-news-title">Mundo Real</h4>
-                    <div class="sidebar-news-carousel">
-                        <div id="sidebar-news-content">
-                            <!-- Noticias injetadas aqui -->
-                        </div>
-                        <div class="news-controls">
-                            <button id="prev-news" title="Anterior">❮</button>
-                            <span id="news-indicator">- / -</span>
-                            <button id="next-news" title="Próxima">❯</button>
-                        </div>
-                    </div>
+                <!-- SEÇÃO DE NOTÍCIAS SIDEBAR (Dinamica) -->
+                <div id="news-sections-container">
+                    <!-- Os carrosséis serão injetados aqui -->
                 </div>
 
             </div>
@@ -747,8 +738,9 @@
             document.getElementById(`tab-${tabName}`).classList.add('active');
         };
 
-        // --- SISTEMA DE NOTÍCIAS REAL NA SIDEBAR ---
-        let newsData = [];
+        // --- SISTEMA DE NOTÍCIAS DINÂMICAS & SEM LIMITES & PRÉ-CARREGADAS ---
+        let allNewsData = {};
+        let allNewsFetched = false;
 
         function stripHtml(html) {
             let tmp = document.createElement("DIV");
@@ -756,49 +748,105 @@
             return tmp.textContent || tmp.innerText || "";
         }
 
-        async function fetchNews() {
-            const newsContainer = document.getElementById('sidebar-news-content');
-            if(!newsContainer) return;
+        function buildNewsUI() {
+            const container = document.getElementById('news-sections-container');
+            container.innerHTML = ''; 
             
-            if(newsData.length > 0) return; // Se já buscou, apenas mantém
-            
-            newsContainer.innerHTML = '<div class="empty-state" style="padding:10px; font-size:11px; flex: 0 0 100%;">Buscando sinais...</div>';
+            // Carrosséis EXCLUSIVOS das Áreas da Vida (Mundo Real foi removido)
+            lifeAreas.forEach(area => {
+                container.appendChild(createCarouselHTML(area.id, area.name, area.color));
+            });
+        }
+
+        function createCarouselHTML(id, title, color) {
+            const section = document.createElement('div');
+            section.className = 'sidebar-news-section';
+            section.innerHTML = `
+                <h4 class="sidebar-news-title" style="color: ${color}">${title}</h4>
+                <div class="sidebar-news-carousel">
+                    <div class="sidebar-news-content" id="carousel-content-${id}">
+                        <div class="empty-state" style="padding:10px; font-size:11px; flex: 0 0 100%;">Buscando sinais...</div>
+                    </div>
+                    <div class="news-controls">
+                        <button class="prev-news" data-target="${id}" title="Anterior">❮</button>
+                        <span class="news-indicator" id="indicator-${id}">- / -</span>
+                        <button class="next-news" data-target="${id}" title="Próxima">❯</button>
+                    </div>
+                </div>
+            `;
+            return section;
+        }
+
+        async function fetchAllNews() {
+            // Requisita áreas com pequeno delay escalonado para não sobrecarregar e cair no block da API
+            let delay = 0;
+            lifeAreas.forEach(area => {
+                setTimeout(() => {
+                    const query = encodeURIComponent(area.name);
+                    const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
+                    fetchAndRenderNews(area.id, rssUrl, area.name, area.color);
+                }, delay);
+                delay += 800;
+            });
+        }
+
+        async function fetchAndRenderNews(id, rssUrl, areaName, areaColor) {
+            const contentDiv = document.getElementById(`carousel-content-${id}`);
+            if(!contentDiv) return;
             
             try {
-                // Utilizando API pública RSS to JSON com o Feed G1
-                const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://g1.globo.com/rss/g1/');
+                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
                 const data = await res.json();
                 
                 if(data.status === 'ok' && data.items.length > 0) {
-                    newsData = data.items.slice(0, 5); // Limitando a 5 notícias
-                    renderAllNews();
+                    allNewsData[id] = data.items;
+                    renderCarouselItems(id, areaName, areaColor);
                 } else {
-                    throw new Error("Falha na formatação da API");
+                    throw new Error("Falha ou sem resultados");
                 }
             } catch(e) {
-                console.error(e);
-                newsContainer.innerHTML = '<div class="empty-state" style="padding:10px; font-size:11px; flex: 0 0 100%;">Mundo exterior inacessível.</div>';
+                contentDiv.innerHTML = '<div class="empty-state" style="padding:10px; font-size:11px; flex: 0 0 100%;">Mundo exterior inacessível ou sem notícias no momento.</div>';
             }
         }
 
-        function renderAllNews() {
-            const newsContainer = document.getElementById('sidebar-news-content');
-            if(!newsContainer || newsData.length === 0) return;
+        function renderCarouselItems(id, areaName, areaColor) {
+            const contentDiv = document.getElementById(`carousel-content-${id}`);
+            const items = allNewsData[id];
+            if(!contentDiv || !items) return;
 
-            newsContainer.innerHTML = '';
-            newsData.forEach((item, index) => {
+            contentDiv.innerHTML = '';
+            items.forEach((item, index) => {
                 let imgUrl = item.enclosure?.link || item.thumbnail;
-                if(!imgUrl && item.description.includes('<img')) {
-                    const match = item.description.match(/src="([^"]+)"/);
+                
+                // Extração inteligente de imagem caso a API oculte no conteúdo HTML
+                const htmlContent = item.content || item.description || "";
+                if(!imgUrl && htmlContent.includes('<img')) {
+                    const match = htmlContent.match(/src=["'](.*?)["']/);
                     if(match) imgUrl = match[1];
                 }
-                if(!imgUrl) imgUrl = 'https://via.placeholder.com/400x200?text=News';
+                
+                // Ignorar pixels de rastreamento (1x1) do Google News
+                if(imgUrl && (imgUrl.includes('1x1') || imgUrl.includes('pixel'))) {
+                    imgUrl = null;
+                }
+
+                // Fallback (Reserva) caso a notícia não possua imagem
+                // Usa um gerador de placeholder com a cor correspondente da área para não quebrar o layout
+                if(!imgUrl) {
+                    const cleanColor = areaColor.replace('#', '');
+                    imgUrl = `https://placehold.co/400x200/${cleanColor}/ffffff?text=${encodeURIComponent(areaName)}`;
+                }
 
                 let rawDesc = item.description.replace(/<img[^>]*>/g, ""); 
                 let cleanDesc = stripHtml(rawDesc).trim();
-                if(cleanDesc.length > 150) cleanDesc = cleanDesc.substring(0, 150) + "...";
+                
+                // Limpeza extra para lixos do google news ("Read more", etc)
+                cleanDesc = cleanDesc.replace(/Read more.+/gi, '').trim();
 
-                newsContainer.innerHTML += `
+                if(cleanDesc.length > 150) cleanDesc = cleanDesc.substring(0, 150) + "...";
+                if(cleanDesc === item.title) cleanDesc = "Clique para ler a matéria completa...";
+
+                contentDiv.innerHTML += `
                     <a href="${item.link}" target="_blank" class="s-news-card" data-index="${index}">
                         <div class="s-news-img" style="background-image: url('${imgUrl}')"></div>
                         <div class="s-news-info">
@@ -809,47 +857,61 @@
                     </a>
                 `;
             });
-            updateIndicator(0);
+            
+            updateIndicator(id, 0);
 
             // Atualiza o indicador ao deslizar/scrollar
-            newsContainer.addEventListener('scroll', () => {
-                const scrollLeft = newsContainer.scrollLeft;
-                const cardElement = newsContainer.querySelector('.s-news-card');
+            contentDiv.addEventListener('scroll', () => {
+                const scrollLeft = contentDiv.scrollLeft;
+                const cardElement = contentDiv.querySelector('.s-news-card');
                 if(cardElement) {
                     const cardWidth = cardElement.offsetWidth + 15; // +15 do gap
                     const index = Math.round(scrollLeft / cardWidth);
-                    updateIndicator(index);
+                    updateIndicator(id, index);
                 }
             });
         }
 
-        function updateIndicator(index) {
-            const indicator = document.getElementById('news-indicator');
-            if(indicator && newsData.length > 0) {
-                const safeIndex = Math.min(Math.max(index, 0), newsData.length - 1);
-                indicator.innerText = `${safeIndex + 1} / ${newsData.length}`;
+        function updateIndicator(id, index) {
+            const indicator = document.getElementById(`indicator-${id}`);
+            const items = allNewsData[id];
+            if(indicator && items && items.length > 0) {
+                const safeIndex = Math.min(Math.max(index, 0), items.length - 1);
+                indicator.innerText = `${safeIndex + 1} / ${items.length}`;
             }
         }
 
-        document.getElementById('prev-news')?.addEventListener('click', () => {
-            const newsContainer = document.getElementById('sidebar-news-content');
-            if(!newsContainer || newsData.length === 0) return;
-            const cardWidth = newsContainer.querySelector('.s-news-card').offsetWidth + 15;
-            newsContainer.scrollBy({ left: -cardWidth, behavior: 'smooth' });
-        });
-
-        document.getElementById('next-news')?.addEventListener('click', () => {
-            const newsContainer = document.getElementById('sidebar-news-content');
-            if(!newsContainer || newsData.length === 0) return;
-            const cardWidth = newsContainer.querySelector('.s-news-card').offsetWidth + 15;
-            newsContainer.scrollBy({ left: cardWidth, behavior: 'smooth' });
+        // Delegação de eventos para os botões dos múltiplos carrosséis
+        document.addEventListener('click', (e) => {
+            if(e.target.classList.contains('prev-news')) {
+                const id = e.target.getAttribute('data-target');
+                const contentDiv = document.getElementById(`carousel-content-${id}`);
+                if(contentDiv) {
+                    const cardElement = contentDiv.querySelector('.s-news-card');
+                    if(cardElement) {
+                        const cardWidth = cardElement.offsetWidth + 15;
+                        contentDiv.scrollBy({ left: -cardWidth, behavior: 'smooth' });
+                    }
+                }
+            }
+            if(e.target.classList.contains('next-news')) {
+                const id = e.target.getAttribute('data-target');
+                const contentDiv = document.getElementById(`carousel-content-${id}`);
+                if(contentDiv) {
+                    const cardElement = contentDiv.querySelector('.s-news-card');
+                    if(cardElement) {
+                        const cardWidth = cardElement.offsetWidth + 15;
+                        contentDiv.scrollBy({ left: cardWidth, behavior: 'smooth' });
+                    }
+                }
+            }
         });
 
         homeBtn.addEventListener('click', () => {
             if(isSymbiosisActive) return;
             loadProfileData();
             renderDashboard(); 
-            fetchNews(); // Injeta notícias na sidebar
+            
             profileOverlay.classList.add('active');
             viewport.classList.add('blurred');
         });
@@ -1001,7 +1063,6 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
             }
         }
 
-        // Restaura a função de renderizar o Grid de Ideias Original
         function renderDashboard() {
             statCountIdeas.innerText = bubblesArray.length;
             neuralGrid.innerHTML = '';
@@ -1525,8 +1586,29 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
         }
 
         function saveData() { const data = bubblesArray.map(b => ({ id: b.id, x: parseInt(b.wrapper.style.left), y: parseInt(b.wrapper.style.top), text: b.tooltip.innerText, areaId: b.area.id, scores: b.scores })); localStorage.setItem('neuralNexusProData', JSON.stringify(data)); }
-        function loadData() { const data = localStorage.getItem('neuralNexusProData'); if (data) { const parsed = JSON.parse(data); parsed.forEach(item => { const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0]; createBubble(item.x, item.y, area, item.text, item.id, item.scores); }); } }
-        window.addEventListener('load', () => { loadData(); loadProfileData(); });
+        
+        function loadData() { 
+            const data = localStorage.getItem('neuralNexusProData'); 
+            if (data) { 
+                const parsed = JSON.parse(data); 
+                parsed.forEach(item => { 
+                    const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0]; 
+                    createBubble(item.x, item.y, area, item.text, item.id, item.scores); 
+                }); 
+            } 
+        }
+
+        // ---> ADICIONADO AQUI: Pré-carregamento das notícias assim que a página abre
+        window.addEventListener('load', () => { 
+            loadData(); 
+            loadProfileData(); 
+            
+            if(!allNewsFetched) {
+                buildNewsUI();
+                fetchAllNews(); // Busca invisivelmente no fundo ao carregar
+                allNewsFetched = true;
+            }
+        });
         
         morphDock.addEventListener('click', () => { morphDock.classList.toggle('open'); });
         
