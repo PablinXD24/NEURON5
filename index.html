@@ -27,6 +27,66 @@
             transition: width 0.3s, top 0.3s, left 0.3s;
         }
 
+        /* --- TELA DE LOGIN E CADASTRO --- */
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(220, 225, 235, 0.85);
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            z-index: 5000;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 1; transition: opacity 0.4s ease;
+        }
+        #auth-overlay.hidden { display: none; opacity: 0; pointer-events: none; }
+
+        .auth-card {
+            width: 90vw; max-width: 400px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 35px; padding: 40px 30px;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.9);
+            display: flex; flex-direction: column; gap: 20px; box-sizing: border-box;
+            text-align: center;
+        }
+
+        .auth-logo-area img { width: 100px; height: auto; margin-bottom: 5px; }
+        .auth-title { font-size: 22px; font-weight: 800; color: #333; margin: 0; }
+        .auth-subtitle { font-size: 13px; color: #777; margin-top: -10px; margin-bottom: 10px; }
+
+        .auth-tabs { display: flex; background: #eee; border-radius: 15px; padding: 4px; margin-bottom: 10px; }
+        .auth-tab { flex: 1; padding: 10px; font-size: 13px; font-weight: 700; color: #777; cursor: pointer; border-radius: 12px; transition: 0.3s; }
+        .auth-tab.active { background: #fff; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+
+        .auth-form { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+        .auth-input-group { display: flex; flex-direction: column; gap: 5px; }
+        .auth-label { font-size: 11px; font-weight: 700; color: #777; text-transform: uppercase; }
+        .auth-input {
+            padding: 12px; border-radius: 12px; border: 1px solid #ddd;
+            background: #fafafa; font-size: 14px; color: #333; outline: none; transition: 0.2s;
+        }
+        .auth-input:focus { border-color: #29FA10; background: #fff; }
+
+        .auth-submit-btn {
+            background: #37617A; color: #fff; padding: 14px; border-radius: 14px; border: none;
+            font-weight: 700; cursor: pointer; margin-top: 5px; font-size: 15px; transition: 0.2s;
+            box-shadow: 0 10px 20px rgba(55, 97, 122, 0.2);
+        }
+        .auth-submit-btn:active { transform: scale(0.98); }
+
+        .auth-divider { display: flex; align-items: center; text-align: center; color: #aaa; font-size: 12px; margin: 5px 0; }
+        .auth-divider::before, .auth-divider::after { content: ''; flex: 1; border-bottom: 1px solid #ddd; }
+        .auth-divider::before { margin-right: 10px; }
+        .auth-divider::after { margin-left: 10px; }
+
+        .google-login-btn {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background: #fff; color: #444; border: 1px solid #ddd; padding: 12px;
+            border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer;
+            transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+        .google-login-btn:hover { background: #fcfcfc; border-color: #ccc; }
+        .google-login-btn:active { transform: scale(0.98); }
+        .google-login-btn svg { width: 18px; height: 18px; }
+
         /* --- MUNDO INFINITO --- */
         #viewport {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -466,6 +526,45 @@
 
     <img id="app-logo" src="https://raw.githubusercontent.com/PablinXD24/NEURON3/main/neuron%20logo%20branco.png" alt="Neuron Logo">
 
+    <!-- TELA DE LOGIN E CADASTRO -->
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <div class="auth-logo-area">
+                <img src="https://raw.githubusercontent.com/PablinXD24/NEURON3/main/neuron%20logo%20branco.png" alt="Neuron Logo" style="filter: invert(1);">
+                <h2 class="auth-title" id="auth-title-text">Entrar no Nexus</h2>
+                <p class="auth-subtitle">Sua rede neural de ideias e conexões</p>
+            </div>
+
+            <div class="auth-tabs">
+                <div class="auth-tab active" id="tabLoginBtn" onclick="switchAuthMode('login')">Entrar</div>
+                <div class="auth-tab" id="tabRegisterBtn" onclick="switchAuthMode('register')">Cadastrar</div>
+            </div>
+
+            <div class="auth-form" id="authFormContent">
+                <div class="auth-input-group" id="nameGroup" style="display: none;">
+                    <label class="auth-label">Nome Completo</label>
+                    <input type="text" class="auth-input" id="authName" placeholder="Seu Nome">
+                </div>
+                <div class="auth-input-group">
+                    <label class="auth-label">E-mail</label>
+                    <input type="email5" class="auth-input" id="authEmail" placeholder="seu@email.com">
+                </div>
+                <div class="auth-input-group">
+                    <label class="auth-label">Senha</label>
+                    <input type="password" class="auth-input" id="authPassword" placeholder="••••••••">
+                </div>
+                <button class="auth-submit-btn" id="authSubmitBtn" onclick="handleAuthSubmit()">Entrar</button>
+            </div>
+
+            <div class="auth-divider">ou continue com</div>
+
+            <button class="google-login-btn" onclick="handleGoogleLogin()">
+                <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.19v3.15C3.17 21.31 7.24 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.19C.43 8.1 0 9.99 0 12s.43 3.9 1.19 5.42l4.09-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.24 0 3.17 2.69 1.19 6.58l4.09 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
+                Continuar com o Google
+            </button>
+        </div>
+    </div>
+
     <div class="radar-overlay" id="radarOverlay">
         <div class="radar-ring"></div><div class="radar-ring"></div><div class="radar-ring"></div>
     </div>
@@ -726,12 +825,82 @@
         const usersListContent = document.getElementById('users-list-content');
         const closeUsersBtn = document.getElementById('closeUsers');
 
+        // Autenticação Elements & Controls
+        const authOverlay = document.getElementById('auth-overlay');
+        let currentAuthMode = 'login';
+        window.switchAuthMode = function(mode) {
+            currentAuthMode = mode;
+            const tabLoginBtn = document.getElementById('tabLoginBtn');
+            const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+            const authTitleText = document.getElementById('auth-title-text');
+            const authSubmitBtn = document.getElementById('authSubmitBtn');
+            const nameGroup = document.getElementById('nameGroup');
+
+            if(mode === 'login') {
+                tabLoginBtn.classList.add('active');
+                tabRegisterBtn.classList.remove('active');
+                authTitleText.innerText = 'Entrar no Nexus';
+                authSubmitBtn.innerText = 'Entrar';
+                nameGroup.style.display = 'none';
+            } else {
+                tabRegisterBtn.classList.add('active');
+                tabLoginBtn.classList.remove('active');
+                authTitleText.innerText = 'Criar Conta';
+                authSubmitBtn.innerText = 'Cadastrar';
+                nameGroup.style.display = 'flex';
+            }
+        };
+
+        window.handleAuthSubmit = function() {
+            const email = document.getElementById('authEmail').value.trim();
+            const pass = document.getElementById('authPassword').value.trim();
+            const name = document.getElementById('authName').value.trim();
+
+            if(!email || !pass) {
+                showToast("Preencha e-mail e senha.");
+                return;
+            }
+
+            if(currentAuthMode === 'register' && !name) {
+                showToast("Preencha o seu nome.");
+                return;
+            }
+
+            let profileData = JSON.parse(localStorage.getItem('nexusProfile')) || {
+                name: "Usuário Nexus",
+                handle: "@viajante_neural",
+                bio: "Explorando o cosmos das ideias, uma conexão de cada vez."
+            };
+
+            if(currentAuthMode === 'register') {
+                profileData.name = name;
+                profileData.handle = "@" + name.toLowerCase().replace(/\s+/g, '_');
+            }
+
+            localStorage.setItem('nexusProfile', JSON.stringify(profileData));
+            authOverlay.classList.add('hidden');
+            showToast(currentAuthMode === 'login' ? "Bem-vindo de volta!" : "Conta criada com sucesso!");
+            loadProfileData();
+        };
+
+        window.handleGoogleLogin = function() {
+            let profileData = JSON.parse(localStorage.getItem('nexusProfile')) || {
+                name: "Viajante Google",
+                handle: "@google_nexus",
+                bio: "Explorando o cosmos das ideias conectado via Google."
+            };
+            localStorage.setItem('nexusProfile', JSON.stringify(profileData));
+            authOverlay.classList.add('hidden');
+            showToast("Autenticado com o Google com sucesso!");
+            loadProfileData();
+        };
+
         let bubblesArray = [];
         let symbiosisBubblesArray = [];
         let spherePoints = [];
         let activeArea = lifeAreas[0];
         let currentBubble = null;
-        let pendingCreationCoords = null; // Variável para reter as coordenadas da bolinha em criação
+        let pendingCreationCoords = null;
         let isSymbiosisActive = false;
         let currentSymbiosisView = 'sphere';
         let worldX = 0, worldY = 0, scale = 1, isPanning = false, startPanX = 0, startPanY = 0;
@@ -740,7 +909,7 @@
         let mainLoopId;
         let sphereAnimationFrame;
 
-        const userId = "default_user"; // ID padrão para sincronização com o Realtime Database
+        const userId = "default_user";
 
         function updateWorldTransform() {
             world.style.transform = `translate(${worldX}px, ${worldY}px) scale(${scale})`;
@@ -1400,7 +1569,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             const bubbleObj = { id: existingId || (Date.now()+Math.random()), wrapper, circle, area, tooltip, scores: existingScores };
             bubblesArray.push(bubbleObj);
             setupInteraction(bubbleObj);
-            return bubbleObj; // Retorna o objeto criado
+            return bubbleObj;
         }
 
         function setupInteraction(bubbleObj) {
@@ -1497,7 +1666,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 } 
                 saveData(); 
             } else if (pendingCreationCoords) {
-                // Criação tardia da bolinha apenas após o texto estar preenchido
                 aiBadgeText.innerText = "Analisando com IA...";
                 aiBadge.classList.remove('ai-active');
 
@@ -1575,7 +1743,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 return fallbackKeywordAnalysis(text);
 
             } catch (error) {
-                console.warn("Flask indisponível ou erro na rota /contextualize. Usando análise local de suporte.", error);
                 return fallbackKeywordAnalysis(text);
             }
         }
@@ -1685,7 +1852,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 const realX = (pos.x - worldX) / scale; 
                 const realY = (pos.y - worldY) / scale;
                 
-                // Salva coordenadas pendentes e abre o popup sem registrar vazio no Firebase
                 pendingCreationCoords = { x: realX, y: realY };
                 openPopup(null);
 
