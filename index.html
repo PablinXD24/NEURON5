@@ -524,23 +524,136 @@
         .toast.show { transform: translateX(-50%) translateY(0); }
         .toast-icon { width: 10px; height: 10px; background: #29FA10; border-radius: 50%; box-shadow: 0 0 10px #29FA10; flex-shrink: 0; }
 
-        @media (max-width: 600px) {
-            #app-logo { width: 90px; top: 15px; left: 15px; }
-            .bottom-ui-container { width: 100%; justify-content: center; gap: 10px; bottom: 25px; padding: 0 10px; box-sizing: border-box; }
-            .morph-dock.open { width: calc(100vw - 120px); height: 70px; justify-content: flex-start; padding: 0; }
-            .morph-ai-bar.open { width: calc(100vw - 80px); }
-            .morph-dock.open .color-list { padding: 0 15px; width: auto; justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            .color-option { margin-right: 5px; }
-            .profile-modal { flex-direction: column; overflow-y: auto; height: 90vh; }
-            .profile-sidebar { width: 100%; padding: 30px 20px; border-right: none; border-bottom: 1px solid #eee; box-sizing: border-box; height: auto; flex-shrink: 0; }
-            .profile-content { overflow: visible; }
-            .profile-nav { overflow-x: auto; padding: 15px 20px; justify-content: flex-start; }
-            .neural-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .edit-form { grid-template-columns: 1fr; }
-            .form-group.full { grid-column: span 1; }
-            .popup-card { margin-top: -20%; }
-            #sphere-view { transform: scale(0.8); }
-            .sphere-text { font-size: 14px; letter-spacing: 2px; }
+        /* --- AJUSTES DE RESPONSIVIDADE MOBILE APRIMORADOS --- */
+        @media (max-width: 768px) {
+            #app-logo { width: 85px; top: 12px; left: 12px; }
+            
+            /* Posicionamento e dimensionamento da Dock inferior adaptados para mobile */
+            .bottom-ui-container { 
+                width: 100%; 
+                justify-content: center; 
+                gap: 8px; 
+                bottom: 20px; 
+                padding: 0 8px; 
+                box-sizing: border-box; 
+                max-width: 100vw;
+            }
+            .dock-btn {
+                width: 44px;
+                height: 44px;
+            }
+            .dock-btn svg {
+                width: 19px;
+                height: 19px;
+            }
+            .morph-dock.open { 
+                width: calc(100vw - 110px); 
+                height: 65px; 
+                justify-content: flex-start; 
+                padding: 0; 
+            }
+            .morph-ai-bar.open { 
+                width: calc(100vw - 75px); 
+                height: 50px;
+            }
+            .morph-dock.open .color-list { 
+                padding: 0 10px; 
+                width: auto; 
+                justify-content: flex-start; 
+                overflow-x: auto; 
+                -webkit-overflow-scrolling: touch; 
+            }
+            .color-option { 
+                width: 32px;
+                height: 32px;
+                margin-right: 4px; 
+            }
+            
+            /* Ajustes do Modal de Perfil para mobile */
+            .profile-modal { 
+                flex-direction: column; 
+                overflow-y: auto; 
+                height: 92vh; 
+                width: 95vw;
+                border-radius: 25px;
+            }
+            .profile-sidebar { 
+                width: 100%; 
+                padding: 20px 15px; 
+                border-right: none; 
+                border-bottom: 1px solid #eee; 
+                box-sizing: border-box; 
+                height: auto; 
+                flex-shrink: 0; 
+            }
+            .profile-content { 
+                overflow: visible; 
+            }
+            .profile-nav { 
+                overflow-x: auto; 
+                padding: 12px 15px; 
+                justify-content: flex-start; 
+                gap: 15px;
+            }
+            .nav-item {
+                font-size: 13px;
+                padding-bottom: 6px;
+            }
+            .tab-content-area {
+                padding: 15px;
+            }
+            .neural-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 10px; 
+            }
+            .edit-form { 
+                grid-template-columns: 1fr; 
+                gap: 10px;
+            }
+            .form-group.full { 
+                grid-column: span 1; 
+            }
+            .save-btn {
+                grid-column: span 1;
+                padding: 12px;
+                font-size: 15px;
+            }
+            
+            /* Popups e Modais Gerais */
+            .popup-card { 
+                width: 90%;
+                margin-top: -10%; 
+                padding: 20px;
+                border-radius: 20px;
+            }
+            #popupInput {
+                height: 70px;
+                padding: 10px;
+                font-size: 13px;
+            }
+            .users-list-card {
+                width: 92%;
+                max-height: 75vh;
+                padding: 18px;
+                border-radius: 20px;
+            }
+            
+            /* Visão de Simbiose e Esfera no Mobile */
+            #sphere-view { 
+                transform: scale(0.7); 
+            }
+            .sphere-text { 
+                font-size: 13px; 
+                letter-spacing: 1.5px; 
+            }
+            .symbiosis-header {
+                top: 15px;
+                padding: 0 12px;
+            }
+            .header-btn {
+                padding: 6px 10px;
+                font-size: 10px;
+            }
         }
     </style>
 </head>
@@ -781,7 +894,6 @@
               currentUserId = user.uid;
               document.getElementById('auth-overlay').classList.add('hidden');
               
-              // Preenche automaticamente o perfil com dados do Google Login caso disponíveis
               let profile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
               if(user.email && !profile.name) {
                   profile.name = user.displayName || user.email.split('@')[0];
@@ -882,7 +994,6 @@
         const usersListContent = document.getElementById('users-list-content');
         const closeUsersBtn = document.getElementById('closeUsers');
 
-        // Controles da Autenticação
         let authMode = 'login';
         function switchAuthMode(mode) {
             authMode = mode;
