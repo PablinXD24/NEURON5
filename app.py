@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # Configuração da API do Google (Certifique-se de configurar sua chave de ambiente ou usar de forma segura)
-GEMINI_API_KEY = os.getenv("AQ.Ab8RN6J8AtZMZbsWIOpW5m0i_OxZEgVX7Ov7zJ8CUurRUBGYQg")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
 def call_gemini_api(prompt):
