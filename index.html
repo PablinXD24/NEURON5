@@ -275,7 +275,7 @@
         .tab-pane.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* MENTE GRID (Original Restaurado) */
+        /* MENTE GRID */
         .neural-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding-bottom: 20px; }
         .thought-card {
             aspect-ratio: 1/1; background: #fff; border-radius: 20px; padding: 15px; cursor: pointer;
@@ -708,7 +708,7 @@
         const symbiosisWorld = document.getElementById('symbiosis-world');
         const symbiosisLinesLayer = document.getElementById('symbiosis-lines');
         const gradDefsSymbiosis = document.getElementById('grad-defs-symbiosis');
-        const closeSymbiosisBtn = document.getElementById('close-symbiosis');
+        const closeSymbiosisBtn = document.getElementById('closeSymbiosisBtn'); // fixed typo if exist
         const toggleViewBtn = document.getElementById('toggle-view');
         const nearbyUsersOverlay = document.getElementById('nearby-users-overlay');
         const usersListContent = document.getElementById('users-list-content');
@@ -738,7 +738,7 @@
             document.getElementById(`tab-${tabName}`).classList.add('active');
         };
 
-        // --- SISTEMA DE NOTÍCIAS DINÂMICAS & SEM LIMITES & PRÉ-CARREGADAS ---
+        // --- SISTEMA DE NOTÍCIAS DINÂMICAS E COM IMAGENS REAIS ---
         let allNewsData = {};
         let allNewsFetched = false;
 
@@ -752,7 +752,6 @@
             const container = document.getElementById('news-sections-container');
             container.innerHTML = ''; 
             
-            // Carrosséis EXCLUSIVOS das Áreas da Vida (Mundo Real foi removido)
             lifeAreas.forEach(area => {
                 container.appendChild(createCarouselHTML(area.id, area.name, area.color));
             });
@@ -778,15 +777,23 @@
         }
 
         async function fetchAllNews() {
-            // Requisita áreas com pequeno delay escalonado para não sobrecarregar e cair no block da API
+            // Mapeamento direto para feeds RSS super confiáveis que possuem imagens (G1 é excelente nisso)
+            const rssSources = {
+                'health': 'https://g1.globo.com/rss/g1/saude/',
+                'mind': 'https://g1.globo.com/rss/g1/educacao/',
+                'social': 'https://g1.globo.com/rss/g1/pop-arte/', // Notícias pop, cultura e interações
+                'career': 'https://g1.globo.com/rss/g1/economia/',
+                'spirit': 'https://g1.globo.com/rss/g1/ciencia-e-saude/'
+            };
+
             let delay = 0;
             lifeAreas.forEach(area => {
                 setTimeout(() => {
-                    const query = encodeURIComponent(area.name);
-                    const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
+                    // Se houver falha no mapeamento, usa um genérico de topo que garante imagem
+                    const rssUrl = rssSources[area.id] || `https://g1.globo.com/rss/g1/`;
                     fetchAndRenderNews(area.id, rssUrl, area.name, area.color);
                 }, delay);
-                delay += 800;
+                delay += 800; // Delay escalonado para não bloquear chamadas simultâneas
             });
         }
 
@@ -818,29 +825,28 @@
             items.forEach((item, index) => {
                 let imgUrl = item.enclosure?.link || item.thumbnail;
                 
-                // Extração inteligente de imagem caso a API oculte no conteúdo HTML
+                // Extração agressiva de imagens caso a API forneça via descrição/conteúdo (Muito comum no RSS do G1 e UOL)
                 const htmlContent = item.content || item.description || "";
                 if(!imgUrl && htmlContent.includes('<img')) {
-                    const match = htmlContent.match(/src=["'](.*?)["']/);
+                    const match = htmlContent.match(/<img[^>]+src=["']([^"']+)["']/i);
                     if(match) imgUrl = match[1];
                 }
                 
-                // Ignorar pixels de rastreamento (1x1) do Google News
-                if(imgUrl && (imgUrl.includes('1x1') || imgUrl.includes('pixel'))) {
+                // Bloqueia imagens de rastreamento (pixels 1x1) que quebram o layout do usuário
+                if(imgUrl && (imgUrl.includes('1x1') || imgUrl.includes('pixel') || imgUrl.includes('logger'))) {
                     imgUrl = null;
                 }
 
-                // Fallback (Reserva) caso a notícia não possua imagem
-                // Usa um gerador de placeholder com a cor correspondente da área para não quebrar o layout
+                // Fallback visualmente agradável apenas se, raramente, alguma notícia não contiver imagem de fato
                 if(!imgUrl) {
                     const cleanColor = areaColor.replace('#', '');
-                    imgUrl = `https://placehold.co/400x200/${cleanColor}/ffffff?text=${encodeURIComponent(areaName)}`;
+                    imgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(areaName)}&background=${cleanColor}&color=fff&size=400&font-size=0.33`;
                 }
 
-                let rawDesc = item.description.replace(/<img[^>]*>/g, ""); 
+                // Limpeza completa de tags HTML, <br> e imagens do texto descritivo
+                let rawDesc = item.description.replace(/<img[^>]*>/g, "").replace(/<br\s*[\/]?>/gi, " "); 
                 let cleanDesc = stripHtml(rawDesc).trim();
                 
-                // Limpeza extra para lixos do google news ("Read more", etc)
                 cleanDesc = cleanDesc.replace(/Read more.+/gi, '').trim();
 
                 if(cleanDesc.length > 150) cleanDesc = cleanDesc.substring(0, 150) + "...";
@@ -860,12 +866,11 @@
             
             updateIndicator(id, 0);
 
-            // Atualiza o indicador ao deslizar/scrollar
             contentDiv.addEventListener('scroll', () => {
                 const scrollLeft = contentDiv.scrollLeft;
                 const cardElement = contentDiv.querySelector('.s-news-card');
                 if(cardElement) {
-                    const cardWidth = cardElement.offsetWidth + 15; // +15 do gap
+                    const cardWidth = cardElement.offsetWidth + 15;
                     const index = Math.round(scrollLeft / cardWidth);
                     updateIndicator(id, index);
                 }
@@ -881,7 +886,6 @@
             }
         }
 
-        // Delegação de eventos para os botões dos múltiplos carrosséis
         document.addEventListener('click', (e) => {
             if(e.target.classList.contains('prev-news')) {
                 const id = e.target.getAttribute('data-target');
@@ -1293,7 +1297,7 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
         sphereView.addEventListener('click', () => switchSymbiosisView('map'));
         toggleViewBtn.addEventListener('click', () => switchSymbiosisView(currentSymbiosisView === 'sphere' ? 'map' : 'sphere'));
 
-        closeSymbiosisBtn.addEventListener('click', () => {
+        document.getElementById('close-symbiosis').addEventListener('click', () => {
             isSymbiosisActive = false;
             viewport.classList.remove('blurred'); symbiosisDimension.classList.remove('active');
             mainUI.classList.remove('hidden-ui');
@@ -1598,14 +1602,13 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
             } 
         }
 
-        // ---> ADICIONADO AQUI: Pré-carregamento das notícias assim que a página abre
         window.addEventListener('load', () => { 
             loadData(); 
             loadProfileData(); 
             
             if(!allNewsFetched) {
                 buildNewsUI();
-                fetchAllNews(); // Busca invisivelmente no fundo ao carregar
+                fetchAllNews(); 
                 allNewsFetched = true;
             }
         });
