@@ -15,7 +15,7 @@
             height: 100vh; width: 100vw; overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none; -webkit-user-select: none;
-            touch-action: none; /* Crucial para gestos manuais */
+            touch-action: none;
             perspective: 1000px;
             overscroll-behavior: none;
         }
@@ -509,9 +509,7 @@
                     <div class="s-stat"><h4>5</h4><span>Simbioses</span></div>
                 </div>
 
-                <!-- SEÇÃO DE NOTÍCIAS SIDEBAR (Dinamica) -->
                 <div id="news-sections-container">
-                    <!-- Os carrosséis serão injetados aqui -->
                 </div>
 
             </div>
@@ -527,7 +525,6 @@
                     
                     <div id="tab-overview" class="tab-pane active">
                         <div class="neural-grid" id="neural-grid">
-                            <!-- O Grid de Ideias será renderizado aqui -->
                         </div>
                     </div>
 
@@ -615,7 +612,6 @@
         <div class="dock-btn" id="homeBtn" title="Meu Perfil">
             <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
         </div>
-        <!-- BOLINHA / BARRA DE CONSULTA & IA -->
         <div class="morph-ai-bar" id="morphAiBar" title="Consultar Mente / IA">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.03-.42 1.98-1.07 2.75z"/></svg>
             <div class="ai-input-container">
@@ -644,7 +640,6 @@
     </div>
 
     <script>
-        // --- FUNÇÕES AUXILIARES DO POP-UP ---
         let pipWindow = null;
         const getWin = () => pipWindow || window;
         const getDoc = () => pipWindow ? pipWindow.document : document;
@@ -657,7 +652,6 @@
             { id: 'spirit', name: 'Espiritual & Emocional', color: '#378c4b', keywords: ['deus', 'fé', 'orar', 'meditar', 'paz'] }
         ];
 
-        // VARS
         const viewport = document.getElementById('viewport');
         const world = document.getElementById('world');
         const soloLinesLayer = document.getElementById('solo-lines');
@@ -667,7 +661,6 @@
         const morphDock = document.getElementById('morphDock');
         const colorList = document.getElementById('colorList');
         
-        // Morph AI Bar
         const morphAiBar = document.getElementById('morphAiBar');
         const aiQuickInput = document.getElementById('aiQuickInput');
         const aiSendBtn = document.getElementById('aiSendBtn');
@@ -683,14 +676,12 @@
         const toast = document.getElementById('toast');
         const toastText = document.getElementById('toastText');
 
-        // DASHBOARD
         const homeBtn = document.getElementById('homeBtn');
         const profileOverlay = document.getElementById('profile-overlay');
         const closeProfileBtn = document.getElementById('closeProfileBtn');
         const neuralGrid = document.getElementById('neural-grid');
         const statCountIdeas = document.getElementById('stat-count-ideas');
         
-        // PROFILE EDIT & API FEEDBACK
         const saveProfileBtn = document.getElementById('saveProfileBtn');
         const inputName = document.getElementById('input-name');
         const inputHandle = document.getElementById('input-handle');
@@ -703,7 +694,6 @@
         const pBio = document.getElementById('p-bio');
         const pAvatarLetter = document.getElementById('p-avatar-letter');
 
-        // SIMBIOSE
         const symbiosisBtn = document.getElementById('symbiosisBtn');
         const radarOverlay = document.getElementById('radarOverlay');
         const symbiosisDimension = document.getElementById('symbiosis-dimension');
@@ -713,13 +703,11 @@
         const symbiosisWorld = document.getElementById('symbiosis-world');
         const symbiosisLinesLayer = document.getElementById('symbiosis-lines');
         const gradDefsSymbiosis = document.getElementById('grad-defs-symbiosis');
-        const closeSymbiosisBtn = document.getElementById('closeSymbiosisBtn'); 
         const toggleViewBtn = document.getElementById('toggle-view');
         const nearbyUsersOverlay = document.getElementById('nearby-users-overlay');
         const usersListContent = document.getElementById('users-list-content');
         const closeUsersBtn = document.getElementById('closeUsers');
 
-        // ESTADO
         let bubblesArray = [];
         let symbiosisBubblesArray = [];
         let spherePoints = [];
@@ -746,7 +734,6 @@
             doc.getElementById(`tab-${tabName}`).classList.add('active');
         };
 
-        // --- SISTEMA DE NOTÍCIAS DINÂMICAS E COM IMAGENS REAIS ---
         let allNewsData = {};
         let allNewsFetched = false;
 
@@ -887,7 +874,6 @@
             }
         }
 
-        // --- MANIPULADORES GLOBAIS DE EVENTOS ---
         const handleGlobalClick = (e) => {
             if(e.target.classList && e.target.classList.contains('prev-news')) {
                 const id = e.target.getAttribute('data-target');
@@ -922,7 +908,6 @@
                 e.preventDefault();
                 const currentDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
                 const zoomFactor = currentDist / initialPinchDist;
-                // Zoom mais suave e cauteloso (fator reduzido de atenuação)
                 const smoothedZoomFactor = 1 + (zoomFactor - 1) * 0.35;
                 const newScale = Math.min(Math.max(0.1, initialScale * smoothedZoomFactor), 5);
                 const centerX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
@@ -956,7 +941,6 @@
             if(e.touches.length === 0) isPanning = false; 
         };
 
-        // Attach iniciais
         document.addEventListener('click', handleGlobalClick);
         window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
         window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -972,7 +956,6 @@
             viewport.classList.add('blurred');
         });
 
-        // --- LÓGICA DA BOLINHA DE CONSULTA & IA ---
         morphAiBar.addEventListener('click', (e) => {
             e.stopPropagation();
             morphAiBar.classList.add('open');
@@ -1002,13 +985,13 @@
             }
 
             try {
-                const prompt = `Você é o assistente inteligente do sistema de mapeamento neural do usuário.
-Contexto das ideias/bolinhas salvas pelo usuário:
+                const prompt = `Você é o assistente inteligente do sistema de mapeamento neural.
+Contexto das ideias salvas pelo usuário:
 ${userIdeas}
 
-Com base nestas informações do usuário e no input dele: "${query}", responda de forma coesa, prestando consultoria, tirando dúvidas sobre as próprias anotações dele ou exercendo funções gerais de IA. Seja direto e prestativo.`;
+Com base nas informações do usuário e no input: "${query}", responda de forma coesa e prestativa.`;
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -1057,7 +1040,6 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
             showToast("Perfil e Configurações Salvas");
         });
 
-        // --- TESTAR API E FEEDBACK VISUAL ---
         async function testGeminiApiKey() {
             const apiKey = inputGeminiKey.value.trim();
             if(!apiKey) {
@@ -1070,7 +1052,7 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
             apiFeedbackBadge.className = "api-feedback-badge";
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
@@ -1155,7 +1137,6 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
         viewport.addEventListener('wheel', (e) => {
             if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
             e.preventDefault(); 
-            // Zoom suave e cauteloso pelo scroll do mouse
             const delta = e.deltaY < 0 ? 1 : -1;
             const step = 0.04;
             const newScale = Math.min(Math.max(0.1, scale + (delta * step)), 5);
@@ -1529,27 +1510,9 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
             }
 
             try {
-                const prompt = `Analise o seguinte pensamento/ideia de um usuário: "${text}"
-Classifique a qual destas 5 áreas da vida ele pertence mais e calcule um score de relevância de 0 a 5 para cada uma das áreas:
-- health (Saúde & Físico)
-- mind (Mente & Intelecto)
-- social (Relacionamentos)
-- career (Carreira & Finanças)
-- spirit (Espiritual & Emocional)
+                const prompt = `Analise o pensamento: "${text}". Classifique a qual das áreas: health, mind, social, career, spirit ele pertence e dê score 0-5. Responda APENAS JSON puro: {"dominantId": "...", "scores": {"health": 0, "mind": 0, "social": 0, "career": 0, "spirit": 0}}`;
 
-Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
-{
-  "dominantId": "id_da_area",
-  "scores": {
-    "health": 0-5,
-    "mind": 0-5,
-    "social": 0-5,
-    "career": 0-5,
-    "spirit": 0-5
-  }
-}`;
-
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -1557,7 +1520,7 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
 
                 const data = await response.json();
                 if (!response.ok || !data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                    throw new Error(data.error?.message || "Resposta inválida da API.");
+                    throw new Error("Resposta inválida da API.");
                 }
 
                 const rawText = data.candidates[0].content.parts[0].text;
@@ -1568,7 +1531,6 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                 return { dominant: dominantArea, scores: parsed.scores };
 
             } catch (error) {
-                console.warn("Erro ao chamar API. Usando análise local.");
                 return fallbackKeywordAnalysis(text);
             }
         }
@@ -1599,11 +1561,6 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                     dominantArea = area;
                 }
             });
-
-            if((cleanText.includes('atestado') || cleanText.includes('medico') || cleanText.includes('consulta')) && (cleanText.includes('falta') || cleanText.includes('trabalho'))) {
-                scores['health'] = Math.max(scores['health'], 4);
-                scores['career'] = Math.max(scores['career'], 4);
-            }
 
             if (maxScore === 0) scores[activeArea.id] = 1;
             return { dominant: dominantArea, scores: scores };
@@ -1728,10 +1685,9 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
         }
         mainLoopId = getWin().requestAnimationFrame(gameLoop);
 
-        // --- SISTEMA DE POP-UP FLUTUANTE (DOCUMENT PiP) ---
         async function enterFloatingMode() {
             if (!('documentPictureInPicture' in window)) {
-                showToast("Pop-up flutuante não suportado neste navegador.");
+                showToast("Pop-up flutuante não suportado.");
                 return;
             }
             if (pipWindow) return;
@@ -1742,7 +1698,6 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                     height: Math.min(window.innerHeight, 600),
                 });
 
-                // Copiar todos os estilos
                 [...document.styleSheets].forEach((styleSheet) => {
                     try {
                         const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
@@ -1759,19 +1714,16 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                     }
                 });
 
-                // Mover os elementos e copiar a classe do body
                 const elementsToMove = [...document.body.children].filter(el => el.tagName !== 'SCRIPT' && el.id !== 'pipBtn');
                 elementsToMove.forEach(el => pipWindow.document.body.appendChild(el));
                 pipWindow.document.body.className = document.body.className;
 
-                // Repassar ouvintes globais para a nova janela garantir o controle (drag, zoom, clicks)
                 pipWindow.document.addEventListener('click', handleGlobalClick);
                 pipWindow.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
                 pipWindow.addEventListener('mousemove', handleGlobalMouseMove);
                 pipWindow.addEventListener('mouseup', handleGlobalMouseUp);
                 pipWindow.addEventListener('touchend', handleGlobalTouchEnd);
 
-                // Transferir os frames de animação do loop principal e das esferas (evita throttling e travamentos)
                 cancelAnimationFrame(mainLoopId);
                 gameLoop();
                 if(isSymbiosisActive && currentSymbiosisView === 'sphere') {
@@ -1779,11 +1731,9 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                     animateSphere();
                 }
 
-                // Restaurar estado ao fechar
                 pipWindow.addEventListener('pagehide', () => {
                     elementsToMove.forEach(el => document.body.appendChild(el));
                     pipWindow = null;
-                    
                     cancelAnimationFrame(mainLoopId);
                     gameLoop();
                     if(isSymbiosisActive && currentSymbiosisView === 'sphere') {
@@ -1792,13 +1742,10 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                     }
                 });
             } catch (error) {
-                console.warn("Abertura automática bloqueada pelo navegador. Use o botão flutuante para abrir o Pop-up.", error);
+                console.warn("Bloqueado pelo navegador.", error);
             }
         }
 
-        // Removida a abertura automática do pop-up ao ocultar a aba. Agora o pop-up só abre se o usuário apertar o botão manual.
-
-        // Botão flutuante para forçar o pop-up manualmente
         const pipBtn = document.createElement('div');
         pipBtn.id = 'pipBtn';
         pipBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:#333;"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 3-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg>';
