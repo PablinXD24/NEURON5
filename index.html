@@ -50,11 +50,14 @@
         }
 
         .auth-logo-icon {
-            width: 60px; height: 60px; border-radius: 50%;
-            background: linear-gradient(135deg, #37617A, #29FA10);
+            width: 70px; height: 70px; border-radius: 50%;
+            background: rgba(55, 97, 122, 0.1);
             display: flex; align-items: center; justify-content: center;
-            font-size: 24px; font-weight: 700; color: #fff;
             margin-bottom: 20px; box-shadow: 0 10px 25px rgba(41, 250, 16, 0.25);
+            overflow: hidden;
+        }
+        .auth-logo-icon img {
+            width: 80%; height: auto; object-fit: contain;
         }
 
         .auth-title { font-size: 22px; font-weight: 800; color: #333; margin: 0 0 5px 0; }
@@ -147,9 +150,11 @@
             border: 1px solid rgba(255, 255, 255, 0.6);
             cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
         .dock-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.45); }
         .dock-btn svg { width: 22px; height: 22px; fill: #444; transition: fill 0.3s; }
+        .dock-btn img { width: 100%; height: 100%; object-fit: cover; }
 
         /* --- MORPH DOCK PARA IA / CONSULTA RÁPIDA --- */
         .morph-ai-bar {
@@ -276,6 +281,11 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 40px; font-weight: 700; color: #fff;
             box-shadow: 0 10px 30px rgba(41, 250, 16, 0.2); position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .avatar-large img {
+            width: 100%; height: 100%; object-fit: cover;
         }
         .avatar-edit {
             position: absolute; bottom: 0; right: 0; width: 30px; height: 30px;
@@ -541,12 +551,14 @@
 </head>
 <body>
 
-    <img id="app-logo" src="https://raw.githubusercontent.com/PablinXD24/NEURON3/main/neuron%20logo%20branco.png" alt="Neuron Logo">
+    <img id="app-logo" src="https://raw.githubusercontent.com/PablinXD24/NEURON3/refs/heads/main/neuron%20logo%20branco.png" alt="Neuron Logo">
 
     <!-- TELA DE LOGIN E CADASTRO -->
     <div id="auth-overlay">
         <div class="auth-card">
-            <div class="auth-logo-icon">N</div>
+            <div class="auth-logo-icon">
+                <img src="https://raw.githubusercontent.com/PablinXD24/NEURON3/refs/heads/main/neuron%20logo%20branco.png" alt="Neuron Logo">
+            </div>
             <h2 class="auth-title" id="authTitle">Bem-vindo ao Neuron</h2>
             <p class="auth-subtitle" id="authSubtitle">Entre para acessar seu cosmos neural</p>
 
@@ -598,10 +610,12 @@
             
             <div class="profile-sidebar">
                 <div class="profile-identity">
-                    <div class="avatar-large">
+                    <div class="avatar-large" id="avatarLargeContainer" title="Clique para alterar a foto de perfil">
                         <span id="p-avatar-letter">U</span>
+                        <img id="p-avatar-img" src="" alt="Avatar" style="display: none;">
                         <div class="avatar-edit">✎</div>
                     </div>
+                    <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
                     <h2 class="identity-name" id="p-name">Usuário Nexus</h2>
                     <span class="identity-handle" id="p-handle">@viajante_neural</span>
                     <p class="identity-bio" id="p-bio">Explorando o cosmos das ideias, uma conexão de cada vez.</p>
@@ -658,6 +672,10 @@
                             <div class="form-group full">
                                 <label class="form-label">Localização</label>
                                 <input type="text" class="form-input" id="input-location" value="São Paulo, BR">
+                            </div>
+                            <div class="form-group full">
+                                <label class="form-label">URL da Foto de Perfil</label>
+                                <input type="text" class="form-input" id="input-avatar-url" placeholder="https://exemplo.com/foto.jpg">
                             </div>
                             <button class="save-btn" id="saveProfileBtn">Salvar Alterações</button>
                         </div>
@@ -719,7 +737,8 @@
 
     <div class="bottom-ui-container" id="mainUI">
         <div class="dock-btn" id="homeBtn" title="Meu Perfil">
-            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            <span id="dock-avatar-letter" style="font-weight: bold; color: #333;">U</span>
+            <img id="dock-avatar-img" src="" alt="Perfil" style="display: none;">
         </div>
         <div class="morph-ai-bar" id="morphAiBar" title="Consultar Mente / IA">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.03-.42 1.98-1.07 2.75z"/></svg>
@@ -772,6 +791,19 @@
           if (user) {
               currentUserId = user.uid;
               document.getElementById('auth-overlay').classList.add('hidden');
+              
+              // Preenche automaticamente o email/foto se logado pelo Google ou Firebase
+              if (user.email) {
+                  const currentProfile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
+                  if (!currentProfile.name || currentProfile.name === "Usuário Nexus") {
+                      currentProfile.name = user.displayName || user.email.split('@')[0];
+                  }
+                  if (user.photoURL && !currentProfile.avatarUrl) {
+                      currentProfile.avatarUrl = user.photoURL;
+                  }
+                  localStorage.setItem('nexusProfile', JSON.stringify(currentProfile));
+              }
+
               loadData();
               loadProfileData();
           } else {
@@ -838,6 +870,10 @@
         const inputName = document.getElementById('input-name');
         const inputHandle = document.getElementById('input-handle');
         const inputBio = document.getElementById('input-bio');
+        const inputAvatarUrl = document.getElementById('input-avatar-url');
+        const avatarLargeContainer = document.getElementById('avatarLargeContainer');
+        const avatarFileInput = document.getElementById('avatarFileInput');
+
         const inputGeminiKey = document.getElementById('input-gemini-key');
         const testApiBtn = document.getElementById('testApiBtn');
         const apiFeedbackBadge = document.getElementById('apiFeedbackBadge');
@@ -845,6 +881,9 @@
         const pHandle = document.getElementById('p-handle');
         const pBio = document.getElementById('p-bio');
         const pAvatarLetter = document.getElementById('p-avatar-letter');
+        const pAvatarImg = document.getElementById('p-avatar-img');
+        const dockAvatarLetter = document.getElementById('dock-avatar-letter');
+        const dockAvatarImg = document.getElementById('dock-avatar-img');
 
         const symbiosisBtn = document.getElementById('symbiosisBtn');
         const radarOverlay = document.getElementById('radarOverlay');
@@ -895,13 +934,23 @@
             }
             try {
                 const { auth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = window.firebaseAuthModules;
+                let userCred;
                 if(authMode === 'login') {
-                    await signInWithEmailAndPassword(auth, email, password);
+                    userCred = await signInWithEmailAndPassword(auth, email, password);
                     showToast("Login realizado com sucesso!");
                 } else {
-                    await createUserWithEmailAndPassword(auth, email, password);
+                    userCred = await createUserWithEmailAndPassword(auth, email, password);
                     showToast("Conta criada com sucesso!");
                 }
+                
+                // Salva o email ou nome base se não houver perfil
+                const currentProfile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
+                if (!currentProfile.name || currentProfile.name === "Usuário Nexus") {
+                    currentProfile.name = email.split('@')[0];
+                }
+                localStorage.setItem('nexusProfile', JSON.stringify(currentProfile));
+                loadProfileData();
+
             } catch (error) {
                 showToast("Erro: " + error.message);
             }
@@ -911,7 +960,15 @@
         async function handleGoogleLogin() {
             try {
                 const { auth, signInWithPopup, googleProvider } = window.firebaseAuthModules;
-                await signInWithPopup(auth, googleProvider);
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
+
+                const currentProfile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
+                if(user.displayName) currentProfile.name = user.displayName;
+                if(user.photoURL) currentProfile.avatarUrl = user.photoURL;
+                localStorage.setItem('nexusProfile', JSON.stringify(currentProfile));
+                loadProfileData();
+
                 showToast("Login com Google realizado!");
             } catch (error) {
                 showToast("Erro no Google Login: " + error.message);
@@ -1168,6 +1225,28 @@
             viewport.classList.add('blurred');
         });
 
+        // Gerenciamento de foto de perfil (upload local ou URL)
+        avatarLargeContainer.addEventListener('click', () => {
+            avatarFileInput.click();
+        });
+
+        avatarFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    const base64Image = uploadEvent.target.result;
+                    inputAvatarUrl.value = base64Image;
+                    const profileData = JSON.parse(localStorage.getItem('nexusProfile')) || {};
+                    profileData.avatarUrl = base64Image;
+                    localStorage.setItem('nexusProfile', JSON.stringify(profileData));
+                    loadProfileData();
+                    showToast("Foto de perfil atualizada!");
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
         morphAiBar.addEventListener('click', (e) => {
             e.stopPropagation();
             morphAiBar.classList.add('open');
@@ -1245,7 +1324,8 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 name: inputName.value,
                 handle: inputHandle.value,
                 bio: inputBio.value,
-                geminiKey: inputGeminiKey.value
+                geminiKey: inputGeminiKey.value,
+                avatarUrl: inputAvatarUrl.value.trim()
             };
             localStorage.setItem('nexusProfile', JSON.stringify(profileData));
             loadProfileData();
@@ -1293,12 +1373,35 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function loadProfileData() {
             const data = JSON.parse(localStorage.getItem('nexusProfile'));
             if(data) {
-                pName.innerText = data.name;
-                pHandle.innerText = data.handle;
-                pBio.innerText = data.bio;
-                pAvatarLetter.innerText = data.name[0].toUpperCase();
-                if(inputName.value === "Usuário Nexus") inputName.value = data.name;
-                if(inputHandle.value === "@viajante_neural") inputHandle.value = data.handle;
+                pName.innerText = data.name || "Usuário Nexus";
+                pHandle.innerText = data.handle || "@viajante_neural";
+                pBio.innerText = data.bio || "";
+                
+                if(data.name && data.name.length > 0) {
+                    pAvatarLetter.innerText = data.name[0].toUpperCase();
+                    dockAvatarLetter.innerText = data.name[0].toUpperCase();
+                }
+
+                if(data.avatarUrl) {
+                    pAvatarImg.src = data.avatarUrl;
+                    pAvatarImg.style.display = 'block';
+                    pAvatarLetter.style.display = 'none';
+
+                    dockAvatarImg.src = data.avatarUrl;
+                    dockAvatarImg.style.display = 'block';
+                    dockAvatarLetter.style.display = 'none';
+
+                    inputAvatarUrl.value = data.avatarUrl;
+                } else {
+                    pAvatarImg.style.display = 'none';
+                    pAvatarLetter.style.display = 'block';
+
+                    dockAvatarImg.style.display = 'none';
+                    dockAvatarLetter.style.display = 'block';
+                }
+
+                if(inputName.value === "Usuário Nexus" && data.name) inputName.value = data.name;
+                if(inputHandle.value === "@viajante_neural" && data.handle) inputHandle.value = data.handle;
                 if(data.geminiKey) {
                     inputGeminiKey.value = data.geminiKey;
                     testGeminiApiKey();
@@ -1977,4 +2080,3 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
     </script>
 </body>
 </html>
-```[cite: 1]
