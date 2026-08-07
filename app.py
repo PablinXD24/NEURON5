@@ -1,98 +1,48 @@
+from flask import Flask, request, jsonify
+import requests
 import os
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-from google import genai
-from google.genai import types
 
 app = Flask(__name__)
-CORS(app)  # Permite requisições do frontend
 
-# Inicializa o cliente Gemini com a API Key do ambiente
-# Certifique-se de definir a variável de ambiente: export GEMINI_API_KEY="sua_chave"
-client = genai.Client()
+# Configuração da API do Google (Certifique-se de configurar sua chave de ambiente ou usar de forma segura)
+GEMINI_API_KEY = os.getenv("AQ.Ab8RN6J8AtZMZbsWIOpW5m0i_OxZEgVX7Ov7zJ8CUurRUBGYQg")
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
+def call_gemini_api(prompt):
+    if not GEMINI_API_KEY:
+        return {"error": "API Key não configurada"}
+    
+    headers = {'Content-Type': 'application/json'}
+    params = {'key': GEMINI_API_KEY}
+    payload = {
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }]
+    }
+    
+    try:
+        response = requests.post(GEMINI_URL, headers=headers, params=params, json=payload)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
 
-@app.route("/api/analyze", methods=["POST"])
-def analyze_bubble():
-  try:
+@app.route('/contextualize', methods=['POST'])
+def contextualize_bubbles():
     data = request.json
-    text = data.get("text", "")
+    bubbles = data.get('bubbles', []) # Lista de bolinhas com {id, text, area}
+    
+    # Prepara o prompt para a IA entender e conectar
+    prompt = "Analise as seguintes ideias e identifique quais possuem relações temáticas. Retorne apenas um JSON no formato {'connections': [{'from': id1, 'to': id2}, ...]} baseando-se no contexto:\n"
+    for b in bubbles:
+        prompt += f"ID: {b['id']}, Texto: {b['text']}, Área: {b['area']}\n"
+        
+    result = call_gemini_api(prompt)
+    return jsonify(result)
 
-    if not text:
-      return jsonify(
-          {"dominantId": "mind", "scores": {str(i): 0 for i in range(5)}}
-      )
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok"})
 
-    prompt = f"""
-        Analise o seguinte pensamento/ideia de um usuário: "{text}"
-        Classifique a qual destas 5 áreas da vida ele pertence mais e calcule um score de relevância de 0 a 5 para cada uma das áreas:
-        - health (Saúde & Físico)
-        - mind (Mente & Intelecto)
-        - social (Relacionamentos)
-        - career (Carreira & Finanças)
-        - spirit (Espiritual & Emocional)
-
-        Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
-        {{
-          "dominantId": "id_da_area",
-          "scores": {{
-            "health": 0-5,
-            "mind": 0-5,
-            "social": 0-5,
-            "career": 0-5,
-            "spirit": 0-5
-          }}
-        }}
-        """
-
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json"
-        ),
-    )
-
-    import json
-
-    result_json = json.loads(response.text)
-    return jsonify(result_json)
-
-  except Exception as e:
-    return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/query", methods=["POST"])
-def query_ai():
-  try:
-    data = request.json
-    query = data.get("query", "")
-    user_ideas = data.get("ideas", [])
-
-    ideas_formatted = "\n".join(
-        [
-            f"[{i.get('area', 'Geral')}]: {i.get('text', '')}"
-            for i in user_ideas
-        ]
-    )
-
-    prompt = f"""
-        Você é o assistente inteligente do sistema de mapeamento neural do usuário.
-        Contexto das ideias/bolinhas salvas pelo usuário:
-        {ideas_formatted}
-
-        Com base nestas informações do usuário e no input dele: "{query}", responda de forma coesa, prestando consultoria, tirando dúvidas sobre as próprias anotações dele ou exercendo funções gerais de IA. Seja direto e prestativo.
-        """
-
-    response = client.models.generate_content(
-        model="gemini-2.5-flash", contents=prompt
-    )
-
-    return jsonify({"response": response.text})
-
-  except Exception as e:
-    return jsonify({"error": str(e)}), 500
-
-
-if __name__ == "__main__":
-  app.run(host="0.0.0.0", port=5000, debug=True)
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
