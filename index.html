@@ -114,17 +114,25 @@
             position: relative; width: 60px; height: 60px; border-radius: 60px;
             display: flex; align-items: center; justify-content: center;
             background: rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(20px) saturate(200%); border: 1px solid rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px) saturate(200%); 
             transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1); cursor: pointer;
+            
+            /* Variável para o brilho e borda adaptáveis */
+            --dock-glow: #29FA10; 
+            border: 1px solid var(--dock-glow);
             box-shadow: inset 0 0 10px rgba(255,255,255,0.8), 0 15px 35px rgba(0,0,0,0.15), 
-                        -3px -3px 15px rgba(41, 250, 16, 0.4), 3px 3px 15px rgba(242, 56, 57, 0.4);
-            overflow: hidden;
+                        0 0 15px var(--dock-glow);
+            
+            /* Removido o hidden para permitir que os textos dos rótulos apareçam sem serem cortados */
+            overflow: visible; 
         }
         .morph-dock:not(.open):hover { transform: scale(1.1); background: rgba(255, 255, 255, 0.5); }
         .morph-dock.open { 
             width: 340px; height: 70px; border-radius: 50px; 
             background: rgba(255, 255, 255, 0.85); 
-            cursor: default; box-shadow: 0 20px 50px rgba(0,0,0,0.15), inset 0 0 20px rgba(255,255,255,0.5); 
+            cursor: default; 
+            border: 1px solid var(--dock-glow); 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15), inset 0 0 20px rgba(255,255,255,0.5), 0 0 20px var(--dock-glow); 
         }
 
         .color-list { 
@@ -135,17 +143,20 @@
         .morph-dock.open .color-list { opacity: 1; pointer-events: auto; transform: scale(1); }
         
         .color-option-container { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .color-option { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; flex-shrink: 0; }
+        .color-option { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s, box-shadow 0.3s; flex-shrink: 0; }
         .color-option:active { transform: scale(0.9); }
-        .color-option.selected { transform: scale(1.1); border-color: #555; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        /* Ajuste do brilho da bolinha selecionada com base na própria cor */
+        .color-option.selected { transform: scale(1.1); border-color: currentColor; box-shadow: 0 0 15px currentColor; }
         
         .area-label { 
-            position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); 
+            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); 
             background: rgba(0,0,0,0.8); color: #fff; padding: 5px 10px; border-radius: 8px; 
             font-size: 11px; white-space: nowrap; opacity: 0; visibility: hidden; 
-            transition: opacity 0.2s; pointer-events: none; 
+            transition: opacity 0.2s; pointer-events: none; z-index: 100;
         }
-        .color-option-container:hover .area-label { opacity: 1; visibility: visible; }
+        /* Mostra o rótulo da área no hover E quando está ativa */
+        .color-option-container:hover .area-label,
+        .color-option-container.active-container .area-label { opacity: 1; visibility: visible; }
 
         .symbiosis-btn.searching { background: rgba(255, 255, 255, 0.8); border-color: #29FA10; animation: pulse-green 1.5s infinite; }
         .symbiosis-btn.searching svg { fill: #29FA10; }
@@ -1370,10 +1381,29 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
         
         lifeAreas.forEach((area, index) => { 
             const container = document.createElement('div'); container.classList.add('color-option-container'); 
-            const dot = document.createElement('div'); dot.classList.add('color-option'); dot.style.backgroundColor = area.color; 
+            const dot = document.createElement('div'); dot.classList.add('color-option'); 
+            dot.style.backgroundColor = area.color; 
+            dot.style.color = area.color; /* Adicionado para permitir o brilho dinâmico */
             const label = document.createElement('div'); label.classList.add('area-label'); label.innerText = area.name; 
-            if(index === 0) { dot.classList.add('selected'); activeArea = area; } 
-            dot.addEventListener('click', (e) => { e.stopPropagation(); document.querySelectorAll('.color-option').forEach(d => d.classList.remove('selected')); dot.classList.add('selected'); activeArea = area; }); 
+            
+            if(index === 0) { 
+                dot.classList.add('selected'); 
+                container.classList.add('active-container'); 
+                activeArea = area; 
+                morphDock.style.setProperty('--dock-glow', area.color); 
+            } 
+            
+            dot.addEventListener('click', (e) => { 
+                e.stopPropagation(); 
+                document.querySelectorAll('.color-option-container').forEach(c => c.classList.remove('active-container'));
+                container.classList.add('active-container');
+
+                document.querySelectorAll('.color-option').forEach(d => d.classList.remove('selected')); 
+                dot.classList.add('selected'); 
+                activeArea = area; 
+                morphDock.style.setProperty('--dock-glow', area.color); /* Atualiza a cor global do sidebar */
+            }); 
+            
             container.appendChild(label); container.appendChild(dot); colorList.appendChild(container); 
         });
         
