@@ -518,9 +518,9 @@
 
             <div class="profile-content">
                 <div class="profile-nav">
-                    <div class="nav-item active" onclick="switchTab('overview')">Mente (Grid)</div>
-                    <div class="nav-item" onclick="switchTab('edit')">Editar Perfil</div>
-                    <div class="nav-item" onclick="switchTab('settings')">Configurações</div>
+                    <div class="nav-item active" onclick="switchTab('overview', event)">Mente (Grid)</div>
+                    <div class="nav-item" onclick="switchTab('edit', event)">Editar Perfil</div>
+                    <div class="nav-item" onclick="switchTab('settings', event)">Configurações</div>
                 </div>
 
                 <div class="tab-content-area">
@@ -644,6 +644,11 @@
     </div>
 
     <script>
+        // --- FUNÇÕES AUXILIARES DO POP-UP ---
+        let pipWindow = null;
+        const getWin = () => pipWindow || window;
+        const getDoc = () => pipWindow ? pipWindow.document : document;
+
         const lifeAreas = [
             { id: 'health', name: 'Saúde & Físico', color: '#29FA10', keywords: ['saude', 'saúde', 'corpo', 'academia', 'treino', 'medico', 'consulta', 'atestado', 'falta', 'exame', 'remedio'] },
             { id: 'mind', name: 'Mente & Intelecto', color: '#37617A', keywords: ['estudar', 'livro', 'ler', 'curso', 'faculdade'] },
@@ -708,7 +713,7 @@
         const symbiosisWorld = document.getElementById('symbiosis-world');
         const symbiosisLinesLayer = document.getElementById('symbiosis-lines');
         const gradDefsSymbiosis = document.getElementById('grad-defs-symbiosis');
-        const closeSymbiosisBtn = document.getElementById('closeSymbiosisBtn'); // fixed typo if exist
+        const closeSymbiosisBtn = document.getElementById('closeSymbiosisBtn'); 
         const toggleViewBtn = document.getElementById('toggle-view');
         const nearbyUsersOverlay = document.getElementById('nearby-users-overlay');
         const usersListContent = document.getElementById('users-list-content');
@@ -725,17 +730,20 @@
         let worldX = 0, worldY = 0, scale = 1, isPanning = false, startPanX = 0, startPanY = 0;
         let initialPinchDist = 0;
         let initialScale = 1;
+        let mainLoopId;
+        let sphereAnimationFrame;
 
         function updateWorldTransform() {
             world.style.transform = `translate(${worldX}px, ${worldY}px) scale(${scale})`;
-            if (scale < 0.6) document.body.classList.add('zoom-out'); else document.body.classList.remove('zoom-out');
+            if (scale < 0.6) getDoc().body.classList.add('zoom-out'); else getDoc().body.classList.remove('zoom-out');
         }
 
-        window.switchTab = function(tabName) {
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            event.target.classList.add('active');
-            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-            document.getElementById(`tab-${tabName}`).classList.add('active');
+        window.switchTab = function(tabName, evt) {
+            const doc = getDoc();
+            doc.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+            doc.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            doc.getElementById(`tab-${tabName}`).classList.add('active');
         };
 
         // --- SISTEMA DE NOTÍCIAS DINÂMICAS E COM IMAGENS REAIS ---
@@ -743,13 +751,14 @@
         let allNewsFetched = false;
 
         function stripHtml(html) {
-            let tmp = document.createElement("DIV");
+            let tmp = getDoc().createElement("DIV");
             tmp.innerHTML = html;
             return tmp.textContent || tmp.innerText || "";
         }
 
         function buildNewsUI() {
-            const container = document.getElementById('news-sections-container');
+            const container = getDoc().getElementById('news-sections-container');
+            if(!container) return;
             container.innerHTML = ''; 
             
             lifeAreas.forEach(area => {
@@ -758,7 +767,7 @@
         }
 
         function createCarouselHTML(id, title, color) {
-            const section = document.createElement('div');
+            const section = getDoc().createElement('div');
             section.className = 'sidebar-news-section';
             section.innerHTML = `
                 <h4 class="sidebar-news-title" style="color: ${color}">${title}</h4>
@@ -777,11 +786,10 @@
         }
 
         async function fetchAllNews() {
-            // Mapeamento direto para feeds RSS super confiáveis que possuem imagens (G1 é excelente nisso)
             const rssSources = {
                 'health': 'https://g1.globo.com/rss/g1/saude/',
                 'mind': 'https://g1.globo.com/rss/g1/educacao/',
-                'social': 'https://g1.globo.com/rss/g1/pop-arte/', // Notícias pop, cultura e interações
+                'social': 'https://g1.globo.com/rss/g1/pop-arte/', 
                 'career': 'https://g1.globo.com/rss/g1/economia/',
                 'spirit': 'https://g1.globo.com/rss/g1/ciencia-e-saude/'
             };
@@ -789,16 +797,15 @@
             let delay = 0;
             lifeAreas.forEach(area => {
                 setTimeout(() => {
-                    // Se houver falha no mapeamento, usa um genérico de topo que garante imagem
                     const rssUrl = rssSources[area.id] || `https://g1.globo.com/rss/g1/`;
                     fetchAndRenderNews(area.id, rssUrl, area.name, area.color);
                 }, delay);
-                delay += 800; // Delay escalonado para não bloquear chamadas simultâneas
+                delay += 800;
             });
         }
 
         async function fetchAndRenderNews(id, rssUrl, areaName, areaColor) {
-            const contentDiv = document.getElementById(`carousel-content-${id}`);
+            const contentDiv = getDoc().getElementById(`carousel-content-${id}`);
             if(!contentDiv) return;
             
             try {
@@ -812,41 +819,35 @@
                     throw new Error("Falha ou sem resultados");
                 }
             } catch(e) {
-                contentDiv.innerHTML = '<div class="empty-state" style="padding:10px; font-size:11px; flex: 0 0 100%;">Mundo exterior inacessível ou sem notícias no momento.</div>';
+                if(getDoc().getElementById(`carousel-content-${id}`)) {
+                    getDoc().getElementById(`carousel-content-${id}`).innerHTML = '<div class="empty-state" style="padding:10px; font-size:11px; flex: 0 0 100%;">Mundo exterior inacessível ou sem notícias no momento.</div>';
+                }
             }
         }
 
         function renderCarouselItems(id, areaName, areaColor) {
-            const contentDiv = document.getElementById(`carousel-content-${id}`);
+            const contentDiv = getDoc().getElementById(`carousel-content-${id}`);
             const items = allNewsData[id];
             if(!contentDiv || !items) return;
 
             contentDiv.innerHTML = '';
             items.forEach((item, index) => {
                 let imgUrl = item.enclosure?.link || item.thumbnail;
-                
-                // Extração agressiva de imagens caso a API forneça via descrição/conteúdo (Muito comum no RSS do G1 e UOL)
                 const htmlContent = item.content || item.description || "";
                 if(!imgUrl && htmlContent.includes('<img')) {
                     const match = htmlContent.match(/<img[^>]+src=["']([^"']+)["']/i);
                     if(match) imgUrl = match[1];
                 }
-                
-                // Bloqueia imagens de rastreamento (pixels 1x1) que quebram o layout do usuário
                 if(imgUrl && (imgUrl.includes('1x1') || imgUrl.includes('pixel') || imgUrl.includes('logger'))) {
                     imgUrl = null;
                 }
-
-                // Fallback visualmente agradável apenas se, raramente, alguma notícia não contiver imagem de fato
                 if(!imgUrl) {
                     const cleanColor = areaColor.replace('#', '');
                     imgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(areaName)}&background=${cleanColor}&color=fff&size=400&font-size=0.33`;
                 }
 
-                // Limpeza completa de tags HTML, <br> e imagens do texto descritivo
                 let rawDesc = item.description.replace(/<img[^>]*>/g, "").replace(/<br\s*[\/]?>/gi, " "); 
                 let cleanDesc = stripHtml(rawDesc).trim();
-                
                 cleanDesc = cleanDesc.replace(/Read more.+/gi, '').trim();
 
                 if(cleanDesc.length > 150) cleanDesc = cleanDesc.substring(0, 150) + "...";
@@ -878,7 +879,7 @@
         }
 
         function updateIndicator(id, index) {
-            const indicator = document.getElementById(`indicator-${id}`);
+            const indicator = getDoc().getElementById(`indicator-${id}`);
             const items = allNewsData[id];
             if(indicator && items && items.length > 0) {
                 const safeIndex = Math.min(Math.max(index, 0), items.length - 1);
@@ -886,10 +887,11 @@
             }
         }
 
-        document.addEventListener('click', (e) => {
-            if(e.target.classList.contains('prev-news')) {
+        // --- MANIPULADORES GLOBAIS DE EVENTOS ---
+        const handleGlobalClick = (e) => {
+            if(e.target.classList && e.target.classList.contains('prev-news')) {
                 const id = e.target.getAttribute('data-target');
-                const contentDiv = document.getElementById(`carousel-content-${id}`);
+                const contentDiv = getDoc().getElementById(`carousel-content-${id}`);
                 if(contentDiv) {
                     const cardElement = contentDiv.querySelector('.s-news-card');
                     if(cardElement) {
@@ -898,9 +900,9 @@
                     }
                 }
             }
-            if(e.target.classList.contains('next-news')) {
+            if(e.target.classList && e.target.classList.contains('next-news')) {
                 const id = e.target.getAttribute('data-target');
-                const contentDiv = document.getElementById(`carousel-content-${id}`);
+                const contentDiv = getDoc().getElementById(`carousel-content-${id}`);
                 if(contentDiv) {
                     const cardElement = contentDiv.querySelector('.s-news-card');
                     if(cardElement) {
@@ -909,7 +911,55 @@
                     }
                 }
             }
-        });
+            if (!morphAiBar.contains(e.target)) {
+                morphAiBar.classList.remove('open');
+            }
+        };
+
+        const handleGlobalTouchMove = (e) => {
+            if(profileOverlay.classList.contains('active')) return;
+            if (e.touches.length === 2 && initialPinchDist > 0) {
+                e.preventDefault();
+                const currentDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                const zoomFactor = currentDist / initialPinchDist;
+                const newScale = Math.min(Math.max(0.1, initialScale * zoomFactor), 5);
+                const centerX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
+                const centerY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
+                const mouseX = centerX - worldX; 
+                const mouseY = centerY - worldY;
+                worldX -= mouseX * (newScale / scale - 1); 
+                worldY -= mouseY * (newScale / scale - 1);
+                scale = newScale; 
+                updateWorldTransform();
+            } else if (isPanning && !isSymbiosisActive && e.touches.length === 1) {
+                e.preventDefault(); 
+                const pos = getEventPos(e); 
+                worldX = pos.x - startPanX; 
+                worldY = pos.y - startPanY;
+                updateWorldTransform();
+            }
+        };
+
+        const handleGlobalMouseMove = (e) => {
+            if (isPanning && !isSymbiosisActive) {
+                e.preventDefault(); const pos = getEventPos(e); worldX = pos.x - startPanX; worldY = pos.y - startPanY;
+                updateWorldTransform();
+            }
+        };
+
+        const handleGlobalMouseUp = () => { isPanning = false; viewport.style.cursor = 'grab'; };
+
+        const handleGlobalTouchEnd = (e) => { 
+            if(e.touches.length < 2) initialPinchDist = 0;
+            if(e.touches.length === 0) isPanning = false; 
+        };
+
+        // Attach iniciais
+        document.addEventListener('click', handleGlobalClick);
+        window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+        window.addEventListener('mousemove', handleGlobalMouseMove);
+        window.addEventListener('mouseup', handleGlobalMouseUp);
+        window.addEventListener('touchend', handleGlobalTouchEnd);
 
         homeBtn.addEventListener('click', () => {
             if(isSymbiosisActive) return;
@@ -925,12 +975,6 @@
             e.stopPropagation();
             morphAiBar.classList.add('open');
             setTimeout(() => aiQuickInput.focus(), 200);
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!morphAiBar.contains(e.target)) {
-                morphAiBar.classList.remove('open');
-            }
         });
 
         async function handleAiBarQuery() {
@@ -975,7 +1019,6 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
 
                 const rawText = data.candidates[0].content.parts[0].text;
                 showToast(rawText.substring(0, 100) + "...");
-                console.log("Resposta da IA:", rawText);
 
             } catch (error) {
                 console.error("Erro na consulta da IA:", error);
@@ -1085,7 +1128,7 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
                     if(hasContext) connectionCount++;
                 });
 
-                const card = document.createElement('div');
+                const card = getDoc().createElement('div');
                 card.classList.add('thought-card');
                 card.style.borderColor = bubble.area.color;
                 
@@ -1142,43 +1185,6 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
              }
         }, { passive: false });
 
-        window.addEventListener('touchmove', (e) => {
-            if(profileOverlay.classList.contains('active')) return;
-            if (e.touches.length === 2 && initialPinchDist > 0) {
-                e.preventDefault();
-                const currentDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-                const zoomFactor = currentDist / initialPinchDist;
-                const newScale = Math.min(Math.max(0.1, initialScale * zoomFactor), 5);
-                const centerX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
-                const centerY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
-                const mouseX = centerX - worldX; 
-                const mouseY = centerY - worldY;
-                worldX -= mouseX * (newScale / scale - 1); 
-                worldY -= mouseY * (newScale / scale - 1);
-                scale = newScale; 
-                updateWorldTransform();
-            } else if (isPanning && !isSymbiosisActive && e.touches.length === 1) {
-                e.preventDefault(); 
-                const pos = getEventPos(e); 
-                worldX = pos.x - startPanX; 
-                worldY = pos.y - startPanY;
-                updateWorldTransform();
-            }
-        }, { passive: false });
-
-        window.addEventListener('mousemove', (e) => {
-            if (isPanning && !isSymbiosisActive) {
-                e.preventDefault(); const pos = getEventPos(e); worldX = pos.x - startPanX; worldY = pos.y - startPanY;
-                updateWorldTransform();
-            }
-        });
-        
-        window.addEventListener('mouseup', () => { isPanning = false; viewport.style.cursor = 'grab'; });
-        window.addEventListener('touchend', (e) => { 
-            if(e.touches.length < 2) initialPinchDist = 0;
-            if(e.touches.length === 0) isPanning = false; 
-        });
-
         symbiosisBtn.addEventListener('click', () => { if (isSymbiosisActive) return; startDiscovery(); });
 
         function startDiscovery() {
@@ -1201,7 +1207,7 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
             ];
             usersListContent.innerHTML = '';
             mockUsers.forEach(user => {
-                const item = document.createElement('div');
+                const item = getDoc().createElement('div');
                 item.classList.add('user-item');
                 item.innerHTML = `
                     <div class="user-avatar" style="background:${user.color}">${user.name[0]}</div>
@@ -1229,16 +1235,15 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
         }
 
         let sphereRotationY = 0;
-        let sphereAnimationFrame;
 
         function initSphereRotation() {
             neuralSphere.innerHTML = '';
             spherePoints = [];
             const count = symbiosisBubblesArray.length;
-            const radius = window.innerWidth < 600 ? 140 : 180;
+            const radius = getWin().innerWidth < 600 ? 140 : 180;
 
             symbiosisBubblesArray.forEach((bubble, i) => {
-                const node = document.createElement('div');
+                const node = getDoc().createElement('div');
                 node.classList.add('sphere-node');
                 node.style.backgroundColor = bubble.area.color;
                 node.style.color = bubble.area.color;
@@ -1260,7 +1265,7 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
 
         function animateSphere() {
             if (!isSymbiosisActive || currentSymbiosisView !== 'sphere') {
-                cancelAnimationFrame(sphereAnimationFrame);
+                getWin().cancelAnimationFrame(sphereAnimationFrame);
                 return;
             }
             sphereRotationY += 0.005; 
@@ -1277,7 +1282,7 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
                 point.element.style.opacity = Math.max(0.2, opacity);
                 point.element.style.zIndex = zIndex + 1000;
             });
-            sphereAnimationFrame = requestAnimationFrame(animateSphere);
+            sphereAnimationFrame = getWin().requestAnimationFrame(animateSphere);
         }
 
         function switchSymbiosisView(viewType) {
@@ -1291,7 +1296,7 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
                 sphereView.classList.remove('active-view'); sphereView.classList.add('hidden-view');
                 symbiosisMapContainer.classList.remove('hidden-view'); symbiosisMapContainer.classList.add('active-view');
                 toggleViewBtn.innerHTML = '<span>Ver Esfera</span>';
-                cancelAnimationFrame(sphereAnimationFrame);
+                getWin().cancelAnimationFrame(sphereAnimationFrame);
             }
         }
         sphereView.addEventListener('click', () => switchSymbiosisView('map'));
@@ -1306,7 +1311,7 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
             const oldBubbles = symbiosisWorld.querySelectorAll('.circle-wrapper');
             oldBubbles.forEach(b => b.remove());
             symbiosisBubblesArray = [];
-            cancelAnimationFrame(sphereAnimationFrame);
+            getWin().cancelAnimationFrame(sphereAnimationFrame);
             viewport.style.pointerEvents = 'auto';
         });
 
@@ -1330,15 +1335,15 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
         }
 
         function createSymbiosisBubble(x, y, area, text, scores) {
-            const wrapper = document.createElement('div');
+            const wrapper = getDoc().createElement('div');
             wrapper.classList.add('circle-wrapper');
             wrapper.style.left = `${x}px`; wrapper.style.top = `${y}px`;
-            const circle = document.createElement('div');
+            const circle = getDoc().createElement('div');
             circle.classList.add('neon-circle');
             circle.style.backgroundColor = area.color;
             circle.style.boxShadow = `0 0 10px ${area.color}, 0 0 25px ${area.color}90`;
             circle.style.animationDuration = `${(Math.random()*3+4).toFixed(2)}s`;
-            const tooltip = document.createElement('div');
+            const tooltip = getDoc().createElement('div');
             tooltip.classList.add('message-tooltip'); tooltip.innerText = text;
             circle.appendChild(tooltip); wrapper.appendChild(circle); symbiosisWorld.appendChild(wrapper);
             const bubbleObj = { wrapper, circle, area, scores, id: Math.random(), tooltip }; 
@@ -1353,12 +1358,13 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
                 const pos = getEventPos(e);
                 startX = pos.x; startY = pos.y;
                 initX = parseInt(wrapper.style.left); initY = parseInt(wrapper.style.top);
+                const targetWin = getWin();
                 if(e.type === 'mousedown') {
-                    window.addEventListener('mousemove', moveDrag);
-                    window.addEventListener('mouseup', endDrag);
+                    targetWin.addEventListener('mousemove', moveDrag);
+                    targetWin.addEventListener('mouseup', endDrag);
                 } else {
-                    window.addEventListener('touchmove', moveDrag, {passive:false});
-                    window.addEventListener('touchend', endDrag);
+                    targetWin.addEventListener('touchmove', moveDrag, {passive:false});
+                    targetWin.addEventListener('touchend', endDrag);
                 }
             };
             const moveDrag = (e) => {
@@ -1369,6 +1375,9 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
             };
             const endDrag = (e) => {
                 isDragging = false;
+                const targetWin = getWin();
+                targetWin.removeEventListener('mousemove', moveDrag); targetWin.removeEventListener('mouseup', endDrag);
+                targetWin.removeEventListener('touchmove', moveDrag); targetWin.removeEventListener('touchend', endDrag);
                 window.removeEventListener('mousemove', moveDrag); window.removeEventListener('mouseup', endDrag);
                 window.removeEventListener('touchmove', moveDrag); window.removeEventListener('touchend', endDrag);
             };
@@ -1377,9 +1386,9 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
         }
 
         function createBubble(x, y, area, text = "", existingId = null, existingScores = {}) {
-            const wrapper = document.createElement('div'); wrapper.classList.add('circle-wrapper'); wrapper.style.left=`${x}px`; wrapper.style.top=`${y}px`;
-            const circle = document.createElement('div'); circle.classList.add('neon-circle'); circle.style.backgroundColor=area.color; circle.style.boxShadow=`0 0 10px ${area.color}, 0 0 25px ${area.color}90`; circle.style.animationDuration=`${(Math.random()*3+4).toFixed(2)}s`;
-            const tooltip = document.createElement('div'); tooltip.classList.add('message-tooltip'); tooltip.innerText=text;
+            const wrapper = getDoc().createElement('div'); wrapper.classList.add('circle-wrapper'); wrapper.style.left=`${x}px`; wrapper.style.top=`${y}px`;
+            const circle = getDoc().createElement('div'); circle.classList.add('neon-circle'); circle.style.backgroundColor=area.color; circle.style.boxShadow=`0 0 10px ${area.color}, 0 0 25px ${area.color}90`; circle.style.animationDuration=`${(Math.random()*3+4).toFixed(2)}s`;
+            const tooltip = getDoc().createElement('div'); tooltip.classList.add('message-tooltip'); tooltip.innerText=text;
             circle.appendChild(tooltip); wrapper.appendChild(circle); world.appendChild(wrapper);
             const bubbleObj = { id: existingId || (Date.now()+Math.random()), wrapper, circle, area, tooltip, scores: existingScores };
             bubblesArray.push(bubbleObj);
@@ -1399,12 +1408,13 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
                 dragStartY = pos.y; 
                 initialBubbleLeft = parseInt(wrapper.style.left||0); 
                 initialBubbleTop = parseInt(wrapper.style.top||0); 
+                const targetWin = getWin();
                 if(e.type === 'mousedown') { 
-                    window.addEventListener('mousemove', onBubbleMove); 
-                    window.addEventListener('mouseup', onBubbleEnd); 
+                    targetWin.addEventListener('mousemove', onBubbleMove); 
+                    targetWin.addEventListener('mouseup', onBubbleEnd); 
                 } else { 
-                    window.addEventListener('touchmove', onBubbleMove, {passive: false}); 
-                    window.addEventListener('touchend', onBubbleEnd); 
+                    targetWin.addEventListener('touchmove', onBubbleMove, {passive: false}); 
+                    targetWin.addEventListener('touchend', onBubbleEnd); 
                 } 
             }
             function onBubbleMove(e) { 
@@ -1417,10 +1427,15 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
                 wrapper.style.top = `${initialBubbleTop + dy}px`; 
             }
             function onBubbleEnd(e) { 
+                const targetWin = getWin();
                 if(e.type === 'mouseup') { 
+                    targetWin.removeEventListener('mousemove', onBubbleMove); 
+                    targetWin.removeEventListener('mouseup', onBubbleEnd); 
                     window.removeEventListener('mousemove', onBubbleMove); 
                     window.removeEventListener('mouseup', onBubbleEnd); 
                 } else { 
+                    targetWin.removeEventListener('touchmove', onBubbleMove); 
+                    targetWin.removeEventListener('touchend', onBubbleEnd); 
                     window.removeEventListener('touchmove', onBubbleMove); 
                     window.removeEventListener('touchend', onBubbleEnd); 
                 } 
@@ -1510,7 +1525,7 @@ Com base nestas informações do usuário e no input dele: "${query}", responda 
 
             try {
                 const prompt = `Analise o seguinte pensamento/ideia de um usuário: "${text}"
-Classifique a qual destas 5 áreas da vida ele pertence mais e calcule um score de relevância de 0 a 5 para cada uma das áreas (considere pontuações cruzadas altas se o texto envolver múltiplos contextos, como saúde impactando trabalho/carreira):
+Classifique a qual destas 5 áreas da vida ele pertence mais e calcule um score de relevância de 0 a 5 para cada uma das áreas:
 - health (Saúde & Físico)
 - mind (Mente & Intelecto)
 - social (Relacionamentos)
@@ -1548,7 +1563,7 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                 return { dominant: dominantArea, scores: parsed.scores };
 
             } catch (error) {
-                console.warn("Erro ao chamar API do Gemini. Usando análise inteligente local.", error);
+                console.warn("Erro ao chamar API. Usando análise local.");
                 return fallbackKeywordAnalysis(text);
             }
         }
@@ -1616,11 +1631,11 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
         morphDock.addEventListener('click', () => { morphDock.classList.toggle('open'); });
         
         lifeAreas.forEach((area, index) => { 
-            const container = document.createElement('div'); container.classList.add('color-option-container'); 
-            const dot = document.createElement('div'); dot.classList.add('color-option'); 
+            const container = getDoc().createElement('div'); container.classList.add('color-option-container'); 
+            const dot = getDoc().createElement('div'); dot.classList.add('color-option'); 
             dot.style.backgroundColor = area.color; 
             dot.style.color = area.color; 
-            const label = document.createElement('div'); label.classList.add('area-label'); label.innerText = area.name; 
+            const label = getDoc().createElement('div'); label.classList.add('area-label'); label.innerText = area.name; 
             
             if(index === 0) { 
                 dot.classList.add('selected'); 
@@ -1631,10 +1646,10 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
             
             dot.addEventListener('click', (e) => { 
                 e.stopPropagation(); 
-                document.querySelectorAll('.color-option-container').forEach(c => c.classList.remove('active-container'));
+                getDoc().querySelectorAll('.color-option-container').forEach(c => c.classList.remove('active-container'));
                 container.classList.add('active-container');
 
-                document.querySelectorAll('.color-option').forEach(d => d.classList.remove('selected')); 
+                getDoc().querySelectorAll('.color-option').forEach(d => d.classList.remove('selected')); 
                 dot.classList.add('selected'); 
                 activeArea = area; 
                 morphDock.style.setProperty('--dock-glow', area.color); 
@@ -1679,16 +1694,16 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                     const rect1 = b1.circle.getBoundingClientRect(); const rect2 = b2.circle.getBoundingClientRect();
                     const x1 = (rect1.left - rectRef.left + (rect1.width/2)) / currentScale; const y1 = (rect1.top - rectRef.top + (rect1.height/2)) / currentScale;
                     const x2 = (rect2.left - rectRef.left + (rect2.width/2)) / currentScale; const y2 = (rect2.top - rectRef.top + (rect2.height/2)) / currentScale;
-                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    const line = getDoc().createElementNS('http://www.w3.org/2000/svg', 'line');
                     line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
                     line.classList.add('connection-line');
                     if (b1.area.id === b2.area.id) { line.setAttribute('stroke', b1.area.color); } 
                     else { 
-                        const gradId = `grad-${Math.random().toString(36).substr(2, 9)}`; const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                        const gradId = `grad-${Math.random().toString(36).substr(2, 9)}`; const gradient = getDoc().createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
                         gradient.setAttribute('id', gradId); gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
                         gradient.setAttribute('x1', x1); gradient.setAttribute('y1', y1); gradient.setAttribute('x2', x2); gradient.setAttribute('y2', y2);
-                        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop'); stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', b1.area.color);
-                        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop'); stop2.setAttribute('offset', '100%'); stop2.setAttribute('stop-color', b2.area.color);
+                        const stop1 = getDoc().createElementNS('http://www.w3.org/2000/svg', 'stop'); stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', b1.area.color);
+                        const stop2 = getDoc().createElementNS('http://www.w3.org/2000/svg', 'stop'); stop2.setAttribute('offset', '100%'); stop2.setAttribute('stop-color', b2.area.color);
                         gradient.appendChild(stop1); gradient.appendChild(stop2); defsLayerRef.appendChild(gradient); line.setAttribute('stroke', `url(#${gradId})`);
                     }
                     linesLayerRef.appendChild(line);
@@ -1704,13 +1719,11 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                     updateLinesGeneric(symbiosisBubblesArray, symbiosisLinesLayer, gradDefsSymbiosis, symbiosisWorld, false);
                 }
             }
-            requestAnimationFrame(gameLoop);
+            mainLoopId = getWin().requestAnimationFrame(gameLoop);
         }
-        requestAnimationFrame(gameLoop);
+        mainLoopId = getWin().requestAnimationFrame(gameLoop);
 
         // --- SISTEMA DE POP-UP FLUTUANTE (DOCUMENT PiP) ---
-        let pipWindow = null;
-        
         async function enterFloatingMode() {
             if (!('documentPictureInPicture' in window)) {
                 showToast("Pop-up flutuante não suportado neste navegador.");
@@ -1724,7 +1737,7 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                     height: Math.min(window.innerHeight, 600),
                 });
 
-                // Copiar todos os estilos para a nova janela
+                // Copiar todos os estilos
                 [...document.styleSheets].forEach((styleSheet) => {
                     try {
                         const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
@@ -1741,31 +1754,51 @@ Responda ESTRITAMENTE em formato JSON puro, sem markdown, contendo:
                     }
                 });
 
-                // Mover elementos principais do body para a janela PiP
+                // Mover os elementos e copiar a classe do body
                 const elementsToMove = [...document.body.children].filter(el => el.tagName !== 'SCRIPT' && el.id !== 'pipBtn');
                 elementsToMove.forEach(el => pipWindow.document.body.appendChild(el));
-
-                // Copiar os atributos do body
                 pipWindow.document.body.className = document.body.className;
-                
-                // Tratar o fechamento da janela PiP para restaurar a interface original
+
+                // Repassar ouvintes globais para a nova janela garantir o controle (drag, zoom, clicks)
+                pipWindow.document.addEventListener('click', handleGlobalClick);
+                pipWindow.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+                pipWindow.addEventListener('mousemove', handleGlobalMouseMove);
+                pipWindow.addEventListener('mouseup', handleGlobalMouseUp);
+                pipWindow.addEventListener('touchend', handleGlobalTouchEnd);
+
+                // Transferir os frames de animação do loop principal e das esferas (evita throttling e travamentos)
+                cancelAnimationFrame(mainLoopId);
+                gameLoop();
+                if(isSymbiosisActive && currentSymbiosisView === 'sphere') {
+                    cancelAnimationFrame(sphereAnimationFrame);
+                    animateSphere();
+                }
+
+                // Restaurar estado ao fechar
                 pipWindow.addEventListener('pagehide', () => {
                     elementsToMove.forEach(el => document.body.appendChild(el));
                     pipWindow = null;
+                    
+                    cancelAnimationFrame(mainLoopId);
+                    gameLoop();
+                    if(isSymbiosisActive && currentSymbiosisView === 'sphere') {
+                        cancelAnimationFrame(sphereAnimationFrame);
+                        animateSphere();
+                    }
                 });
             } catch (error) {
-                console.warn("Navegador bloqueou a abertura automática. Use o botão flutuante para iniciar a interface pop-up.", error);
+                console.warn("Abertura automática bloqueada pelo navegador. Use o botão flutuante para abrir o Pop-up.", error);
             }
         }
 
-        // Tenta abrir automaticamente quando o usuário sai da aba (Pode ser bloqueado se não houver um clique no documento imediatamente antes)
+        // Tentar abrir o pop-up automaticamente na mudança de aba
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 enterFloatingMode();
             }
         });
 
-        // Botão manual (Fallback seguro para contornar bloqueios de segurança do navegador)
+        // Botão flutuante para forçar o pop-up manualmente
         const pipBtn = document.createElement('div');
         pipBtn.id = 'pipBtn';
         pipBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:#333;"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 3-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg>';
