@@ -218,20 +218,43 @@
         .s-stat h4 { margin: 0; font-size: 16px; color: #333; }
         .s-stat span { font-size: 10px; color: #999; text-transform: uppercase; }
 
-        /* NOTÍCIAS SIDEBAR */
+        /* NOTÍCIAS SIDEBAR ATUALIZADO PARA CARROSSEL SWIPE */
         .sidebar-news-section { margin-top: 15px; display: flex; flex-direction: column; gap: 15px; }
         .sidebar-news-title { font-size: 12px; font-weight: 700; color: #777; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-        .sidebar-news-list { display: flex; flex-direction: column; gap: 10px; }
-        .s-news-card {
-            display: flex; gap: 10px; background: #fff; border-radius: 12px;
-            padding: 10px; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-            transition: 0.2s; border: 1px solid transparent; align-items: center;
+        
+        .sidebar-news-carousel { display: flex; flex-direction: column; gap: 10px; width: 100%; overflow: hidden; }
+        #sidebar-news-content { 
+            display: flex; 
+            gap: 15px; 
+            overflow-x: auto; 
+            scroll-snap-type: x mandatory; 
+            scroll-behavior: smooth;
+            -ms-overflow-style: none;  /* IE e Edge */
+            scrollbar-width: none;  /* Firefox */
+            padding-bottom: 5px; /* Sombra */
         }
-        .s-news-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-color: #eee; }
-        .s-news-img { width: 45px; height: 45px; border-radius: 8px; flex-shrink: 0; background-size: cover; background-position: center; background-color: #f0f0f0; }
-        .s-news-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; flex: 1; }
-        .s-news-text { font-size: 11px; color: #333; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .s-news-date { font-size: 9px; color: #999; margin-top: 4px; }
+        #sidebar-news-content::-webkit-scrollbar { display: none; } /* Chrome */
+        
+        .s-news-card {
+            display: flex; flex-direction: column; background: #fff; border-radius: 16px;
+            text-decoration: none; box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            transition: 0.3s; border: 1px solid #eee; overflow: hidden;
+            flex: 0 0 85%; /* Exibe 85% do atual e deixa 15% para a ponta do próximo */
+            scroll-snap-align: start;
+            box-sizing: border-box;
+            min-height: 270px;
+        }
+        .s-news-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); border-color: #ddd; }
+        .s-news-img { width: 100%; height: 140px; background-size: cover; background-position: center; background-color: #f0f0f0; flex-shrink: 0; }
+        .s-news-info { padding: 15px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .s-news-text { font-size: 14px; color: #222; font-weight: 800; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .s-news-desc { font-size: 12px; color: #555; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .s-news-date { font-size: 10px; color: #999; margin-top: auto; font-weight: 600; text-transform: uppercase; }
+        
+        .news-controls { display: flex; justify-content: space-between; align-items: center; padding: 0 5px; margin-top: 5px; }
+        .news-controls button { background: #fff; border: 1px solid #ddd; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #555; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .news-controls button:active { background: #eee; transform: scale(0.9); }
+        #news-indicator { font-size: 11px; color: #777; font-weight: 700; letter-spacing: 1px; }
 
         .profile-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         
@@ -488,8 +511,15 @@
                 <!-- SEÇÃO DE NOTÍCIAS SIDEBAR -->
                 <div class="sidebar-news-section">
                     <h4 class="sidebar-news-title">Mundo Real</h4>
-                    <div class="sidebar-news-list" id="sidebar-news-list">
-                        <!-- Noticias injetadas aqui -->
+                    <div class="sidebar-news-carousel">
+                        <div id="sidebar-news-content">
+                            <!-- Noticias injetadas aqui -->
+                        </div>
+                        <div class="news-controls">
+                            <button id="prev-news" title="Anterior">❮</button>
+                            <span id="news-indicator">- / -</span>
+                            <button id="next-news" title="Próxima">❯</button>
+                        </div>
                     </div>
                 </div>
 
@@ -718,12 +748,21 @@
         };
 
         // --- SISTEMA DE NOTÍCIAS REAL NA SIDEBAR ---
+        let newsData = [];
+
+        function stripHtml(html) {
+            let tmp = document.createElement("DIV");
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || "";
+        }
+
         async function fetchNews() {
-            const newsContainer = document.getElementById('sidebar-news-list');
+            const newsContainer = document.getElementById('sidebar-news-content');
             if(!newsContainer) return;
-            if(newsContainer.children.length > 0 && !newsContainer.querySelector('.empty-state')) return;
             
-            newsContainer.innerHTML = '<div class="empty-state" style="padding:10px; font-size:11px;">Buscando sinais...</div>';
+            if(newsData.length > 0) return; // Se já buscou, apenas mantém
+            
+            newsContainer.innerHTML = '<div class="empty-state" style="padding:10px; font-size:11px; flex: 0 0 100%;">Buscando sinais...</div>';
             
             try {
                 // Utilizando API pública RSS to JSON com o Feed G1
@@ -731,39 +770,80 @@
                 const data = await res.json();
                 
                 if(data.status === 'ok' && data.items.length > 0) {
-                    newsContainer.innerHTML = '';
-                    
-                    // Limitando a 5 notícias para não poluir demais a barra lateral
-                    data.items.slice(0, 5).forEach(item => {
-                        const card = document.createElement('a');
-                        card.href = item.link;
-                        card.target = "_blank";
-                        card.classList.add('s-news-card');
-                        
-                        let imgUrl = item.enclosure?.link || item.thumbnail;
-                        if(!imgUrl && item.description.includes('<img')) {
-                            const match = item.description.match(/src="([^"]+)"/);
-                            if(match) imgUrl = match[1];
-                        }
-                        if(!imgUrl) imgUrl = 'https://via.placeholder.com/100?text=News';
-
-                        card.innerHTML = `
-                            <div class="s-news-img" style="background-image: url('${imgUrl}')"></div>
-                            <div class="s-news-info">
-                                <div class="s-news-text">${item.title}</div>
-                                <div class="s-news-date">${new Date(item.pubDate).toLocaleDateString('pt-BR')}</div>
-                            </div>
-                        `;
-                        newsContainer.appendChild(card);
-                    });
+                    newsData = data.items.slice(0, 5); // Limitando a 5 notícias
+                    renderAllNews();
                 } else {
                     throw new Error("Falha na formatação da API");
                 }
             } catch(e) {
                 console.error(e);
-                newsContainer.innerHTML = '<div class="empty-state" style="padding:10px; font-size:11px;">Mundo exterior inacessível.</div>';
+                newsContainer.innerHTML = '<div class="empty-state" style="padding:10px; font-size:11px; flex: 0 0 100%;">Mundo exterior inacessível.</div>';
             }
         }
+
+        function renderAllNews() {
+            const newsContainer = document.getElementById('sidebar-news-content');
+            if(!newsContainer || newsData.length === 0) return;
+
+            newsContainer.innerHTML = '';
+            newsData.forEach((item, index) => {
+                let imgUrl = item.enclosure?.link || item.thumbnail;
+                if(!imgUrl && item.description.includes('<img')) {
+                    const match = item.description.match(/src="([^"]+)"/);
+                    if(match) imgUrl = match[1];
+                }
+                if(!imgUrl) imgUrl = 'https://via.placeholder.com/400x200?text=News';
+
+                let rawDesc = item.description.replace(/<img[^>]*>/g, ""); 
+                let cleanDesc = stripHtml(rawDesc).trim();
+                if(cleanDesc.length > 150) cleanDesc = cleanDesc.substring(0, 150) + "...";
+
+                newsContainer.innerHTML += `
+                    <a href="${item.link}" target="_blank" class="s-news-card" data-index="${index}">
+                        <div class="s-news-img" style="background-image: url('${imgUrl}')"></div>
+                        <div class="s-news-info">
+                            <div class="s-news-text">${item.title}</div>
+                            <div class="s-news-desc">${cleanDesc}</div>
+                            <div class="s-news-date">${new Date(item.pubDate).toLocaleDateString('pt-BR')} às ${new Date(item.pubDate).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</div>
+                        </div>
+                    </a>
+                `;
+            });
+            updateIndicator(0);
+
+            // Atualiza o indicador ao deslizar/scrollar
+            newsContainer.addEventListener('scroll', () => {
+                const scrollLeft = newsContainer.scrollLeft;
+                const cardElement = newsContainer.querySelector('.s-news-card');
+                if(cardElement) {
+                    const cardWidth = cardElement.offsetWidth + 15; // +15 do gap
+                    const index = Math.round(scrollLeft / cardWidth);
+                    updateIndicator(index);
+                }
+            });
+        }
+
+        function updateIndicator(index) {
+            const indicator = document.getElementById('news-indicator');
+            if(indicator && newsData.length > 0) {
+                const safeIndex = Math.min(Math.max(index, 0), newsData.length - 1);
+                indicator.innerText = `${safeIndex + 1} / ${newsData.length}`;
+            }
+        }
+
+        document.getElementById('prev-news')?.addEventListener('click', () => {
+            const newsContainer = document.getElementById('sidebar-news-content');
+            if(!newsContainer || newsData.length === 0) return;
+            const cardWidth = newsContainer.querySelector('.s-news-card').offsetWidth + 15;
+            newsContainer.scrollBy({ left: -cardWidth, behavior: 'smooth' });
+        });
+
+        document.getElementById('next-news')?.addEventListener('click', () => {
+            const newsContainer = document.getElementById('sidebar-news-content');
+            if(!newsContainer || newsData.length === 0) return;
+            const cardWidth = newsContainer.querySelector('.s-news-card').offsetWidth + 15;
+            newsContainer.scrollBy({ left: cardWidth, behavior: 'smooth' });
+        });
 
         homeBtn.addEventListener('click', () => {
             if(isSymbiosisActive) return;
