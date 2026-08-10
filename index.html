@@ -416,10 +416,12 @@
         input:checked + .slider { background-color: #29FA10; }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        /* --- SIMBIOSE & OVERLAYS --- */
+        /* --- SIMBIOSE & OVERLAYS (LIQUID GLASS POPUP STYLE) --- */
         #symbiosis-dimension { 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            background: radial-gradient(circle at center, #10151a 0%, #000000 100%); 
+            background: rgba(10, 15, 22, 0.45);
+            backdrop-filter: blur(35px) saturate(200%);
+            -webkit-backdrop-filter: blur(35px) saturate(200%);
             z-index: 2000; display: none; justify-content: center; align-items: center; 
             opacity: 0; transition: opacity 0.5s ease; 
             overflow: hidden;
@@ -427,33 +429,47 @@
         }
         #symbiosis-dimension.active { display: flex; opacity: 1; pointer-events: auto; }
         
-        .symbiosis-header { 
-            position: absolute; top: 20px; left: 0; width: 100%; 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 20px; box-sizing: border-box; pointer-events: none; z-index: 2001; 
+        .symbiosis-card-container {
+            width: 85vw; max-width: 480px; height: 75vh; max-height: 600px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(40px) saturate(220%);
+            -webkit-backdrop-filter: blur(40px) saturate(220%);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 40px;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.3), inset 0 0 25px rgba(255, 255, 255, 0.3);
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
+            animation: popupGlassIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        .symbiosis-title { color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; font-size: 12px; }
-        .header-actions { display: flex; gap: 8px; align-items: center; pointer-events: auto; }
-        .header-btn { 
-            background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); 
-            padding: 8px 14px; border-radius: 20px; cursor: pointer; backdrop-filter: blur(5px); 
-            font-weight: 600; font-size: 11px; white-space: nowrap; transition: background 0.2s;
+        @keyframes popupGlassIn {
+            0% { transform: scale(0.85) translateY(30px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
         }
-        .header-btn:active { background: rgba(255, 255, 255, 0.25); }
 
-        #sphere-view { perspective: 1000px; display: flex; align-items: center; justify-content: center; cursor: grab; position: absolute; width: 100%; height: 100%; overflow: hidden; }
+        .symbiosis-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 25px 30px 15px 30px; box-sizing: border-box; z-index: 2001; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .symbiosis-title { color: rgba(255, 255, 255, 0.9); text-transform: uppercase; letter-spacing: 2px; font-weight: 800; font-size: 14px; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+        .header-btn { 
+            background: rgba(255, 255, 255, 0.2); color: #fff; border: 1px solid rgba(255, 255, 255, 0.4); 
+            padding: 8px 16px; border-radius: 20px; cursor: pointer; 
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            font-weight: 600; font-size: 11px; white-space: nowrap; transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .header-btn:active { background: rgba(255, 255, 255, 0.35); transform: scale(0.95); }
+
+        #sphere-view { perspective: 1000px; display: flex; align-items: center; justify-content: center; cursor: grab; position: relative; width: 100%; flex: 1; overflow: hidden; }
         #neural-sphere { position: relative; width: 0; height: 0; transform-style: preserve-3d; }
-        .sphere-node { position: absolute; width: 14px; height: 14px; border-radius: 50%; top: 0; left: 0; transform: translate(-50%, -50%); box-shadow: 0 0 15px currentColor; will-change: transform, opacity; }
+        .sphere-node { position: absolute; width: 16px; height: 16px; border-radius: 50%; top: 0; left: 0; transform: translate(-50%, -50%); box-shadow: 0 0 20px currentColor; will-change: transform, opacity; }
         .sphere-text { 
-            position: absolute; bottom: 15vh; left: 50%; transform: translateX(-50%); color: white; font-size: 14px; 
-            font-weight: 400; text-align: center;
-            text-shadow: 0 0 20px rgba(41, 250, 16, 0.8); pointer-events: none; opacity: 0.8; letter-spacing: 3px; 
+            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.9); font-size: 13px; 
+            font-weight: 600; text-align: center;
+            text-shadow: 0 0 20px rgba(41, 250, 16, 0.8); pointer-events: none; opacity: 0.9; letter-spacing: 2px; 
             width: 100%; z-index: 2001;
         }
-        
-        #symbiosis-map-container { position: absolute; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
-        #symbiosis-map-container.active-view { opacity: 1; pointer-events: auto; }
-        #sphere-view.hidden-view { opacity: 0; pointer-events: none; }
 
         /* Lista de Usuários */
         #nearby-users-overlay { 
@@ -532,7 +548,6 @@
         @media (max-width: 768px) {
             #app-logo { width: 85px; top: 12px; left: 12px; }
             
-            /* Posicionamento e dimensionamento da Dock inferior adaptados para mobile */
             .bottom-ui-container { 
                 width: 100%; 
                 justify-content: center; 
@@ -542,14 +557,8 @@
                 box-sizing: border-box; 
                 max-width: 100vw;
             }
-            .dock-btn {
-                width: 44px;
-                height: 44px;
-            }
-            .dock-btn svg {
-                width: 19px;
-                height: 19px;
-            }
+            .dock-btn { width: 44px; height: 44px; }
+            .dock-btn svg { width: 19px; height: 19px; }
             .morph-dock.open { 
                 width: calc(100vw - 110px); 
                 height: 65px; 
@@ -567,13 +576,8 @@
                 overflow-x: auto; 
                 -webkit-overflow-scrolling: touch; 
             }
-            .color-option { 
-                width: 32px;
-                height: 32px;
-                margin-right: 4px; 
-            }
+            .color-option { width: 32px; height: 32px; margin-right: 4px; }
             
-            /* Ajustes do Modal de Perfil para mobile */
             .profile-modal { 
                 flex-direction: column; 
                 overflow-y: auto; 
@@ -590,75 +594,24 @@
                 height: auto; 
                 flex-shrink: 0; 
             }
-            .profile-content { 
-                overflow: visible; 
-            }
-            .profile-nav { 
-                overflow-x: auto; 
-                padding: 12px 15px; 
-                justify-content: flex-start; 
-                gap: 15px;
-            }
-            .nav-item {
-                font-size: 13px;
-                padding-bottom: 6px;
-            }
-            .tab-content-area {
-                padding: 15px;
-            }
-            .neural-grid { 
-                grid-template-columns: repeat(2, 1fr); 
-                gap: 10px; 
-            }
-            .edit-form { 
-                grid-template-columns: 1fr; 
-                gap: 10px;
-            }
-            .form-group.full { 
-                grid-column: span 1; 
-            }
-            .save-btn {
-                grid-column: span 1;
-                padding: 12px;
-                font-size: 15px;
-            }
+            .profile-content { overflow: visible; }
+            .profile-nav { overflow-x: auto; padding: 12px 15px; justify-content: flex-start; gap: 15px; }
+            .nav-item { font-size: 13px; padding-bottom: 6px; }
+            .tab-content-area { padding: 15px; }
+            .neural-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .edit-form { grid-template-columns: 1fr; gap: 10px; }
+            .form-group.full { grid-column: span 1; }
+            .save-btn { grid-column: span 1; padding: 12px; font-size: 15px; }
             
-            /* Popups e Modais Gerais */
-            .popup-card { 
-                width: 90%;
-                margin-top: -10%; 
-                padding: 20px;
-                border-radius: 20px;
-            }
-            #popupInput {
-                height: 70px;
-                padding: 10px;
-                font-size: 13px;
-            }
-            .users-list-card {
-                width: 92%;
-                max-height: 75vh;
-                padding: 18px;
-                border-radius: 20px;
-            }
+            .popup-card { width: 90%; margin-top: -10%; padding: 20px; border-radius: 20px; }
+            #popupInput { height: 70px; padding: 10px; font-size: 13px; }
+            .users-list-card { width: 92%; max-height: 75vh; padding: 18px; border-radius: 20px; }
             
-            /* Visão de Simbiose e Esfera no Mobile */
-            #sphere-view { 
-                transform: scale(0.85); 
-            }
-            .sphere-text { 
-                font-size: 12px; 
-                letter-spacing: 1.5px; 
-                bottom: 12vh;
-            }
-            .symbiosis-header {
-                top: 15px;
-                padding: 0 12px;
-            }
-            .header-btn {
-                padding: 6px 10px;
-                font-size: 10px;
-            }
+            .symbiosis-card-container { width: 92vw; height: 70vh; }
+            #sphere-view { transform: scale(0.9); }
+            .sphere-text { font-size: 11px; letter-spacing: 1.5px; bottom: 20px; }
+            .symbiosis-header { padding: 20px 20px 12px 20px; }
+            .header-btn { padding: 6px 12px; font-size: 10px; }
         }
     </style>
 </head>
@@ -831,16 +784,20 @@
         </div>
     </div>
 
+    <!-- TELA DE SIMBIOSE (ATUALIZADA PARA LIQUID GLASS POP-UP, SEM MAPA) -->
     <div id="symbiosis-dimension">
-        <div class="symbiosis-header">
-            <div class="symbiosis-title">Fusão Neural</div>
-            <div class="header-actions">
-                <button id="toggle-view" class="header-btn"><span>Alternar Visão</span></button>
-                <button id="close-symbiosis" class="header-btn">Encerrar</button>
+        <div class="symbiosis-card-container">
+            <div class="symbiosis-header">
+                <div class="symbiosis-title">Fusão Neural</div>
+                <div class="header-actions">
+                    <button id="close-symbiosis" class="header-btn">Encerrar</button>
+                </div>
+            </div>
+            <div id="sphere-view" class="active-view">
+                <div id="neural-sphere"></div>
+                <div class="sphere-text">CONEXÃO ATIVA</div>
             </div>
         </div>
-        <div id="sphere-view" class="symbiosis-view active-view"><div id="neural-sphere"></div><div class="sphere-text">CONEXÃO ATIVA</div></div>
-        <div id="symbiosis-map-container" class="symbiosis-view hidden-view"><div id="symbiosis-world"><svg class="lines-layer" id="symbiosis-lines"><defs id="grad-defs-symbiosis"></defs></svg></div></div>
     </div>
 
     <div class="bottom-ui-container" id="mainUI">
@@ -990,11 +947,6 @@
         const symbiosisDimension = document.getElementById('symbiosis-dimension');
         const sphereView = document.getElementById('sphere-view');
         const neuralSphere = document.getElementById('neural-sphere');
-        const symbiosisMapContainer = document.getElementById('symbiosis-map-container');
-        const symbiosisWorld = document.getElementById('symbiosis-world');
-        const symbiosisLinesLayer = document.getElementById('symbiosis-lines');
-        const gradDefsSymbiosis = document.getElementById('grad-defs-symbiosis');
-        const toggleViewBtn = document.getElementById('toggle-view');
         const nearbyUsersOverlay = document.getElementById('nearby-users-overlay');
         const usersListContent = document.getElementById('users-list-content');
         const closeUsersBtn = document.getElementById('closeUsers');
@@ -1064,7 +1016,6 @@
         let currentBubble = null;
         let pendingCreationCoords = null; 
         let isSymbiosisActive = false;
-        let currentSymbiosisView = 'sphere';
         let worldX = 0, worldY = 0, scale = 1, isPanning = false, startPanX = 0, startPanY = 0;
         let initialPinchDist = 0;
         let initialScale = 1;
@@ -1563,7 +1514,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function startDiscovery() {
             symbiosisBtn.classList.add('searching'); radarOverlay.classList.add('active');
             showToast("Buscando sinais neurais próximos...");
-            // AJUSTE: Tempo de busca reduzido para 800ms (antes era 2500ms)
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => { setTimeout(() => { showNearbyUsers(position.coords.latitude, position.coords.longitude); }, 800); },
@@ -1603,7 +1553,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             viewport.classList.add('blurred'); symbiosisDimension.classList.add('active');
             mainUI.classList.add('hidden-ui');
             showToast(`Conectado com ${targetUser.name}`);
-            switchSymbiosisView('sphere');
             generateSymbiosisData(targetUser); 
             initSphereRotation();
         }
@@ -1614,7 +1563,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             neuralSphere.innerHTML = '';
             spherePoints = [];
             const count = symbiosisBubblesArray.length;
-            const radius = getWin().innerWidth < 600 ? 140 : 180;
+            const radius = getWin().innerWidth < 600 ? 120 : 150;
 
             symbiosisBubblesArray.forEach((bubble, i) => {
                 const node = getDoc().createElement('div');
@@ -1638,7 +1587,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         }
 
         function animateSphere() {
-            if (!isSymbiosisActive || currentSymbiosisView !== 'sphere') {
+            if (!isSymbiosisActive) {
                 getWin().cancelAnimationFrame(sphereAnimationFrame);
                 return;
             }
@@ -1659,31 +1608,10 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             sphereAnimationFrame = getWin().requestAnimationFrame(animateSphere);
         }
 
-        function switchSymbiosisView(viewType) {
-            currentSymbiosisView = viewType;
-            if (viewType === 'sphere') {
-                sphereView.classList.remove('hidden-view'); sphereView.classList.add('active-view');
-                symbiosisMapContainer.classList.remove('active-view'); symbiosisMapContainer.classList.add('hidden-view');
-                toggleViewBtn.innerHTML = '<span>Ver Mapa</span>';
-                initSphereRotation();
-            } else {
-                sphereView.classList.remove('active-view'); sphereView.classList.add('hidden-view');
-                symbiosisMapContainer.classList.remove('active-view'); symbiosisMapContainer.classList.add('active-view');
-                toggleViewBtn.innerHTML = '<span>Ver Esfera</span>';
-                getWin().cancelAnimationFrame(sphereAnimationFrame);
-            }
-        }
-        sphereView.addEventListener('click', () => switchSymbiosisView('map'));
-        toggleViewBtn.addEventListener('click', () => switchSymbiosisView(currentSymbiosisView === 'sphere' ? 'map' : 'sphere'));
-
         document.getElementById('close-symbiosis').addEventListener('click', () => {
             isSymbiosisActive = false;
             viewport.classList.remove('blurred'); symbiosisDimension.classList.remove('active');
             mainUI.classList.remove('hidden-ui');
-            while (symbiosisLinesLayer.querySelectorAll('line').length > 0) symbiosisLinesLayer.removeChild(symbiosisLinesLayer.lastChild);
-            gradDefsSymbiosis.innerHTML = '';
-            const oldBubbles = symbiosisWorld.querySelectorAll('.circle-wrapper');
-            oldBubbles.forEach(b => b.remove());
             symbiosisBubblesArray = [];
             getWin().cancelAnimationFrame(sphereAnimationFrame);
             viewport.style.pointerEvents = 'auto';
@@ -1692,71 +1620,17 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function generateSymbiosisData(targetUser) {
             symbiosisBubblesArray = [];
             bubblesArray.forEach(b => {
-                createSymbiosisBubble(parseInt(b.wrapper.style.left) - 200, parseInt(b.wrapper.style.top), b.area, b.tooltip.innerText, b.scores);
+                symbiosisBubblesArray.push({ area: b.area });
             });
             let partnerBubbles = [];
             if(targetUser.area === "mind") partnerBubbles = [ {t: "Filosofia Quântica", a: "mind"}, {t: "Lógica Fuzzy", a: "mind"}, {t: "Café sem açúcar", a: "health"} ];
             else if (targetUser.area === "career") partnerBubbles = [ {t: "Startup Unicórnio", a: "career"}, {t: "Networking", a: "social"}, {t: "Investimento Anjo", a: "career"} ];
             else partnerBubbles = [ {t: "Meditação", a: "spirit"}, {t: "Yoga no Parque", a: "health"}, {t: "Paz Interior", a: "spirit"} ];
 
-            partnerBubbles.forEach(async p => {
+            partnerBubbles.forEach(p => {
                 const area = lifeAreas.find(a => a.id === p.a);
-                const scores = (await analyzeFullContext(p.t)).scores;
-                const rx = (Math.random() * 400) - 100;
-                const ry = (Math.random() * 400) - 200;
-                createSymbiosisBubble(rx, ry, area, p.t, scores);
+                symbiosisBubblesArray.push({ area: area });
             });
-        }
-
-        function createSymbiosisBubble(x, y, area, text, scores) {
-            const wrapper = getDoc().createElement('div');
-            wrapper.classList.add('circle-wrapper');
-            wrapper.style.left = `${x}px`; wrapper.style.top = `${y}px`;
-            const circle = getDoc().createElement('div');
-            circle.classList.add('neon-circle');
-            circle.style.backgroundColor = area.color;
-            circle.style.boxShadow = `0 0 10px ${area.color}, 0 0 25px ${area.color}90`;
-            circle.style.animationDuration = `${(Math.random()*3+4).toFixed(2)}s`;
-            const tooltip = getDoc().createElement('div');
-            tooltip.classList.add('message-tooltip'); tooltip.innerText = text;
-            circle.appendChild(tooltip); wrapper.appendChild(circle); symbiosisWorld.appendChild(wrapper);
-            const bubbleObj = { wrapper, circle, area, scores, id: Math.random(), tooltip }; 
-            symbiosisBubblesArray.push(bubbleObj);
-            setupSimpleDrag(wrapper);
-        }
-
-        function setupSimpleDrag(wrapper) {
-            let isDragging = false; let startX, startY, initX, initY;
-            const startDrag = (e) => {
-                e.stopPropagation(); isDragging = true;
-                const pos = getEventPos(e);
-                startX = pos.x; startY = pos.y;
-                initX = parseInt(wrapper.style.left); initY = parseInt(wrapper.style.top);
-                const targetWin = getWin();
-                if(e.type === 'mousedown') {
-                    targetWin.addEventListener('mousemove', moveDrag);
-                    targetWin.addEventListener('mouseup', endDrag);
-                } else {
-                    targetWin.addEventListener('touchmove', moveDrag, {passive:false});
-                    targetWin.addEventListener('touchend', endDrag);
-                }
-            };
-            const moveDrag = (e) => {
-                if(!isDragging) return;
-                const pos = getEventPos(e);
-                wrapper.style.left = `${initX + (pos.x - startX)}px`;
-                wrapper.style.top = `${initY + (pos.y - startY)}px`;
-            };
-            const endDrag = (e) => {
-                isDragging = false;
-                const targetWin = getWin();
-                targetWin.removeEventListener('mousemove', moveDrag); targetWin.removeEventListener('mouseup', endDrag);
-                targetWin.removeEventListener('touchmove', moveDrag); targetWin.removeEventListener('touchend', endDrag);
-                window.removeEventListener('mousemove', moveDrag); window.removeEventListener('mouseup', endDrag);
-                window.removeEventListener('touchmove', moveDrag); window.removeEventListener('touchend', endDrag);
-            };
-            wrapper.addEventListener('mousedown', startDrag);
-            wrapper.addEventListener('touchstart', startDrag, {passive: false});
         }
 
         function createBubble(x, y, area, text = "", existingId = null, existingScores = {}) {
@@ -2071,10 +1945,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function gameLoop() {
             if (!isSymbiosisActive) {
                 updateLinesGeneric(bubblesArray, soloLinesLayer, gradDefsSolo, world, true);
-            } else {
-                if(currentSymbiosisView === 'map') {
-                    updateLinesGeneric(symbiosisBubblesArray, symbiosisLinesLayer, gradDefsSymbiosis, symbiosisWorld, false);
-                }
             }
             mainLoopId = getWin().requestAnimationFrame(gameLoop);
         }
@@ -2121,7 +1991,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
 
                 cancelAnimationFrame(mainLoopId);
                 gameLoop();
-                if(isSymbiosisActive && currentSymbiosisView === 'sphere') {
+                if(isSymbiosisActive) {
                     cancelAnimationFrame(sphereAnimationFrame);
                     animateSphere();
                 }
@@ -2131,7 +2001,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                     pipWindow = null;
                     cancelAnimationFrame(mainLoopId);
                     gameLoop();
-                    if(isSymbiosisActive && currentSymbiosisView === 'sphere') {
+                    if(isSymbiosisActive) {
                         cancelAnimationFrame(sphereAnimationFrame);
                         animateSphere();
                     }
