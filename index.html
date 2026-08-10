@@ -29,7 +29,7 @@
 
         /* --- BARRA LATERAL FLUTUANTE RETRÁTIL DE CONTATOS (LADO DIREITO) --- */
         #contacts-sidebar {
-            position: fixed; top: 35%; right: 0; transform: translateY(-50%);
+            position: fixed; top: 25%; right: 0; transform: translateY(-50%);
             width: 50px; height: 280px; background: rgba(255, 255, 255, 0.35);
             backdrop-filter: blur(20px) saturate(180%);
             border-top-left-radius: 25px; border-bottom-left-radius: 25px;
@@ -173,7 +173,7 @@
 
         /* --- UI INFERIOR (DOCK) --- */
         .bottom-ui-container {
-            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+            position: fixed; bottom: 45px; left: 50%; transform: translateX(-50%);
             z-index: 1000; display: flex; align-items: center; gap: 12px;
             transition: opacity 0.3s, transform 0.3s;
             width: auto; max-width: 100%;
@@ -583,16 +583,26 @@
         .toast-icon { width: 10px; height: 10px; background: #29FA10; border-radius: 50%; box-shadow: 0 0 10px #29FA10; flex-shrink: 0; }
 
         /* --- AJUSTES DE RESPONSIVIDADE --- */
+        @media (max-width: 1920px) {
+            /* Otimizações adaptadas para telas maiores e resolução 1920*1080 */
+            .bottom-ui-container {
+                bottom: 35px;
+            }
+            #contacts-sidebar {
+                top: 28%;
+            }
+        }
+
         @media (max-width: 768px) {
             #app-logo { width: 80px; top: 12px; left: 12px; }
-            #contacts-sidebar { height: 240px; }
+            #contacts-sidebar { height: 240px; top: 25%; }
             #contacts-sidebar.open { width: 240px; }
             
             .bottom-ui-container { 
                 width: 100%; 
                 justify-content: center; 
                 gap: 8px; 
-                bottom: 15px; 
+                bottom: 20px; 
                 padding: 0 10px; 
                 box-sizing: border-box; 
                 max-width: 100vw;
@@ -920,12 +930,10 @@
               }
               localStorage.setItem('nexusProfile', JSON.stringify(profile));
 
-              // Salva a posição/presença inicial com coordenadas aleatórias realistas se houver geolocalização ativa
               if ("geolocation" in navigator) {
                   navigator.geolocation.getCurrentPosition((position) => {
                       updateUserPresence(position.coords.latitude, position.coords.longitude, profile.name);
                   }, () => {
-                      // Fallback simulado para coordenadas base se o GPS falhar
                       updateUserPresence(-23.5505 + (Math.random()-0.5)*0.01, -46.6333 + (Math.random()-0.5)*0.01, profile.name);
                   });
               } else {
@@ -1637,9 +1645,8 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
              }
         }, { passive: false });
 
-        // --- CÁLCULO DE DISTÂNCIA EM METROS (FÓRMULA DE HAVERSINE) ---
         function calculateDistanceInMeters(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // Raio da terra em metros
+            const R = 6371e3;
             const φ1 = lat1 * Math.PI/180;
             const φ2 = lat2 * Math.PI/180;
             const Δφ = (lat2-lat1) * Math.PI/180;
@@ -1650,7 +1657,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                       Math.sin(Δλ/2) * Math.sin(Δλ/2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-            return R * c; // Distância em metros
+            return R * c;
         }
 
         async function initNFCConnection() {
@@ -2123,13 +2130,11 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             const currentTime = new Date().getTime(); 
             const tapLength = currentTime - lastTap;
             
-            // Tratamento especial para mobile: checar se o toque teve deslocamento mínimo (evitando falso positivo de zoom/pan)
             if (e.type === 'touchend') {
                 const endPos = e.changedTouches ? { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY } : { x: 0, y: 0 };
                 const moveDist = Math.hypot(endPos.x - startTouchPos.x, endPos.y - startTouchPos.y);
                 const touchDuration = currentTime - startTouchTime;
                 
-                // Se moveu mais de 10 pixels, considerou-se pan/zoom e não clique de criação
                 if (moveDist > 10 || touchDuration > 400) {
                     lastTap = 0;
                     return;
