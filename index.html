@@ -904,6 +904,18 @@
       const googleProvider = new GoogleAuthProvider();
 
       let currentUserId = "default_user";
+      let currentUserCoords = { lat: null, lon: null };
+
+      // Captura a geolocalização exata atual para calcular a distância em metros
+      if ("geolocation" in navigator) {
+          navigator.geolocation.watchPosition((position) => {
+              currentUserCoords.lat = position.coords.latitude;
+              currentUserCoords.lon = position.coords.longitude;
+              if (currentUserId !== "default_user") {
+                  set(ref(db, 'users/' + currentUserId + '/presence/location'), currentUserCoords);
+              }
+          }, (err) => { console.log("Erro de geolocalização:", err); }, { enableHighAccuracy: true });
+      }
 
       onAuthStateChanged(auth, (user) => {
           if (user) {
@@ -920,10 +932,10 @@
               }
               localStorage.setItem('nexusProfile', JSON.stringify(profile));
 
-              // Atualiza registro do usuário atual no Firebase para listagem real
               set(ref(db, 'users/' + currentUserId + '/presence'), {
                   name: profile.name,
                   handle: profile.handle,
+                  location: currentUserCoords,
                   lastActive: Date.now()
               });
 
@@ -936,7 +948,6 @@
           }
       });
 
-      // Função para buscar usuários REAIS cadastrados no Firebase (Sem simulações falsas)
       function fetchRealUsers() {
           const contactsContainer = document.getElementById('real-contacts-container');
           onValue(ref(db, 'users'), (snapshot) => {
@@ -949,18 +960,25 @@
 
               let count = 0;
               Object.keys(allUsers).forEach(uid => {
-                  if (uid === currentUserId) return; // Não listar a si mesmo
+                  if (uid === currentUserId) return;
                   const userData = allUsers[uid];
                   if (userData && userData.presence) {
                       count++;
                       const item = document.createElement('div');
                       item.classList.add('contact-card-item');
                       const userName = userData.presence.name || "Usuário";
+                      
+                      let distanceText = "Online";
+                      if (currentUserCoords.lat && userData.presence.location && userData.presence.location.lat) {
+                          const dist = calculateDistanceMeters(currentUserCoords.lat, currentUserCoords.lon, userData.presence.location.lat, userData.presence.location.lon);
+                          distanceText = `${Math.round(dist)} metros de você`;
+                      }
+
                       item.innerHTML = `
                           <div class="contact-avatar">${userName[0].toUpperCase()}</div>
                           <div class="contact-info">
                               <span class="contact-name">${userName}</span>
-                              <span class="contact-status">Online</span>
+                              <span class="contact-status">${distanceText}</span>
                           </div>
                       `;
                       item.addEventListener('click', () => {
@@ -976,6 +994,23 @@
           });
       }
 
+      function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+          const R = 6371e3; // Raio da Terra em metros
+          const φ1 = lat1 * Math.PI/180;
+          const φ2 = lat2 * Math.PI/180;
+          const Δφ = (lat2-lat1) * Math.PI/180;
+          const Δλ = (lon2-lon1) * Math.PI/180;
+
+          const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+          return R * c;
+      }
+
+      window.calculateDistanceMeters = calculateDistanceMeters;
+      window.currentUserCoords = currentUserCoords;
       window.firebaseAuthModules = { 
           auth, 
           createUserWithEmailAndPassword, 
@@ -1623,7 +1658,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
              }
         }, { passive: false });
 
-        // --- CONEXÃO POR APROXIMAÇÃO NFC E GEOLOCALIZAÇÃO FUNCIONAL ---
+        // --- CONEXÃO POR APROXIMAÇÃO NFC E GEOLOCALIZAÇÃO ---
         
         async function initNFCConnection() {
             if ('NDEFReader' in window) {
@@ -1643,7 +1678,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                         }
                     };
                 } catch (error) {
-                    console.log("NFC indisponível ou negado, utilizando detecção por proximidade real Firebase/Geo:", error);
+                    console.log("NFC indisponível, utilizando detecção por proximidade em metros:", error);
                     startGeoDiscovery();
                 }
             } else {
@@ -1659,7 +1694,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function startGeoDiscovery() {
             symbiosisBtn.classList.add('searching'); 
             radarOverlay.classList.add('active');
-            showToast("Buscando mentes próximas por geolocalização...");
+            showToast("Calculando distância das mentes próximas...");
             
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(
@@ -1676,7 +1711,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             }
         }
 
-        // Busca exclusivamente usuários REAIS da base de dados (Sem simulações/fakes)
         function fetchRealUsersNearby() {
             symbiosisBtn.classList.remove('searching'); 
             radarOverlay.classList.remove('active');
@@ -1687,7 +1721,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 usersListContent.innerHTML = '';
                 
                 if (!allUsers) {
-                    usersListContent.innerHTML = '<div class="empty-state">Nenhum usuário real encontrado nas proximidades.</div>';
+                    usersListContent.innerHTML = '<div class="empty-state">Nenhum usuário encontrado nas proximidades.</div>';
                     nearbyUsersOverlay.classList.add('active');
                     return;
                 }
@@ -1698,23 +1732,30 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                     const userData = allUsers[uid];
                     if (userData && userData.presence) {
                         foundCount++;
-                        const realUser = { name: userData.presence.name || "Explorador", area: "mind", color: "#37617A" };
+                        const realUserName = userData.presence.name || "Explorador";
+                        
+                        let distanceStr = "Distância desconhecida";
+                        if (window.currentUserCoords.lat && userData.presence.location && userData.presence.location.lat) {
+                            const meters = window.calculateDistanceMeters(window.currentUserCoords.lat, window.currentUserCoords.lon, userData.presence.location.lat, userData.presence.location.lon);
+                            distanceStr = `${Math.round(meters)} metros de você`;
+                        }
+
                         const item = getDoc().createElement('div');
                         item.classList.add('user-item');
                         item.innerHTML = `
-                            <div class="user-avatar" style="background:${realUser.color}">${realUser.name[0]}</div>
+                            <div class="user-avatar" style="background:#37617A">${realUserName[0]}</div>
                             <div class="user-info">
-                                <span class="user-name">${realUser.name}</span>
-                                <span class="user-meta">Conectado ao site • Usuário Real</span>
+                                <span class="user-name">${realUserName}</span>
+                                <span class="user-meta">${distanceStr} • Simbiose Pronta</span>
                             </div>
                         `;
-                        item.addEventListener('click', () => { closeUsersList(); activateSymbiosisMode(realUser); });
+                        item.addEventListener('click', () => { closeUsersList(); activateSymbiosisMode({ name: realUserName, area: "mind" }); });
                         usersListContent.appendChild(item);
                     }
                 });
 
                 if (foundCount === 0) {
-                    usersListContent.innerHTML = '<div class="empty-state">Nenhum outro usuário real online no momento. Compartilhe o site com um amigo para testar!</div>';
+                    usersListContent.innerHTML = '<div class="empty-state">Nenhum outro usuário online nas proximidades no momento.</div>';
                 }
                 
                 nearbyUsersOverlay.classList.add('active');
@@ -2071,8 +2112,16 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function handleCreateGesture(e) {
             if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
             if(e.target !== viewport && e.target !== world && e.target.id !== 'solo-lines') return;
+            
             const currentTime = new Date().getTime(); 
             const tapLength = currentTime - lastTap;
+            
+            // Tratativa refinada para prevenir criação de bolinhas indesejadas no zoom/pinch
+            if (e.touches && e.touches.length > 1) {
+                lastTap = 0;
+                return;
+            }
+
             if (e.type === 'dblclick' || (e.type === 'touchend' && tapLength < 300 && tapLength > 0)) {
                 e.preventDefault(); 
                 const pos = getEventPos(e.changedTouches ? e.changedTouches[0] : e);
@@ -2132,3 +2181,4 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
     </script>
 </body>
 </html>
+[cite: 1]
