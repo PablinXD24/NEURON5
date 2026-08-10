@@ -293,16 +293,21 @@ body {
 .s-stat h4 { margin: 0; font-size: 16px; color: #333; }
 .s-stat span { font-size: 10px; color: #999; text-transform: uppercase; }
 
-/* NOTÍCIAS SIDEBAR */
+/* NOTÍCIAS SIDEBAR ATUALIZADO (MÚLTIPLOS CARROSSÉIS) */
 #news-sections-container { display: flex; flex-direction: column; gap: 20px; margin-top: 15px; }
 .sidebar-news-section { display: flex; flex-direction: column; gap: 15px; }
 .sidebar-news-title { font-size: 12px; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 
 .sidebar-news-carousel { display: flex; flex-direction: column; gap: 10px; width: 100%; overflow: hidden; }
 .sidebar-news-content { 
-    display: flex; gap: 15px; overflow-x: auto; 
-    scroll-snap-type: x mandatory; scroll-behavior: smooth;
-    -ms-overflow-style: none; scrollbar-width: none; padding-bottom: 5px;
+    display: flex; 
+    gap: 15px; 
+    overflow-x: auto; 
+    scroll-snap-type: x mandatory; 
+    scroll-behavior: smooth;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    padding-bottom: 5px;
 }
 .sidebar-news-content::-webkit-scrollbar { display: none; }
 
@@ -310,7 +315,10 @@ body {
     display: flex; flex-direction: column; background: #fff; border-radius: 16px;
     text-decoration: none; box-shadow: 0 4px 15px rgba(0,0,0,0.04);
     transition: 0.3s; border: 1px solid #eee; overflow: hidden;
-    flex: 0 0 85%; scroll-snap-align: start; box-sizing: border-box; min-height: 270px;
+    flex: 0 0 85%;
+    scroll-snap-align: start;
+    box-sizing: border-box;
+    min-height: 270px;
 }
 .s-news-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); border-color: #ddd; }
 .s-news-img { width: 100%; height: 140px; background-size: cover; background-position: center; background-color: #f0f0f0; flex-shrink: 0; }
@@ -509,37 +517,130 @@ input:checked + .slider:before { transform: translateX(18px); }
 .toast.show { transform: translateX(-50%) translateY(0); }
 .toast-icon { width: 10px; height: 10px; background: #29FA10; border-radius: 50%; box-shadow: 0 0 10px #29FA10; flex-shrink: 0; }
 
-/* --- RESPONSIVIDADE MOBILE --- */
+/* --- AJUSTES DE RESPONSIVIDADE MOBILE APRIMORADOS --- */
 @media (max-width: 768px) {
     #app-logo { width: 85px; top: 12px; left: 12px; }
     
     .bottom-ui-container { 
-        width: 100%; justify-content: center; gap: 8px; bottom: 20px; padding: 0 8px; box-sizing: border-box; max-width: 100vw;
+        width: 100%; 
+        justify-content: center; 
+        gap: 8px; 
+        bottom: 20px; 
+        padding: 0 8px; 
+        box-sizing: border-box; 
+        max-width: 100vw;
     }
-    .dock-btn { width: 44px; height: 44px; }
-    .dock-btn svg { width: 19px; height: 19px; }
-    .morph-dock.open { width: calc(100vw - 110px); height: 65px; justify-content: flex-start; padding: 0; }
-    .morph-ai-bar.open { width: calc(100vw - 75px); height: 50px; }
-    .morph-dock.open .color-list { padding: 0 10px; width: auto; justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .color-option { width: 32px; height: 32px; margin-right: 4px; }
+    .dock-btn {
+        width: 44px;
+        height: 44px;
+    }
+    .dock-btn svg {
+        width: 19px;
+        height: 19px;
+    }
+    .morph-dock.open { 
+        width: calc(100vw - 110px); 
+        height: 65px; 
+        justify-content: flex-start; 
+        padding: 0; 
+    }
+    .morph-ai-bar.open { 
+        width: calc(100vw - 75px); 
+        height: 50px;
+    }
+    .morph-dock.open .color-list { 
+        padding: 0 10px; 
+        width: auto; 
+        justify-content: flex-start; 
+        overflow-x: auto; 
+        -webkit-overflow-scrolling: touch; 
+    }
+    .color-option { 
+        width: 32px;
+        height: 32px;
+        margin-right: 4px; 
+    }
     
-    .profile-modal { flex-direction: column; overflow-y: auto; height: 92vh; width: 95vw; border-radius: 25px; }
-    .profile-sidebar { width: 100%; padding: 20px 15px; border-right: none; border-bottom: 1px solid #eee; box-sizing: border-box; height: auto; flex-shrink: 0; }
-    .profile-content { overflow: visible; }
-    .profile-nav { overflow-x: auto; padding: 12px 15px; justify-content: flex-start; gap: 15px; }
-    .nav-item { font-size: 13px; padding-bottom: 6px; }
-    .tab-content-area { padding: 15px; }
-    .neural-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .edit-form { grid-template-columns: 1fr; gap: 10px; }
-    .form-group.full { grid-column: span 1; }
-    .save-btn { grid-column: span 1; padding: 12px; font-size: 15px; }
+    .profile-modal { 
+        flex-direction: column; 
+        overflow-y: auto; 
+        height: 92vh; 
+        width: 95vw;
+        border-radius: 25px;
+    }
+    .profile-sidebar { 
+        width: 100%; 
+        padding: 20px 15px; 
+        border-right: none; 
+        border-bottom: 1px solid #eee; 
+        box-sizing: border-box; 
+        height: auto; 
+        flex-shrink: 0; 
+    }
+    .profile-content { 
+        overflow: visible; 
+    }
+    .profile-nav { 
+        overflow-x: auto; 
+        padding: 12px 15px; 
+        justify-content: flex-start; 
+        gap: 15px;
+    }
+    .nav-item {
+        font-size: 13px;
+        padding-bottom: 6px;
+    }
+    .tab-content-area {
+        padding: 15px;
+    }
+    .neural-grid { 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 10px; 
+    }
+    .edit-form { 
+        grid-template-columns: 1fr; 
+        gap: 10px;
+    }
+    .form-group.full { 
+        grid-column: span 1; 
+    }
+    .save-btn {
+        grid-column: span 1;
+        padding: 12px;
+        font-size: 15px;
+    }
     
-    .popup-card { width: 90%; margin-top: -10%; padding: 20px; border-radius: 20px; }
-    #popupInput { height: 70px; padding: 10px; font-size: 13px; }
-    .users-list-card { width: 92%; max-height: 75vh; padding: 18px; border-radius: 20px; }
+    .popup-card { 
+        width: 90%;
+        margin-top: -10%; 
+        padding: 20px;
+        border-radius: 20px;
+    }
+    #popupInput {
+        height: 70px;
+        padding: 10px;
+        font-size: 13px;
+    }
+    .users-list-card {
+        width: 92%;
+        max-height: 75vh;
+        padding: 18px;
+        border-radius: 20px;
+    }
     
-    #sphere-view { transform: scale(0.7); }
-    .sphere-text { font-size: 13px; letter-spacing: 1.5px; }
-    .symbiosis-header { top: 15px; padding: 0 12px; }
-    .header-btn { padding: 6px 10px; font-size: 10px; }
+    #sphere-view { 
+        transform: scale(0.7); 
+    }
+    .sphere-text { 
+        font-size: 13px; 
+        letter-spacing: 1.5px; 
+    }
+    .symbiosis-header {
+        top: 15px;
+        padding: 0 12px;
+    }
+    .header-btn {
+        padding: 6px 10px;
+        font-size: 10px;
+    }
 }
