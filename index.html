@@ -418,10 +418,12 @@
 
         /* --- SIMBIOSE & OVERLAYS --- */
         #symbiosis-dimension { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
             background: radial-gradient(circle at center, #10151a 0%, #000000 100%); 
             z-index: 2000; display: none; justify-content: center; align-items: center; 
             opacity: 0; transition: opacity 0.5s ease; 
+            overflow: hidden;
+            box-sizing: border-box;
         }
         #symbiosis-dimension.active { display: flex; opacity: 1; pointer-events: auto; }
         
@@ -431,22 +433,22 @@
             padding: 0 20px; box-sizing: border-box; pointer-events: none; z-index: 2001; 
         }
         .symbiosis-title { color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; font-size: 12px; }
-        .header-actions { display: flex; gap: 8px; pointer-events: auto; }
+        .header-actions { display: flex; gap: 8px; align-items: center; pointer-events: auto; }
         .header-btn { 
             background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); 
-            padding: 8px 12px; border-radius: 20px; cursor: pointer; backdrop-filter: blur(5px); 
-            font-weight: 600; font-size: 11px;
+            padding: 8px 14px; border-radius: 20px; cursor: pointer; backdrop-filter: blur(5px); 
+            font-weight: 600; font-size: 11px; white-space: nowrap; transition: background 0.2s;
         }
+        .header-btn:active { background: rgba(255, 255, 255, 0.25); }
 
         #sphere-view { perspective: 1000px; display: flex; align-items: center; justify-content: center; cursor: grab; position: absolute; width: 100%; height: 100%; overflow: hidden; }
         #neural-sphere { position: relative; width: 0; height: 0; transform-style: preserve-3d; }
-        .sphere-node { position: absolute; width: 28px; height: 28px; border-radius: 50%; top: 0; left: 0; transform: translate(-50%, -50%); box-shadow: 0 0 15px currentColor; will-change: transform, opacity; cursor: pointer; }
-        .sphere-node:hover .message-tooltip { opacity: 1; }
+        .sphere-node { position: absolute; width: 14px; height: 14px; border-radius: 50%; top: 0; left: 0; transform: translate(-50%, -50%); box-shadow: 0 0 15px currentColor; will-change: transform, opacity; }
         .sphere-text { 
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); color: white; font-size: 14px; 
-            font-weight: 600; text-align: center;
-            text-shadow: 0 0 20px rgba(41, 250, 16, 0.8); pointer-events: none; opacity: 0.9; letter-spacing: 2px; 
-            white-space: nowrap; z-index: 2001;
+            position: absolute; bottom: 15vh; left: 50%; transform: translateX(-50%); color: white; font-size: 14px; 
+            font-weight: 400; text-align: center;
+            text-shadow: 0 0 20px rgba(41, 250, 16, 0.8); pointer-events: none; opacity: 0.8; letter-spacing: 3px; 
+            width: 100%; z-index: 2001;
         }
         
         #symbiosis-map-container { position: absolute; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
@@ -530,6 +532,7 @@
         @media (max-width: 768px) {
             #app-logo { width: 85px; top: 12px; left: 12px; }
             
+            /* Posicionamento e dimensionamento da Dock inferior adaptados para mobile */
             .bottom-ui-container { 
                 width: 100%; 
                 justify-content: center; 
@@ -570,6 +573,7 @@
                 margin-right: 4px; 
             }
             
+            /* Ajustes do Modal de Perfil para mobile */
             .profile-modal { 
                 flex-direction: column; 
                 overflow-y: auto; 
@@ -619,6 +623,7 @@
                 font-size: 15px;
             }
             
+            /* Popups e Modais Gerais */
             .popup-card { 
                 width: 90%;
                 margin-top: -10%; 
@@ -637,9 +642,14 @@
                 border-radius: 20px;
             }
             
+            /* Visão de Simbiose e Esfera no Mobile */
+            #sphere-view { 
+                transform: scale(0.85); 
+            }
             .sphere-text { 
                 font-size: 12px; 
-                letter-spacing: 1px; 
+                letter-spacing: 1.5px; 
+                bottom: 12vh;
             }
             .symbiosis-header {
                 top: 15px;
@@ -825,13 +835,12 @@
         <div class="symbiosis-header">
             <div class="symbiosis-title">Fusão Neural</div>
             <div class="header-actions">
+                <button id="toggle-view" class="header-btn"><span>Alternar Visão</span></button>
                 <button id="close-symbiosis" class="header-btn">Encerrar</button>
             </div>
         </div>
-        <div id="sphere-view" class="symbiosis-view active-view">
-            <div id="neural-sphere"></div>
-            <div class="sphere-text">CONEXÃO ATIVA</div>
-        </div>
+        <div id="sphere-view" class="symbiosis-view active-view"><div id="neural-sphere"></div><div class="sphere-text">CONEXÃO ATIVA</div></div>
+        <div id="symbiosis-map-container" class="symbiosis-view hidden-view"><div id="symbiosis-world"><svg class="lines-layer" id="symbiosis-lines"><defs id="grad-defs-symbiosis"></defs></svg></div></div>
     </div>
 
     <div class="bottom-ui-container" id="mainUI">
@@ -981,6 +990,11 @@
         const symbiosisDimension = document.getElementById('symbiosis-dimension');
         const sphereView = document.getElementById('sphere-view');
         const neuralSphere = document.getElementById('neural-sphere');
+        const symbiosisMapContainer = document.getElementById('symbiosis-map-container');
+        const symbiosisWorld = document.getElementById('symbiosis-world');
+        const symbiosisLinesLayer = document.getElementById('symbiosis-lines');
+        const gradDefsSymbiosis = document.getElementById('grad-defs-symbiosis');
+        const toggleViewBtn = document.getElementById('toggle-view');
         const nearbyUsersOverlay = document.getElementById('nearby-users-overlay');
         const usersListContent = document.getElementById('users-list-content');
         const closeUsersBtn = document.getElementById('closeUsers');
@@ -1050,9 +1064,11 @@
         let currentBubble = null;
         let pendingCreationCoords = null; 
         let isSymbiosisActive = false;
+        let currentSymbiosisView = 'sphere';
         let worldX = 0, worldY = 0, scale = 1, isPanning = false, startPanX = 0, startPanY = 0;
         let initialPinchDist = 0;
         let initialScale = 1;
+        let mainLoopId;
         let sphereAnimationFrame;
 
         function updateWorldTransform() {
@@ -1069,6 +1085,7 @@
         };
 
         let allNewsData = {};
+        let allNewsFetched = false;
 
         function stripHtml(html) {
             let tmp = getDoc().createElement("DIV");
@@ -1546,8 +1563,13 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function startDiscovery() {
             symbiosisBtn.classList.add('searching'); radarOverlay.classList.add('active');
             showToast("Buscando sinais neurais próximos...");
-            // Ajuste no tempo de pesquisa para ser rápido (400ms)
-            setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 400);
+            // AJUSTE: Tempo de busca reduzido para 800ms (antes era 2500ms)
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => { setTimeout(() => { showNearbyUsers(position.coords.latitude, position.coords.longitude); }, 800); },
+                    (error) => { setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 800); }
+                );
+            } else { setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 800); }
         }
 
         function showNearbyUsers(userLat, userLon) {
@@ -1581,6 +1603,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             viewport.classList.add('blurred'); symbiosisDimension.classList.add('active');
             mainUI.classList.add('hidden-ui');
             showToast(`Conectado com ${targetUser.name}`);
+            switchSymbiosisView('sphere');
             generateSymbiosisData(targetUser); 
             initSphereRotation();
         }
@@ -1591,21 +1614,15 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             neuralSphere.innerHTML = '';
             spherePoints = [];
             const count = symbiosisBubblesArray.length;
-            const radius = getWin().innerWidth < 600 ? 130 : 160;
+            const radius = getWin().innerWidth < 600 ? 140 : 180;
 
             symbiosisBubblesArray.forEach((bubble, i) => {
                 const node = getDoc().createElement('div');
                 node.classList.add('sphere-node');
                 node.style.backgroundColor = bubble.area.color;
                 node.style.color = bubble.area.color;
-                node.style.boxShadow = `0 0 15px ${bubble.area.color}, 0 0 30px ${bubble.area.color}`;
 
-                const tooltip = getDoc().createElement('div');
-                tooltip.classList.add('message-tooltip');
-                tooltip.innerText = bubble.text;
-                node.appendChild(tooltip);
-
-                const y = 1 - (i / (Math.max(1, count - 1))) * 2;
+                const y = 1 - (i / (count - 1)) * 2;
                 const r = Math.sqrt(1 - y * y);
                 const theta = i * 2.4; 
 
@@ -1621,7 +1638,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         }
 
         function animateSphere() {
-            if (!isSymbiosisActive) {
+            if (!isSymbiosisActive || currentSymbiosisView !== 'sphere') {
                 getWin().cancelAnimationFrame(sphereAnimationFrame);
                 return;
             }
@@ -1642,11 +1659,31 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             sphereAnimationFrame = getWin().requestAnimationFrame(animateSphere);
         }
 
+        function switchSymbiosisView(viewType) {
+            currentSymbiosisView = viewType;
+            if (viewType === 'sphere') {
+                sphereView.classList.remove('hidden-view'); sphereView.classList.add('active-view');
+                symbiosisMapContainer.classList.remove('active-view'); symbiosisMapContainer.classList.add('hidden-view');
+                toggleViewBtn.innerHTML = '<span>Ver Mapa</span>';
+                initSphereRotation();
+            } else {
+                sphereView.classList.remove('active-view'); sphereView.classList.add('hidden-view');
+                symbiosisMapContainer.classList.remove('active-view'); symbiosisMapContainer.classList.add('active-view');
+                toggleViewBtn.innerHTML = '<span>Ver Esfera</span>';
+                getWin().cancelAnimationFrame(sphereAnimationFrame);
+            }
+        }
+        sphereView.addEventListener('click', () => switchSymbiosisView('map'));
+        toggleViewBtn.addEventListener('click', () => switchSymbiosisView(currentSymbiosisView === 'sphere' ? 'map' : 'sphere'));
+
         document.getElementById('close-symbiosis').addEventListener('click', () => {
             isSymbiosisActive = false;
             viewport.classList.remove('blurred'); symbiosisDimension.classList.remove('active');
             mainUI.classList.remove('hidden-ui');
-            neuralSphere.innerHTML = '';
+            while (symbiosisLinesLayer.querySelectorAll('line').length > 0) symbiosisLinesLayer.removeChild(symbiosisLinesLayer.lastChild);
+            gradDefsSymbiosis.innerHTML = '';
+            const oldBubbles = symbiosisWorld.querySelectorAll('.circle-wrapper');
+            oldBubbles.forEach(b => b.remove());
             symbiosisBubblesArray = [];
             getWin().cancelAnimationFrame(sphereAnimationFrame);
             viewport.style.pointerEvents = 'auto';
@@ -1655,23 +1692,71 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function generateSymbiosisData(targetUser) {
             symbiosisBubblesArray = [];
             bubblesArray.forEach(b => {
-                symbiosisBubblesArray.push({
-                    area: b.area,
-                    text: b.tooltip.innerText
-                });
+                createSymbiosisBubble(parseInt(b.wrapper.style.left) - 200, parseInt(b.wrapper.style.top), b.area, b.tooltip.innerText, b.scores);
             });
             let partnerBubbles = [];
             if(targetUser.area === "mind") partnerBubbles = [ {t: "Filosofia Quântica", a: "mind"}, {t: "Lógica Fuzzy", a: "mind"}, {t: "Café sem açúcar", a: "health"} ];
             else if (targetUser.area === "career") partnerBubbles = [ {t: "Startup Unicórnio", a: "career"}, {t: "Networking", a: "social"}, {t: "Investimento Anjo", a: "career"} ];
             else partnerBubbles = [ {t: "Meditação", a: "spirit"}, {t: "Yoga no Parque", a: "health"}, {t: "Paz Interior", a: "spirit"} ];
 
-            partnerBubbles.forEach(p => {
+            partnerBubbles.forEach(async p => {
                 const area = lifeAreas.find(a => a.id === p.a);
-                symbiosisBubblesArray.push({
-                    area: area,
-                    text: p.t
-                });
+                const scores = (await analyzeFullContext(p.t)).scores;
+                const rx = (Math.random() * 400) - 100;
+                const ry = (Math.random() * 400) - 200;
+                createSymbiosisBubble(rx, ry, area, p.t, scores);
             });
+        }
+
+        function createSymbiosisBubble(x, y, area, text, scores) {
+            const wrapper = getDoc().createElement('div');
+            wrapper.classList.add('circle-wrapper');
+            wrapper.style.left = `${x}px`; wrapper.style.top = `${y}px`;
+            const circle = getDoc().createElement('div');
+            circle.classList.add('neon-circle');
+            circle.style.backgroundColor = area.color;
+            circle.style.boxShadow = `0 0 10px ${area.color}, 0 0 25px ${area.color}90`;
+            circle.style.animationDuration = `${(Math.random()*3+4).toFixed(2)}s`;
+            const tooltip = getDoc().createElement('div');
+            tooltip.classList.add('message-tooltip'); tooltip.innerText = text;
+            circle.appendChild(tooltip); wrapper.appendChild(circle); symbiosisWorld.appendChild(wrapper);
+            const bubbleObj = { wrapper, circle, area, scores, id: Math.random(), tooltip }; 
+            symbiosisBubblesArray.push(bubbleObj);
+            setupSimpleDrag(wrapper);
+        }
+
+        function setupSimpleDrag(wrapper) {
+            let isDragging = false; let startX, startY, initX, initY;
+            const startDrag = (e) => {
+                e.stopPropagation(); isDragging = true;
+                const pos = getEventPos(e);
+                startX = pos.x; startY = pos.y;
+                initX = parseInt(wrapper.style.left); initY = parseInt(wrapper.style.top);
+                const targetWin = getWin();
+                if(e.type === 'mousedown') {
+                    targetWin.addEventListener('mousemove', moveDrag);
+                    targetWin.addEventListener('mouseup', endDrag);
+                } else {
+                    targetWin.addEventListener('touchmove', moveDrag, {passive:false});
+                    targetWin.addEventListener('touchend', endDrag);
+                }
+            };
+            const moveDrag = (e) => {
+                if(!isDragging) return;
+                const pos = getEventPos(e);
+                wrapper.style.left = `${initX + (pos.x - startX)}px`;
+                wrapper.style.top = `${initY + (pos.y - startY)}px`;
+            };
+            const endDrag = (e) => {
+                isDragging = false;
+                const targetWin = getWin();
+                targetWin.removeEventListener('mousemove', moveDrag); targetWin.removeEventListener('mouseup', endDrag);
+                targetWin.removeEventListener('touchmove', moveDrag); targetWin.removeEventListener('touchend', endDrag);
+                window.removeEventListener('mousemove', moveDrag); window.removeEventListener('mouseup', endDrag);
+                window.removeEventListener('touchmove', moveDrag); window.removeEventListener('touchend', endDrag);
+            };
+            wrapper.addEventListener('mousedown', startDrag);
+            wrapper.addEventListener('touchstart', startDrag, {passive: false});
         }
 
         function createBubble(x, y, area, text = "", existingId = null, existingScores = {}) {
@@ -1681,50 +1766,390 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             circle.appendChild(tooltip); wrapper.appendChild(circle); world.appendChild(wrapper);
             const bubbleObj = { id: existingId || (Date.now()+Math.random()), wrapper, circle, area, tooltip, scores: existingScores };
             bubblesArray.push(bubbleObj);
+            setupInteraction(bubbleObj);
             return bubbleObj; 
         }
 
-        function openPopup(bubble) {
-            currentBubble = bubble;
-            popupTitle.innerText = bubble.area.name;
-            popupCard.style.borderTopColor = bubble.area.color;
-            popupInput.value = bubble.tooltip.innerText;
-            aiBadge.className = "ai-badge ai-active";
-            aiBadgeText.innerText = "Sinal Sincronizado";
-            popupOverlay.classList.add('active');
-            setTimeout(() => popupInput.focus(), 100);
+        function setupInteraction(bubbleObj) {
+            let isDraggingBubble = false; let dragStartX, dragStartY, initialBubbleLeft, initialBubbleTop;
+            const wrapper = bubbleObj.wrapper;
+            
+            function onBubbleStart(e) { 
+                e.stopPropagation(); 
+                isDraggingBubble = false; 
+                const pos = getEventPos(e); 
+                dragStartX = pos.x; 
+                dragStartY = pos.y; 
+                initialBubbleLeft = parseInt(wrapper.style.left||0); 
+                initialBubbleTop = parseInt(wrapper.style.top||0); 
+                const targetWin = getWin();
+                if(e.type === 'mousedown') { 
+                    targetWin.addEventListener('mousemove', onBubbleMove); 
+                    targetWin.addEventListener('mouseup', onBubbleEnd); 
+                } else { 
+                    targetWin.addEventListener('touchmove', onBubbleMove, {passive: false}); 
+                    targetWin.addEventListener('touchend', onBubbleEnd); 
+                } 
+            }
+            function onBubbleMove(e) { 
+                isDraggingBubble = true; 
+                e.preventDefault(); 
+                const pos = getEventPos(e); 
+                const dx = (pos.x - dragStartX)/scale; 
+                const dy = (pos.y - dragStartY)/scale; 
+                wrapper.style.left = `${initialBubbleLeft + dx}px`; 
+                wrapper.style.top = `${initialBubbleTop + dy}px`; 
+            }
+            function onBubbleEnd(e) { 
+                const targetWin = getWin();
+                if(e.type === 'mouseup') { 
+                    targetWin.removeEventListener('mousemove', onBubbleMove); 
+                    targetWin.removeEventListener('mouseup', onBubbleEnd); 
+                    window.removeEventListener('mousemove', onBubbleMove); 
+                    window.removeEventListener('mouseup', onBubbleEnd); 
+                } else { 
+                    targetWin.removeEventListener('touchmove', onBubbleMove); 
+                    targetWin.removeEventListener('touchend', onBubbleEnd); 
+                    window.removeEventListener('touchmove', onBubbleMove); 
+                    window.removeEventListener('touchend', onBubbleEnd); 
+                } 
+                if(!isDraggingBubble) openPopup(bubbleObj); 
+                else saveData(); 
+            }
+            wrapper.addEventListener('mousedown', onBubbleStart); 
+            wrapper.addEventListener('touchstart', onBubbleStart, {passive: false});
         }
 
-        btnSave.addEventListener('click', () => {
-            if(currentBubble) {
-                currentBubble.tooltip.innerText = popupInput.value;
-                popupOverlay.classList.remove('active');
-                showToast("Ideia atualizada com sucesso!");
+        function openPopup(bubbleObj) { 
+            currentBubble = bubbleObj; 
+            popupInput.value = bubbleObj ? bubbleObj.tooltip.innerText : ""; 
+            updatePopupStyle(bubbleObj ? bubbleObj.area : activeArea); 
+            aiBadge.classList.remove('ai-active');
+            aiBadgeText.innerText = "Aguardando IA...";
+            popupOverlay.classList.add('active'); 
+            setTimeout(() => popupInput.focus(), 100); 
+        }
+
+        function updatePopupStyle(area) { 
+            popupCard.style.borderTopColor = area.color; 
+            popupTitle.style.color = area.color; 
+            popupTitle.innerText = area.name; 
+            btnSave.style.backgroundColor = area.color; 
+        }
+
+        function closePopup() { 
+            popupOverlay.classList.remove('active'); 
+            currentBubble = null; 
+            pendingCreationCoords = null;
+        }
+        
+        btnSave.addEventListener('click', async () => { 
+            const text = popupInput.value.trim();
+            if (!text) {
+                showToast("Digite um assunto para salvar a ideia.");
+                return;
             }
+
+            if (currentBubble) { 
+                currentBubble.tooltip.innerText = text; 
+                aiBadgeText.innerText = "Analisando com IA...";
+                aiBadge.classList.remove('ai-active');
+                
+                const result = await analyzeFullContext(text); 
+                currentBubble.scores = result.scores; 
+                if (result.dominant && result.dominant.id !== currentBubble.area.id) { 
+                    currentBubble.area = result.dominant; 
+                    currentBubble.circle.style.backgroundColor = result.dominant.color; 
+                    currentBubble.circle.style.boxShadow = `0 0 10px ${result.dominant.color}, 0 0 25px ${result.dominant.color}90`; 
+                } 
+                saveData(); 
+            } else if (pendingCreationCoords) {
+                aiBadgeText.innerText = "Analisando com IA...";
+                aiBadge.classList.remove('ai-active');
+
+                const result = await analyzeFullContext(text);
+                const assignedArea = result.dominant || activeArea;
+                
+                const newBubble = createBubble(pendingCreationCoords.x, pendingCreationCoords.y, assignedArea, text, null, result.scores);
+                if (result.dominant) {
+                    newBubble.area = result.dominant;
+                    newBubble.circle.style.backgroundColor = result.dominant.color;
+                    newBubble.circle.style.boxShadow = `0 0 10px ${result.dominant.color}, 0 0 25px ${result.dominant.color}90`;
+                }
+                saveData();
+            }
+            closePopup(); 
         });
 
-        btnDelete.addEventListener('click', () => {
-            if(currentBubble) {
-                currentBubble.wrapper.remove();
-                bubblesArray = bubblesArray.filter(b => b !== currentBubble);
-                popupOverlay.classList.remove('active');
-                showToast("Ideia excluída.");
+        let typingTimer;
+        popupInput.addEventListener('input', (e) => {
+            clearTimeout(typingTimer);
+            const text = e.target.value.trim();
+            if(!text) {
+                aiBadgeText.innerText = "Aguardando IA...";
+                aiBadge.classList.remove('ai-active');
+                return;
             }
+
+            aiBadgeText.innerText = "IA pensando...";
+            aiBadge.classList.remove('ai-active');
+
+            typingTimer = setTimeout(async () => {
+                const result = await analyzeFullContext(text); 
+                if(result.dominant) {
+                    updatePopupStyle(result.dominant);
+                    aiBadgeText.innerText = `IA Ativa: ${result.dominant.name}`;
+                    aiBadge.classList.add('ai-active');
+                }
+            }, 500);
         });
 
-        function showToast(text) {
-            toastText.innerText = text;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+        btnDelete.addEventListener('click', () => { 
+            if (currentBubble) { 
+                currentBubble.wrapper.remove(); 
+                bubblesArray = bubblesArray.filter(b => b.id !== currentBubble.id); 
+                saveData(); 
+            } 
+            closePopup(); 
+        });
+        popupOverlay.addEventListener('click', (e) => { if (e.target === popupOverlay) closePopup(); });
+
+        async function analyzeFullContext(text) {
+            if (!text || text.trim() === "") return { dominant: activeArea, scores: {} };
+            return fallbackKeywordAnalysis(text);
         }
 
-        function loadData() {
-            // Mock de carregamento inicial
-            createBubble(100, 100, lifeAreas[0], "Fazer treino de força focado em hipertrofia");
-            createBubble(-150, 200, lifeAreas[1], "Estudar arquitetura de microsserviços");
-            buildNewsUI();
-            fetchAllNews();
+        function fallbackKeywordAnalysis(text) {
+            const cleanText = text.toLowerCase();
+            let scores = {};
+            let maxScore = 0;
+            let dominantArea = activeArea;
+            
+            lifeAreas.forEach(area => scores[area.id] = 0);
+            
+            const smartMap = {
+                health: ['saude', 'corpo', 'academia', 'treino', 'comer', 'peso', 'dormir', 'agua', 'corrida', 'medico', 'consulta', 'atestado', 'exame', 'remedio', 'dor', 'hospital', 'doente'],
+                mind: ['estudar', 'livro', 'ler', 'curso', 'faculdade', 'codigo', 'aprender', 'foco', 'projeto', 'programar'],
+                social: ['amor', 'namorado', 'casamento', 'mae', 'pai', 'amigos', 'festa', 'encontro', 'familia', 'gente'],
+                career: ['trabalho', 'emprego', 'dinheiro', 'salario', 'projeto', 'chefe', 'empresa', 'negocio', 'vendas', 'financas', 'falta', 'atestado', 'ponto', 'cargo'],
+                spirit: ['deus', 'fé', 'orar', 'meditar', 'paz', 'universo', 'gratidao', 'alma', 'proposito', 'energia']
+            };
+
+            lifeAreas.forEach(area => {
+                const words = smartMap[area.id] || [];
+                words.forEach(word => {
+                    if (cleanText.includes(word)) scores[area.id] += 2;
+                });
+                if (scores[area.id] > maxScore) {
+                    maxScore = scores[area.id];
+                    dominantArea = area;
+                }
+            });
+
+            if (maxScore === 0) scores[activeArea.id] = 1;
+            return { dominant: dominantArea, scores: scores };
         }
+
+        function saveData() {
+            const data = bubblesArray.map(b => ({ id: b.id, x: parseInt(b.wrapper.style.left), y: parseInt(b.wrapper.style.top), text: b.tooltip.innerText, areaId: b.area.id, scores: b.scores }));
+            const { db, ref, set } = window.firebaseDbModules;
+            const userId = window.getCurrentUserId();
+            set(ref(db, 'users/' + userId + '/bubbles'), data);
+        }
+        
+        function loadData() { 
+            const { db, ref, onValue } = window.firebaseDbModules;
+            const userId = window.getCurrentUserId();
+            onValue(ref(db, 'users/' + userId + '/bubbles'), (snapshot) => {
+                const data = snapshot.val();
+                world.querySelectorAll('.circle-wrapper').forEach(el => el.remove());
+                bubblesArray = [];
+                if (data) {
+                    data.forEach(item => {
+                        const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
+                        createBubble(item.x, item.y, area, item.text, item.id, item.scores);
+                    });
+                }
+            });
+        }
+
+        window.addEventListener('load', () => { 
+            loadProfileData(); 
+            
+            if(!allNewsFetched) {
+                buildNewsUI();
+                fetchAllNews(); 
+                allNewsFetched = true;
+            }
+        });
+        
+        morphDock.addEventListener('click', () => { morphDock.classList.toggle('open'); });
+        
+        lifeAreas.forEach((area, index) => { 
+            const container = getDoc().createElement('div'); container.classList.add('color-option-container'); 
+            const dot = getDoc().createElement('div'); dot.classList.add('color-option'); 
+            dot.style.backgroundColor = area.color; 
+            dot.style.color = area.color; 
+            const label = getDoc().createElement('div'); label.classList.add('area-label'); label.innerText = area.name; 
+            
+            if(index === 0) { 
+                dot.classList.add('selected'); 
+                container.classList.add('active-container'); 
+                activeArea = area; 
+                morphDock.style.setProperty('--dock-glow', area.color); 
+            } 
+            
+            dot.addEventListener('click', (e) => { 
+                e.stopPropagation(); 
+                getDoc().querySelectorAll('.color-option-container').forEach(c => c.classList.remove('active-container'));
+                container.classList.add('active-container');
+
+                getDoc().querySelectorAll('.color-option').forEach(d => d.classList.remove('selected')); 
+                dot.classList.add('selected'); 
+                activeArea = area; 
+                morphDock.style.setProperty('--dock-glow', area.color); 
+            }); 
+            
+            container.appendChild(label); container.appendChild(dot); colorList.appendChild(container); 
+        });
+        
+        let lastTap = 0;
+        function handleCreateGesture(e) {
+            if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
+            if(e.target !== viewport && e.target !== world && e.target.id !== 'solo-lines') return;
+            const currentTime = new Date().getTime(); 
+            const tapLength = currentTime - lastTap;
+            if (e.type === 'dblclick' || (e.type === 'touchend' && tapLength < 300 && tapLength > 0)) {
+                e.preventDefault(); 
+                const pos = getEventPos(e.changedTouches ? e.changedTouches[0] : e);
+                const realX = (pos.x - worldX) / scale; 
+                const realY = (pos.y - worldY) / scale;
+                
+                pendingCreationCoords = { x: realX, y: realY };
+                openPopup(null);
+
+                lastTap = 0;
+            } else {
+                lastTap = currentTime;
+            }
+        }
+        viewport.addEventListener('dblclick', handleCreateGesture); 
+        viewport.addEventListener('touchend', handleCreateGesture);
+        
+        function showToast(msg) { toastText.innerText = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 4000); }
+
+        function updateLinesGeneric(targetArray, linesLayerRef, defsLayerRef, containerElement, useScale) {
+            while (linesLayerRef.querySelectorAll('line').length > 0) linesLayerRef.removeChild(linesLayerRef.lastChild);
+            defsLayerRef.innerHTML = ''; 
+            const rectRef = containerElement.getBoundingClientRect(); const currentScale = useScale ? scale : 1;
+            for (let i = 0; i < targetArray.length; i++) {
+                const b1 = targetArray[i]; let targetBubble = null;
+                for (let j = i + 1; j < targetArray.length; j++) { const candidate = targetArray[j]; if (b1.area.id === candidate.area.id) { targetBubble = candidate; break; } }
+                if (!targetBubble) { for (let j = i + 1; j < targetArray.length; j++) { const candidate = targetArray[j]; const b1HasContext = (b1.scores && b1.scores[candidate.area.id] > 0); const b2HasContext = (candidate.scores && candidate.scores[b1.area.id] > 0); const shared = lifeAreas.some(a => b1.scores && candidate.scores && b1.scores[a.id]>0 && candidate.scores[a.id]>0); if (b1HasContext || b2HasContext || shared) { targetBubble = candidate; break; } } }
+                if (targetBubble) {
+                    const b2 = targetBubble;
+                    const rect1 = b1.circle.getBoundingClientRect(); const rect2 = b2.circle.getBoundingClientRect();
+                    const x1 = (rect1.left - rectRef.left + (rect1.width/2)) / currentScale; const y1 = (rect1.top - rectRef.top + (rect1.height/2)) / currentScale;
+                    const x2 = (rect2.left - rectRef.left + (rect2.width/2)) / currentScale; const y2 = (rect2.top - rectRef.top + (rect2.height/2)) / currentScale;
+                    const line = getDoc().createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+                    line.classList.add('connection-line');
+                    if (b1.area.id === b2.area.id) { line.setAttribute('stroke', b1.area.color); } 
+                    else { 
+                        const gradId = `grad-${Math.random().toString(36).substr(2, 9)}`; const gradient = getDoc().createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                        gradient.setAttribute('id', gradId); gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
+                        gradient.setAttribute('x1', x1); gradient.setAttribute('y1', y1); gradient.setAttribute('x2', x2); gradient.setAttribute('y2', y2);
+                        const stop1 = getDoc().createElementNS('http://www.w3.org/2000/svg', 'stop'); stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', b1.area.color);
+                        const stop2 = getDoc().createElementNS('http://www.w3.org/2000/svg', 'stop'); stop2.setAttribute('offset', '100%'); stop2.setAttribute('stop-color', b2.area.color);
+                        gradient.appendChild(stop1); gradient.appendChild(stop2); defsLayerRef.appendChild(gradient); line.setAttribute('stroke', `url(#${gradId})`);
+                    }
+                    linesLayerRef.appendChild(line);
+                }
+            }
+        }
+
+        function gameLoop() {
+            if (!isSymbiosisActive) {
+                updateLinesGeneric(bubblesArray, soloLinesLayer, gradDefsSolo, world, true);
+            } else {
+                if(currentSymbiosisView === 'map') {
+                    updateLinesGeneric(symbiosisBubblesArray, symbiosisLinesLayer, gradDefsSymbiosis, symbiosisWorld, false);
+                }
+            }
+            mainLoopId = getWin().requestAnimationFrame(gameLoop);
+        }
+        mainLoopId = getWin().requestAnimationFrame(gameLoop);
+
+        async function enterFloatingMode() {
+            if (!('documentPictureInPicture' in window)) {
+                showToast("Pop-up flutuante não suportado.");
+                return;
+            }
+            if (pipWindow) return;
+
+            try {
+                pipWindow = await window.documentPictureInPicture.requestWindow({
+                    width: Math.min(window.innerWidth, 400),
+                    height: Math.min(window.innerHeight, 600),
+                });
+
+                [...document.styleSheets].forEach((styleSheet) => {
+                    try {
+                        const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+                        const style = document.createElement('style');
+                        style.textContent = cssRules;
+                        pipWindow.document.head.appendChild(style);
+                    } catch (e) {
+                        const link = document.createElement('link');
+                        link.rel = 'stylesheet';
+                        link.type = styleSheet.type;
+                        link.media = styleSheet.media;
+                        link.href = styleSheet.href;
+                        pipWindow.document.head.appendChild(link);
+                    }
+                });
+
+                const elementsToMove = [...document.body.children].filter(el => el.tagName !== 'SCRIPT' && el.id !== 'pipBtn');
+                elementsToMove.forEach(el => pipWindow.document.body.appendChild(el));
+                pipWindow.document.body.className = document.body.className;
+
+                pipWindow.document.addEventListener('click', handleGlobalClick);
+                pipWindow.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+                pipWindow.addEventListener('mousemove', handleGlobalMouseMove);
+                pipWindow.addEventListener('mouseup', handleGlobalMouseUp);
+                pipWindow.addEventListener('touchend', handleGlobalTouchEnd);
+
+                cancelAnimationFrame(mainLoopId);
+                gameLoop();
+                if(isSymbiosisActive && currentSymbiosisView === 'sphere') {
+                    cancelAnimationFrame(sphereAnimationFrame);
+                    animateSphere();
+                }
+
+                pipWindow.addEventListener('pagehide', () => {
+                    elementsToMove.forEach(el => document.body.appendChild(el));
+                    pipWindow = null;
+                    cancelAnimationFrame(mainLoopId);
+                    gameLoop();
+                    if(isSymbiosisActive && currentSymbiosisView === 'sphere') {
+                        cancelAnimationFrame(sphereAnimationFrame);
+                        animateSphere();
+                    }
+                });
+            } catch (error) {
+                console.warn("Bloqueado pelo navegador.", error);
+            }
+        }
+
+        const pipBtn = document.createElement('div');
+        pipBtn.id = 'pipBtn';
+        pipBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:#333;"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 3-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg>';
+        pipBtn.style.cssText = 'position:fixed; top:20px; right:20px; width:45px; height:45px; background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:9999; box-shadow:0 5px 15px rgba(0,0,0,0.1); transition:0.3s; border:1px solid rgba(255,255,255,0.6);';
+        pipBtn.title = 'Modo Flutuante';
+        pipBtn.onclick = enterFloatingMode;
+        pipBtn.onmouseover = () => pipBtn.style.transform = 'scale(1.1)';
+        pipBtn.onmouseout = () => pipBtn.style.transform = 'scale(1)';
+        document.body.appendChild(pipBtn);
     </script>
 </body>
 </html>
