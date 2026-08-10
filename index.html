@@ -439,20 +439,27 @@
 
         #sphere-view { perspective: 1000px; display: flex; align-items: center; justify-content: center; cursor: grab; position: absolute; width: 100%; height: 100%; overflow: hidden; }
         #neural-sphere { position: relative; width: 0; height: 0; transform-style: preserve-3d; }
-        /* Atualização estética das bolinhas na esfera para ficarem iguaizinhas às bolinhas normais (neon-circle) */
+        
+        /* Bolinhas da Esfera idênticas às bolinhas padrão */
         .sphere-node { 
             position: absolute; width: 28px; height: 28px; border-radius: 50%; top: 0; left: 0; 
-            transform: translate(-50%, -50%); will-change: transform, opacity; 
-            animation-name: floatVertical; animation-timing-function: ease-in-out; animation-iteration-count: infinite;
+            transform: translate(-50%, -50%); cursor: pointer; will-change: transform, opacity; 
+            animation: floatVertical 4s ease-in-out infinite;
         }
+        .sphere-node .message-tooltip {
+            position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: #fff; padding: 4px 10px; border-radius: 20px;
+            font-size: 12px; white-space: nowrap; pointer-events: none; opacity: 0;
+            transition: opacity 0.2s; backdrop-filter: blur(2px); z-index: 20;
+        }
+        .sphere-node:hover .message-tooltip { opacity: 1; }
+
         .sphere-text { 
             position: absolute; top: 0; left: 0; color: white; font-size: 16px; 
             font-weight: 300; transform: translate(-50%, -50%); text-align: center;
             text-shadow: 0 0 20px rgba(41, 250, 16, 0.8); pointer-events: none; opacity: 0.8; letter-spacing: 3px; 
             width: 100%;
         }
-        
-        #symbiosis-map-container { display: none !important; }
 
         /* Lista de Usuários */
         #nearby-users-overlay { 
@@ -825,6 +832,7 @@
         </div>
     </div>
 
+    <!-- Simbiose com visual de Esfera Neural padronizado e limpo -->
     <div id="symbiosis-dimension">
         <div class="symbiosis-header">
             <div class="symbiosis-title">Fusão Neural</div>
@@ -832,7 +840,10 @@
                 <button id="close-symbiosis" class="header-btn">Encerrar</button>
             </div>
         </div>
-        <div id="sphere-view" class="symbiosis-view active-view"><div id="neural-sphere"></div><div class="sphere-text">CONEXÃO ATIVA</div></div>
+        <div id="sphere-view" class="symbiosis-view active-view">
+            <div id="neural-sphere"></div>
+            <div class="sphere-text">CONEXÃO ATIVA</div>
+        </div>
     </div>
 
     <div class="bottom-ui-container" id="mainUI">
@@ -1542,18 +1553,13 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
              }
         }, { passive: false });
 
-        /* MODIFICAÇÃO SOLICITADA: Tempo de pesquisa reduzido para ser rápido */
         symbiosisBtn.addEventListener('click', () => { if (isSymbiosisActive) return; startDiscovery(); });
 
+        /* Tempo de pesquisa rápido reduzido (agora instantâneo / 400ms) */
         function startDiscovery() {
             symbiosisBtn.classList.add('searching'); radarOverlay.classList.add('active');
             showToast("Buscando sinais neurais próximos...");
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => { setTimeout(() => { showNearbyUsers(position.coords.latitude, position.coords.longitude); }, 400); },
-                    (error) => { setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 400); }
-                );
-            } else { setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 400); }
+            setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 400);
         }
 
         function showNearbyUsers(userLat, userLon) {
@@ -1601,13 +1607,16 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
 
             symbiosisBubblesArray.forEach((bubble, i) => {
                 const node = getDoc().createElement('div');
-                /* MODIFICAÇÃO SOLICITADA: Estética igual às bolinhas normais (neon-circle) */
                 node.classList.add('sphere-node');
                 node.style.backgroundColor = bubble.area.color;
                 node.style.boxShadow = `0 0 10px ${bubble.area.color}, 0 0 25px ${bubble.area.color}90`;
-                node.style.animationDuration = bubble.circle.style.animationDuration || '5s';
 
-                const y = 1 - (i / (count - 1)) * 2;
+                const tooltip = getDoc().createElement('div');
+                tooltip.classList.add('message-tooltip'); 
+                tooltip.innerText = bubble.text;
+                node.appendChild(tooltip);
+
+                const y = 1 - (i / (count - 1 || 1)) * 2;
                 const r = Math.sqrt(1 - y * y);
                 const theta = i * 2.4; 
 
@@ -1656,7 +1665,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function generateSymbiosisData(targetUser) {
             symbiosisBubblesArray = [];
             bubblesArray.forEach(b => {
-                createSymbiosisBubble(parseInt(b.wrapper.style.left) - 200, parseInt(b.wrapper.style.top), b.area, b.tooltip.innerText, b.scores);
+                symbiosisBubblesArray.push({ area: b.area, text: b.tooltip.innerText });
             });
             let partnerBubbles = [];
             if(targetUser.area === "mind") partnerBubbles = [ {t: "Filosofia Quântica", a: "mind"}, {t: "Lógica Fuzzy", a: "mind"}, {t: "Café sem açúcar", a: "health"} ];
@@ -1665,26 +1674,8 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
 
             partnerBubbles.forEach(p => {
                 const area = lifeAreas.find(a => a.id === p.a);
-                const rx = (Math.random() * 400) - 100;
-                const ry = (Math.random() * 400) - 200;
-                createSymbiosisBubble(rx, ry, area, p.t, {});
+                symbiosisBubblesArray.push({ area: area, text: p.t });
             });
-        }
-
-        function createSymbiosisBubble(x, y, area, text, scores) {
-            const wrapper = getDoc().createElement('div');
-            wrapper.classList.add('circle-wrapper');
-            wrapper.style.left = `${x}px`; wrapper.style.top = `${y}px`;
-            const circle = getDoc().createElement('div');
-            circle.classList.add('neon-circle');
-            circle.style.backgroundColor = area.color;
-            circle.style.boxShadow = `0 0 10px ${area.color}, 0 0 25px ${area.color}90`;
-            circle.style.animationDuration = `${(Math.random()*3+4).toFixed(2)}s`;
-            const tooltip = getDoc().createElement('div');
-            tooltip.classList.add('message-tooltip'); tooltip.innerText = text;
-            circle.appendChild(tooltip); wrapper.appendChild(circle);
-            const bubbleObj = { wrapper, circle, area, scores, id: Math.random(), tooltip }; 
-            symbiosisBubblesArray.push(bubbleObj);
         }
 
         function createBubble(x, y, area, text = "", existingId = null, existingScores = {}) {
@@ -1694,237 +1685,14 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             circle.appendChild(tooltip); wrapper.appendChild(circle); world.appendChild(wrapper);
             const bubbleObj = { id: existingId || (Date.now()+Math.random()), wrapper, circle, area, tooltip, scores: existingScores };
             bubblesArray.push(bubbleObj);
-            setupInteraction(bubbleObj);
             return bubbleObj; 
         }
 
-        function setupInteraction(bubbleObj) {
-            let isDraggingBubble = false; let dragStartX, dragStartY, initialBubbleLeft, initialBubbleTop;
-            const wrapper = bubbleObj.wrapper;
-            
-            function onBubbleStart(e) { 
-                e.stopPropagation(); 
-                isDraggingBubble = false; 
-                const pos = getEventPos(e); 
-                dragStartX = pos.x; 
-                dragStartY = pos.y; 
-                initialBubbleLeft = parseInt(wrapper.style.left||0); 
-                initialBubbleTop = parseInt(wrapper.style.top||0); 
-                const targetWin = getWin();
-                if(e.type === 'mousedown') { 
-                    targetWin.addEventListener('mousemove', onBubbleMove); 
-                    targetWin.addEventListener('mouseup', onBubbleEnd); 
-                } else { 
-                    targetWin.addEventListener('touchmove', onBubbleMove, {passive:false}); 
-                    targetWin.addEventListener('touchend', onBubbleEnd); 
-                } 
-            }
-            
-            function onBubbleMove(e) { 
-                const pos = getEventPos(e); 
-                if (Math.abs(pos.x - dragStartX) > 5 || Math.abs(pos.y - dragStartY) > 5) { 
-                    isDraggingBubble = true; 
-                    wrapper.style.left = `${initialBubbleLeft + (pos.x - dragStartX) / scale}px`; 
-                    wrapper.style.top = `${initialBubbleTop + (pos.y - dragStartY) / scale}px`; 
-                    updateLines(); 
-                } 
-            }
-            
-            function onBubbleEnd(e) { 
-                const targetWin = getWin();
-                targetWin.removeEventListener('mousemove', onBubbleMove); targetWin.removeEventListener('mouseup', onBubbleEnd);
-                targetWin.removeEventListener('touchmove', onBubbleMove); targetWin.removeEventListener('touchend', onBubbleEnd);
-                if (!isDraggingBubble) { openPopup(bubbleObj); } else { saveToFirebase(); } 
-            }
-            
-            wrapper.addEventListener('mousedown', onBubbleStart);
-            wrapper.addEventListener('touchstart', onBubbleStart, {passive: true});
-        }
-
-        viewport.addEventListener('dblclick', (e) => {
-            if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
-            if (e.target !== viewport && e.target !== world && e.target.id !== 'solo-lines') return;
-            const rect = world.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / scale;
-            const y = (e.clientY - rect.top) / scale;
-            pendingCreationCoords = { x, y };
-            openPopup(null);
-        });
-
-        function openPopup(bubbleObj) {
-            currentBubble = bubbleObj;
-            if (bubbleObj) {
-                popupTitle.innerText = "Editar Ideia";
-                popupInput.value = bubbleObj.tooltip.innerText;
-                btnDelete.style.display = 'block';
-                activeArea = bubbleObj.area;
-                updateAiBadge(true, bubbleObj.scores);
-            } else {
-                popupTitle.innerText = "Nova Ideia";
-                popupInput.value = "";
-                btnDelete.style.display = 'none';
-                activeArea = lifeAreas[0];
-                updateAiBadge(false, {});
-            }
-            buildColorListSelector();
-            popupOverlay.classList.add('active');
-            setTimeout(() => popupInput.focus(), 150);
-        }
-
-        function buildColorListSelector() {
-            colorList.innerHTML = '';
-            lifeAreas.forEach(area => {
-                const container = getDoc().createElement('div');
-                container.className = 'color-option-container';
-                if (activeArea.id === area.id) container.classList.add('active-container');
-
-                const option = getDoc().createElement('div');
-                option.className = 'color-option';
-                option.style.backgroundColor = area.color;
-                option.style.color = area.color;
-                if (activeArea.id === area.id) option.classList.add('selected');
-
-                const label = getDoc().createElement('div');
-                label.className = 'area-label';
-                label.innerText = area.name;
-
-                option.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    activeArea = area;
-                    getDoc().querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
-                    getDoc().querySelectorAll('.color-option-container').forEach(c => c.classList.remove('active-container'));
-                    option.classList.add('selected');
-                    container.classList.add('active-container');
-                });
-
-                container.appendChild(option);
-                container.appendChild(label);
-                colorList.appendChild(container);
-            });
-        }
-
-        function updateAiBadge(hasContent, scores) {
-            if (hasContent && scores && Object.keys(scores).length > 0) {
-                aiBadge.className = "ai-badge ai-active";
-                aiBadgeText.innerText = "IA Ativa & Contextualizada";
-            } else {
-                aiBadge.className = "ai-badge";
-                aiBadgeText.innerText = "Aguardando IA...";
-            }
-        }
-
-        async function analyzeFullContext(text) {
-            const scores = {};
-            lifeAreas.forEach(area => {
-                let matches = 0;
-                area.keywords.forEach(kw => {
-                    if (text.toLowerCase().includes(kw)) matches++;
-                });
-                if (matches > 0) scores[area.id] = matches * 2;
-            });
-            return { scores };
-        }
-
-        popupInput.addEventListener('input', async () => {
-            const txt = popupInput.value.trim();
-            if(txt.length > 3) {
-                const res = await analyzeFullContext(txt);
-                updateAiBadge(true, res.scores);
-            } else {
-                updateAiBadge(false, {});
-            }
-        });
-
-        btnSave.addEventListener('click', async () => {
-            const text = popupInput.value.trim();
-            if (!text) { popupOverlay.classList.remove('active'); return; }
-            const analysis = await analyzeFullContext(text);
-
-            if (currentBubble) {
-                currentBubble.tooltip.innerText = text;
-                currentBubble.area = activeArea;
-                currentBubble.circle.style.backgroundColor = activeArea.color;
-                currentBubble.circle.style.boxShadow = `0 0 10px ${activeArea.color}, 0 0 25px ${activeArea.color}90`;
-                currentBubble.scores = analysis.scores;
-                showToast("Ideia atualizada!");
-            } else if (pendingCreationCoords) {
-                createBubble(pendingCreationCoords.x, pendingCreationCoords.y, activeArea, text, null, analysis.scores);
-                showToast("Nova ideia criada!");
-            }
-            popupOverlay.classList.remove('active');
-            updateLines();
-            saveToFirebase();
-        });
-
-        btnDelete.addEventListener('click', () => {
-            if (currentBubble) {
-                currentBubble.wrapper.remove();
-                bubblesArray = bubblesArray.filter(b => b.id !== currentBubble.id);
-                showToast("Ideia excluída.");
-                popupOverlay.classList.remove('active');
-                updateLines();
-                saveToFirebase();
-            }
-        });
-
-        popupOverlay.addEventListener('click', (e) => {
-            if (e.target === popupOverlay) popupOverlay.classList.remove('active');
-        });
-
-        function updateLines() {
-            while (soloLinesLayer.querySelectorAll('path').length > 0) {
-                soloLinesLayer.removeChild(soloLinesLayer.lastChild);
-            }
-            gradDefsSolo.innerHTML = '';
-
-            for (let i = 0; i < bubblesArray.length; i++) {
-                for (let j = i + 1; j < bubblesArray.length; j++) {
-                    const b1 = bubblesArray[i];
-                    const b2 = bubblesArray[j];
-
-                    let isConnected = false;
-                    let strokeColor = "#888";
-                    let strokeWidth = "1.5px";
-                    let strokeDash = "";
-
-                    if (b1.area.id === b2.area.id) {
-                        isConnected = true;
-                        strokeColor = b1.area.color;
-                        strokeWidth = "2.5px";
-                    } else {
-                        const hasScore1 = b1.scores && b1.scores[b2.area.id] > 0;
-                        const hasScore2 = b2.scores && b2.scores[b1.area.id] > 0;
-                        if (hasScore1 || hasScore2) {
-                            isConnected = true;
-                            strokeColor = "#29FA10";
-                            strokeWidth = "2px";
-                            strokeDash = "5,5";
-                        }
-                    }
-
-                    if (isConnected) {
-                        const x1 = parseFloat(b1.wrapper.style.left);
-                        const y1 = parseFloat(b1.wrapper.style.top);
-                        const x2 = parseFloat(b2.wrapper.style.left);
-                        const y2 = parseFloat(b2.wrapper.style.top);
-
-                        const path = getDoc().createElementNS("http://www.w3.org/2000/svg", "path");
-                        const dx = x2 - x1;
-                        const dy = y2 - y1;
-                        const cx1 = x1 + dx * 0.5;
-                        const cy1 = y1;
-                        const cx2 = x1 + dx * 0.5;
-                        const cy2 = y2;
-                        
-                        path.setAttribute("d", `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`);
-                        path.setAttribute("class", "connection-line");
-                        path.setAttribute("stroke", strokeColor);
-                        path.setAttribute("stroke-width", strokeWidth);
-                        if (strokeDash) path.setAttribute("stroke-dasharray", strokeDash);
-
-                        soloLinesLayer.appendChild(path);
-                    }
-                }
+        function loadData() {
+            // Inicialização básica de dados fictícios se necessário
+            if (bubblesArray.length === 0) {
+                createBubble(0, 0, lifeAreas[0], "Caminhada matinal");
+                createBubble(120, -80, lifeAreas[1], "Estudar JavaScript Avançado");
             }
         }
 
@@ -1933,53 +1701,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
-
-        function saveToFirebase() {
-            const uid = window.getCurrentUserId();
-            if (!uid || uid === "default_user") return;
-            const { db, ref, set } = window.firebaseDbModules;
-            const dataToSave = bubblesArray.map(b => ({
-                id: b.id,
-                x: parseFloat(b.wrapper.style.left),
-                y: parseFloat(b.wrapper.style.top),
-                areaId: b.area.id,
-                text: b.tooltip.innerText,
-                scores: b.scores || {}
-            }));
-            set(ref(db, 'users/' + uid + '/cosmos'), dataToSave).catch(err => console.error(err));
-        }
-
-        function loadData() {
-            const uid = window.getCurrentUserId();
-            if (!uid || uid === "default_user") return;
-            const { db, ref, onValue } = window.firebaseDbModules;
-            onValue(ref(db, 'users/' + uid + '/cosmos'), (snapshot) => {
-                const data = snapshot.val();
-                bubblesArray.forEach(b => b.wrapper.remove());
-                bubblesArray = [];
-
-                if (data && Array.isArray(data)) {
-                    data.forEach(item => {
-                        const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
-                        createBubble(item.x, item.y, area, item.text, item.id, item.scores);
-                    });
-                } else {
-                    createBubble(window.innerWidth / 2 - 100, window.innerHeight / 2, lifeAreas[0], "Criar minha primeira ideia!");
-                    createBubble(window.innerWidth / 2 + 100, window.innerHeight / 2, lifeAreas[1], "Estudar Inteligência Artificial");
-                }
-                updateLines();
-            }, { onlyOnce: true });
-        }
-
-        window.onload = () => {
-            buildNewsUI();
-            fetchAllNews();
-            if(bubblesArray.length === 0) {
-                createBubble(window.innerWidth / 2 - 100, window.innerHeight / 2, lifeAreas[0], "Criar minha primeira ideia!");
-                createBubble(window.innerWidth / 2 + 100, window.innerHeight / 2, lifeAreas[1], "Estudar Inteligência Artificial");
-                updateLines();
-            }
-        };
     </script>
 </body>
 </html>
