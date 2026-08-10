@@ -88,7 +88,9 @@
                     <div class="s-stat"><h4>5</h4><span>Simbioses</span></div>
                 </div>
 
-                <div id="news-sections-container"></div>
+                <div id="news-sections-container">
+                </div>
+
             </div>
 
             <div class="profile-content">
@@ -99,8 +101,10 @@
                 </div>
 
                 <div class="tab-content-area">
+                    
                     <div id="tab-overview" class="tab-pane active">
-                        <div class="neural-grid" id="neural-grid"></div>
+                        <div class="neural-grid" id="neural-grid">
+                        </div>
                     </div>
 
                     <div id="tab-edit" class="tab-pane">
@@ -158,6 +162,7 @@
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -213,6 +218,60 @@
         </div>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+      import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+      import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyABMVB4pYyQMil8XaQu2zf6_siHlDMCgRE",
+        authDomain: "neuron5.firebaseapp.com",
+        projectId: "neuron5",
+        storageBucket: "neuron5.firebasestorage.app",
+        messagingSenderId: "45038955818",
+        appId: "1:45038955818:web:856c83eaa31dfbc747c253"
+      };
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      const auth = getAuth(app);
+      const googleProvider = new GoogleAuthProvider();
+
+      let currentUserId = "default_user";
+
+      onAuthStateChanged(auth, (user) => {
+          if (user) {
+              currentUserId = user.uid;
+              document.getElementById('auth-overlay').classList.add('hidden');
+              
+              let profile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
+              if(user.email && !profile.name) {
+                  profile.name = user.displayName || user.email.split('@')[0];
+                  profile.handle = "@" + user.email.split('@')[0];
+              }
+              if(user.photoURL && !profile.avatarUrl) {
+                  profile.avatarUrl = user.photoURL;
+              }
+              localStorage.setItem('nexusProfile', JSON.stringify(profile));
+
+              loadData();
+              loadProfileData();
+          } else {
+              currentUserId = "default_user";
+              document.getElementById('auth-overlay').classList.remove('hidden');
+          }
+      });
+
+      window.firebaseAuthModules = { 
+          auth, 
+          createUserWithEmailAndPassword, 
+          signInWithEmailAndPassword, 
+          signInWithPopup, 
+          googleProvider 
+      };
+      window.firebaseDbModules = { db, ref, set, onValue };
+      window.getCurrentUserId = () => currentUserId;
+    </script>
+
+    <script src="script.js"></script>
 </body>
 </html>
