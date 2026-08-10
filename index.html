@@ -29,7 +29,7 @@
 
         /* --- BARRA LATERAL FLUTUANTE RETRÁTIL DE CONTATOS (LADO DIREITO) --- */
         #contacts-sidebar {
-            position: fixed; top: 35%; right: 0; transform: translateY(-50%);
+            position: fixed; top: 25%; right: 0; transform: translateY(-50%);
             width: 50px; height: 280px; background: rgba(255, 255, 255, 0.35);
             backdrop-filter: blur(20px) saturate(180%);
             border-top-left-radius: 25px; border-bottom-left-radius: 25px;
@@ -173,7 +173,7 @@
 
         /* --- UI INFERIOR (DOCK) --- */
         .bottom-ui-container {
-            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+            position: fixed; bottom: 45px; left: 50%; transform: translateX(-50%);
             z-index: 1000; display: flex; align-items: center; gap: 12px;
             transition: opacity 0.3s, transform 0.3s;
             width: auto; max-width: 100%;
@@ -582,52 +582,56 @@
         .toast.show { transform: translateX(-50%) translateY(0); }
         .toast-icon { width: 10px; height: 10px; background: #29FA10; border-radius: 50%; box-shadow: 0 0 10px #29FA10; flex-shrink: 0; }
 
-        /* --- AJUSTES DE RESPONSIVIDADE --- */
+        /* --- AJUSTES DE RESPONSIVIDADE EXCLUSIVOS PARA MOBILE --- */
         @media (max-width: 768px) {
-            #app-logo { width: 80px; top: 12px; left: 12px; }
-            #contacts-sidebar { height: 240px; }
-            #contacts-sidebar.open { width: 240px; }
+            #app-logo { width: 70px; top: 10px; left: 10px; }
+            #contacts-sidebar { height: 220px; top: 20%; }
+            #contacts-sidebar.open { width: 230px; }
             
             .bottom-ui-container { 
-                width: 100%; 
-                justify-content: center; 
-                gap: 8px; 
+                width: 92vw; 
+                justify-content: space-between; 
+                gap: 6px; 
                 bottom: 15px; 
-                padding: 0 10px; 
+                padding: 0 8px; 
                 box-sizing: border-box; 
-                max-width: 100vw;
             }
-            .dock-btn { width: 42px; height: 42px; }
-            .dock-btn svg { width: 18px; height: 18px; }
+            .dock-btn { width: 40px; height: 40px; }
+            .dock-btn svg { width: 16px; height: 16px; }
+            
+            .morph-ai-bar:not(.open) { width: 40px; height: 40px; }
+            .morph-ai-bar.open { 
+                width: calc(100vw - 130px); 
+                height: 42px;
+            }
+            .ai-quick-input { font-size: 12px; }
+
+            .morph-dock:not(.open) { width: 44px; height: 44px; }
             .morph-dock.open { 
-                width: calc(100vw - 110px); 
-                height: 55px; 
+                width: calc(100vw - 120px); 
+                height: 50px; 
                 justify-content: flex-start; 
                 padding: 0; 
             }
-            .morph-ai-bar.open { 
-                width: calc(100vw - 75px); 
-                height: 45px;
-            }
             .morph-dock.open .color-list { 
-                padding: 0 10px; 
-                width: auto; 
-                justify-content: flex-start; 
+                padding: 0 8px; 
+                width: 100%; 
+                justify-content: space-around; 
                 overflow-x: auto; 
                 -webkit-overflow-scrolling: touch; 
             }
-            .color-option { width: 30px; height: 30px; margin-right: 4px; }
+            .color-option { width: 26px; height: 26px; margin: 0 2px; }
             
             .profile-modal { 
                 flex-direction: column; 
                 overflow-y: auto; 
-                height: 92vh; 
-                width: 95vw;
-                border-radius: 25px;
+                height: 94vh; 
+                width: 96vw;
+                border-radius: 20px;
             }
             .profile-sidebar { 
                 width: 100%; 
-                padding: 20px 15px; 
+                padding: 15px 12px; 
                 border-right: none; 
                 border-bottom: 1px solid #eee; 
                 box-sizing: border-box; 
@@ -635,23 +639,30 @@
                 flex-shrink: 0; 
             }
             .profile-content { overflow: visible; }
-            .profile-nav { overflow-x: auto; padding: 12px 15px; justify-content: flex-start; gap: 15px; }
-            .nav-item { font-size: 13px; padding-bottom: 6px; }
-            .tab-content-area { padding: 15px; }
-            .neural-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .edit-form { grid-template-columns: 1fr; gap: 10px; }
+            .profile-nav { overflow-x: auto; padding: 10px 12px; justify-content: flex-start; gap: 12px; }
+            .nav-item { font-size: 12px; padding-bottom: 4px; }
+            .tab-content-area { padding: 12px; }
+            .neural-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .edit-form { grid-template-columns: 1fr; gap: 8px; }
             .form-group.full { grid-column: span 1; }
-            .save-btn { grid-column: span 1; padding: 12px; font-size: 15px; }
+            .save-btn { grid-column: span 1; padding: 10px; font-size: 14px; }
             
-            .popup-card { width: 90%; margin-top: -10%; padding: 20px; border-radius: 20px; }
-            #popupInput { height: 70px; padding: 10px; font-size: 13px; }
-            .users-list-card { width: 92%; max-height: 75vh; padding: 18px; border-radius: 20px; }
+            .popup-card { width: 88vw; margin-top: 0; padding: 18px; border-radius: 20px; box-sizing: border-box; }
+            #popupInput { height: 65px; padding: 10px; font-size: 13px; }
+            .users-list-card { width: 90vw; max-height: 70vh; padding: 15px; border-radius: 20px; box-sizing: border-box; }
             
-            .symbiosis-card-container { width: 92vw; height: 70vh; }
-            #sphere-view { transform: scale(0.9); }
-            .sphere-text { font-size: 11px; letter-spacing: 1.5px; bottom: 20px; }
-            .symbiosis-header { padding: 20px 20px 12px 20px; }
-            .header-btn { padding: 6px 12px; font-size: 10px; }
+            .symbiosis-card-container { width: 92vw; height: 68vh; border-radius: 25px; }
+            #sphere-view { transform: scale(0.85); }
+            .sphere-text { font-size: 10px; letter-spacing: 1px; bottom: 15px; }
+            .symbiosis-header { padding: 15px 15px 10px 15px; }
+            .header-btn { padding: 5px 10px; font-size: 9px; }
+
+            .toast {
+                top: 15px;
+                padding: 10px 18px;
+                font-size: 12px;
+                max-width: 92%;
+            }
         }
     </style>
 </head>
@@ -861,7 +872,7 @@
         <div class="morph-ai-bar" id="morphAiBar" title="Consultar Mente / IA">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.03-.42 1.98-1.07 2.75z"/></svg>
             <div class="ai-input-container">
-                <input type="text" class="ai-quick-input" id="aiQuickInput" placeholder="Consulte suas ideias ou pergunte à IA...">
+                <input type="text" class="ai-quick-input" id="aiQuickInput" placeholder="Consulte suas ideias...">
                 <button class="ai-send-btn" id="aiSendBtn">➔</button>
             </div>
         </div>
@@ -920,12 +931,10 @@
               }
               localStorage.setItem('nexusProfile', JSON.stringify(profile));
 
-              // Salva a posição/presença inicial com coordenadas aleatórias realistas se houver geolocalização ativa
               if ("geolocation" in navigator) {
                   navigator.geolocation.getCurrentPosition((position) => {
                       updateUserPresence(position.coords.latitude, position.coords.longitude, profile.name);
                   }, () => {
-                      // Fallback simulado para coordenadas base se o GPS falhar
                       updateUserPresence(-23.5505 + (Math.random()-0.5)*0.01, -46.6333 + (Math.random()-0.5)*0.01, profile.name);
                   });
               } else {
@@ -1408,7 +1417,7 @@
                 if(matching.length > 0) {
                     showToast(`Encontrado: ${matching[0].tooltip.innerText}`);
                 } else {
-                    showToast("Insira sua Gemini API nas Configurações para respostas completas.");
+                    showToast("Insira sua Gemini API nas Configurações.");
                 }
                 return;
             }
@@ -1637,9 +1646,8 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
              }
         }, { passive: false });
 
-        // --- CÁLCULO DE DISTÂNCIA EM METROS (FÓRMULA DE HAVERSINE) ---
         function calculateDistanceInMeters(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // Raio da terra em metros
+            const R = 6371e3;
             const φ1 = lat1 * Math.PI/180;
             const φ2 = lat2 * Math.PI/180;
             const Δφ = (lat2-lat1) * Math.PI/180;
@@ -1650,7 +1658,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                       Math.sin(Δλ/2) * Math.sin(Δλ/2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-            return R * c; // Distância em metros
+            return R * c;
         }
 
         async function initNFCConnection() {
@@ -1686,7 +1694,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function startGeoDiscovery() {
             symbiosisBtn.classList.add('searching'); 
             radarOverlay.classList.add('active');
-            showToast("Buscando mentes próximas por geolocalização...");
+            showToast("Buscando mentes próximas...");
             
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(
@@ -1750,7 +1758,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 });
 
                 if (foundCount === 0) {
-                    usersListContent.innerHTML = '<div class="empty-state">Nenhum outro usuário real online no momento. Compartilhe o site com alguém para testar!</div>';
+                    usersListContent.innerHTML = '<div class="empty-state">Nenhum outro usuário real online no momento.</div>';
                 }
                 
                 nearbyUsersOverlay.classList.add('active');
@@ -1783,7 +1791,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             neuralSphere.innerHTML = '';
             spherePoints = [];
             const count = symbiosisBubblesArray.length;
-            const radius = getWin().innerWidth < 600 ? 120 : 150;
+            const radius = getWin().innerWidth < 600 ? 100 : 150;
 
             symbiosisBubblesArray.forEach((bubble, i) => {
                 const node = getDoc().createElement('div');
@@ -2123,13 +2131,11 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             const currentTime = new Date().getTime(); 
             const tapLength = currentTime - lastTap;
             
-            // Tratamento especial para mobile: checar se o toque teve deslocamento mínimo (evitando falso positivo de zoom/pan)
             if (e.type === 'touchend') {
                 const endPos = e.changedTouches ? { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY } : { x: 0, y: 0 };
                 const moveDist = Math.hypot(endPos.x - startTouchPos.x, endPos.y - startTouchPos.y);
                 const touchDuration = currentTime - startTouchTime;
                 
-                // Se moveu mais de 10 pixels, considerou-se pan/zoom e não clique de criação
                 if (moveDist > 10 || touchDuration > 400) {
                     lastTap = 0;
                     return;
@@ -2197,3 +2203,4 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
     </script>
 </body>
 </html>
+```[cite: 1]
