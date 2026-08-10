@@ -439,27 +439,17 @@
 
         #sphere-view { perspective: 1000px; display: flex; align-items: center; justify-content: center; cursor: grab; position: absolute; width: 100%; height: 100%; overflow: hidden; }
         #neural-sphere { position: relative; width: 0; height: 0; transform-style: preserve-3d; }
-        
-        /* Bolinhas da Esfera idênticas às bolinhas padrão */
-        .sphere-node { 
-            position: absolute; width: 28px; height: 28px; border-radius: 50%; top: 0; left: 0; 
-            transform: translate(-50%, -50%); cursor: pointer; will-change: transform, opacity; 
-            animation: floatVertical 4s ease-in-out infinite;
-        }
-        .sphere-node .message-tooltip {
-            position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.8); color: #fff; padding: 4px 10px; border-radius: 20px;
-            font-size: 12px; white-space: nowrap; pointer-events: none; opacity: 0;
-            transition: opacity 0.2s; backdrop-filter: blur(2px); z-index: 20;
-        }
-        .sphere-node:hover .message-tooltip { opacity: 1; }
-
+        .sphere-node { position: absolute; width: 28px; height: 28px; border-radius: 50%; top: 0; left: 0; transform: translate(-50%, -50%); box-shadow: 0 0 15px currentColor; will-change: transform, opacity; cursor: pointer; }
         .sphere-text { 
             position: absolute; top: 0; left: 0; color: white; font-size: 16px; 
             font-weight: 300; transform: translate(-50%, -50%); text-align: center;
             text-shadow: 0 0 20px rgba(41, 250, 16, 0.8); pointer-events: none; opacity: 0.8; letter-spacing: 3px; 
             width: 100%;
         }
+        
+        #symbiosis-map-container { position: absolute; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+        #symbiosis-map-container.active-view { opacity: 1; pointer-events: auto; }
+        #sphere-view.hidden-view { opacity: 0; pointer-events: none; }
 
         /* Lista de Usuários */
         #nearby-users-overlay { 
@@ -832,7 +822,6 @@
         </div>
     </div>
 
-    <!-- Simbiose com visual de Esfera Neural padronizado e limpo -->
     <div id="symbiosis-dimension">
         <div class="symbiosis-header">
             <div class="symbiosis-title">Fusão Neural</div>
@@ -840,10 +829,8 @@
                 <button id="close-symbiosis" class="header-btn">Encerrar</button>
             </div>
         </div>
-        <div id="sphere-view" class="symbiosis-view active-view">
-            <div id="neural-sphere"></div>
-            <div class="sphere-text">CONEXÃO ATIVA</div>
-        </div>
+        <div id="sphere-view" class="symbiosis-view active-view"><div id="neural-sphere"></div><div class="sphere-text">CONEXÃO ATIVA</div></div>
+        <div id="symbiosis-map-container" class="symbiosis-view hidden-view"><div id="symbiosis-world"><svg class="lines-layer" id="symbiosis-lines"><defs id="grad-defs-symbiosis"></defs></svg></div></div>
     </div>
 
     <div class="bottom-ui-container" id="mainUI">
@@ -993,6 +980,10 @@
         const symbiosisDimension = document.getElementById('symbiosis-dimension');
         const sphereView = document.getElementById('sphere-view');
         const neuralSphere = document.getElementById('neural-sphere');
+        const symbiosisMapContainer = document.getElementById('symbiosis-map-container');
+        const symbiosisWorld = document.getElementById('symbiosis-world');
+        const symbiosisLinesLayer = document.getElementById('symbiosis-lines');
+        const gradDefsSymbiosis = document.getElementById('grad-defs-symbiosis');
         const nearbyUsersOverlay = document.getElementById('nearby-users-overlay');
         const usersListContent = document.getElementById('users-list-content');
         const closeUsersBtn = document.getElementById('closeUsers');
@@ -1065,6 +1056,7 @@
         let worldX = 0, worldY = 0, scale = 1, isPanning = false, startPanX = 0, startPanY = 0;
         let initialPinchDist = 0;
         let initialScale = 1;
+        let mainLoopId;
         let sphereAnimationFrame;
 
         function updateWorldTransform() {
@@ -1081,6 +1073,7 @@
         };
 
         let allNewsData = {};
+        let allNewsFetched = false;
 
         function stripHtml(html) {
             let tmp = getDoc().createElement("DIV");
@@ -1555,11 +1548,10 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
 
         symbiosisBtn.addEventListener('click', () => { if (isSymbiosisActive) return; startDiscovery(); });
 
-        /* Tempo de pesquisa rápido reduzido (agora instantâneo / 400ms) */
         function startDiscovery() {
             symbiosisBtn.classList.add('searching'); radarOverlay.classList.add('active');
             showToast("Buscando sinais neurais próximos...");
-            setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 400);
+            setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 800);
         }
 
         function showNearbyUsers(userLat, userLon) {
@@ -1609,14 +1601,15 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 const node = getDoc().createElement('div');
                 node.classList.add('sphere-node');
                 node.style.backgroundColor = bubble.area.color;
-                node.style.boxShadow = `0 0 10px ${bubble.area.color}, 0 0 25px ${bubble.area.color}90`;
+                node.style.color = bubble.area.color;
+                node.style.boxShadow = `0 0 15px ${bubble.area.color}, 0 0 25px ${bubble.area.color}90`;
+                
+                node.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showToast(bubble.tooltip.innerText);
+                });
 
-                const tooltip = getDoc().createElement('div');
-                tooltip.classList.add('message-tooltip'); 
-                tooltip.innerText = bubble.text;
-                node.appendChild(tooltip);
-
-                const y = 1 - (i / (count - 1 || 1)) * 2;
+                const y = 1 - (i / (count - 1)) * 2;
                 const r = Math.sqrt(1 - y * y);
                 const theta = i * 2.4; 
 
@@ -1657,6 +1650,10 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             isSymbiosisActive = false;
             viewport.classList.remove('blurred'); symbiosisDimension.classList.remove('active');
             mainUI.classList.remove('hidden-ui');
+            while (symbiosisLinesLayer.querySelectorAll('line').length > 0) symbiosisLinesLayer.removeChild(symbiosisLinesLayer.lastChild);
+            gradDefsSymbiosis.innerHTML = '';
+            const oldBubbles = symbiosisWorld.querySelectorAll('.circle-wrapper');
+            oldBubbles.forEach(b => b.remove());
             symbiosisBubblesArray = [];
             getWin().cancelAnimationFrame(sphereAnimationFrame);
             viewport.style.pointerEvents = 'auto';
@@ -1665,17 +1662,36 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function generateSymbiosisData(targetUser) {
             symbiosisBubblesArray = [];
             bubblesArray.forEach(b => {
-                symbiosisBubblesArray.push({ area: b.area, text: b.tooltip.innerText });
+                createSymbiosisBubble(parseInt(b.wrapper.style.left) - 200, parseInt(b.wrapper.style.top), b.area, b.tooltip.innerText, b.scores);
             });
             let partnerBubbles = [];
             if(targetUser.area === "mind") partnerBubbles = [ {t: "Filosofia Quântica", a: "mind"}, {t: "Lógica Fuzzy", a: "mind"}, {t: "Café sem açúcar", a: "health"} ];
             else if (targetUser.area === "career") partnerBubbles = [ {t: "Startup Unicórnio", a: "career"}, {t: "Networking", a: "social"}, {t: "Investimento Anjo", a: "career"} ];
             else partnerBubbles = [ {t: "Meditação", a: "spirit"}, {t: "Yoga no Parque", a: "health"}, {t: "Paz Interior", a: "spirit"} ];
 
-            partnerBubbles.forEach(p => {
+            partnerBubbles.forEach(async p => {
                 const area = lifeAreas.find(a => a.id === p.a);
-                symbiosisBubblesArray.push({ area: area, text: p.t });
+                const scores = (await analyzeFullContext(p.t)).scores;
+                const rx = (Math.random() * 400) - 100;
+                const ry = (Math.random() * 400) - 200;
+                createSymbiosisBubble(rx, ry, area, p.t, scores);
             });
+        }
+
+        function createSymbiosisBubble(x, y, area, text, scores) {
+            const wrapper = getDoc().createElement('div');
+            wrapper.classList.add('circle-wrapper');
+            wrapper.style.left = `${x}px`; wrapper.style.top = `${y}px`;
+            const circle = getDoc().createElement('div');
+            circle.classList.add('neon-circle');
+            circle.style.backgroundColor = area.color;
+            circle.style.boxShadow = `0 0 10px ${area.color}, 0 0 25px ${area.color}90`;
+            circle.style.animationDuration = `${(Math.random()*3+4).toFixed(2)}s`;
+            const tooltip = getDoc().createElement('div');
+            tooltip.classList.add('message-tooltip'); tooltip.innerText = text;
+            circle.appendChild(tooltip); wrapper.appendChild(circle); symbiosisWorld.appendChild(wrapper);
+            const bubbleObj = { wrapper, circle, area, scores, id: Math.random(), tooltip }; 
+            symbiosisBubblesArray.push(bubbleObj);
         }
 
         function createBubble(x, y, area, text = "", existingId = null, existingScores = {}) {
@@ -1685,22 +1701,308 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             circle.appendChild(tooltip); wrapper.appendChild(circle); world.appendChild(wrapper);
             const bubbleObj = { id: existingId || (Date.now()+Math.random()), wrapper, circle, area, tooltip, scores: existingScores };
             bubblesArray.push(bubbleObj);
+            setupInteraction(bubbleObj);
             return bubbleObj; 
         }
 
-        function loadData() {
-            // Inicialização básica de dados fictícios se necessário
-            if (bubblesArray.length === 0) {
-                createBubble(0, 0, lifeAreas[0], "Caminhada matinal");
-                createBubble(120, -80, lifeAreas[1], "Estudar JavaScript Avançado");
+        function setupInteraction(bubbleObj) {
+            let isDraggingBubble = false; let dragStartX, dragStartY, initialBubbleLeft, initialBubbleTop;
+            const wrapper = bubbleObj.wrapper;
+            
+            function onBubbleStart(e) { 
+                e.stopPropagation(); 
+                isDraggingBubble = false; 
+                const pos = getEventPos(e); 
+                dragStartX = pos.x; 
+                dragStartY = pos.y; 
+                initialBubbleLeft = parseInt(wrapper.style.left||0); 
+                initialBubbleTop = parseInt(wrapper.style.top||0); 
+                const targetWin = getWin();
+                if(e.type === 'mousedown') { 
+                    targetWin.addEventListener('mousemove', onBubbleMove); 
+                    targetWin.addEventListener('mouseup', onBubbleEnd); 
+                } else { 
+                    targetWin.addEventListener('touchmove', onBubbleMove, {passive:false}); 
+                    targetWin.addEventListener('touchend', onBubbleEnd); 
+                } 
+            }
+            
+            function onBubbleMove(e) { 
+                const pos = getEventPos(e); 
+                const dx = pos.x - dragStartX; 
+                const dy = pos.y - dragStartY; 
+                if(Math.hypot(dx, dy) > 5) { 
+                    isDraggingBubble = true; 
+                    wrapper.style.left = `${initialBubbleLeft + (dx / scale)}px`; 
+                    wrapper.style.top = `${initialBubbleTop + (dy / scale)}px`; 
+                    scheduleDrawLines(); 
+                } 
+            }
+            
+            function onBubbleEnd(e) { 
+                const targetWin = getWin();
+                targetWin.removeEventListener('mousemove', onBubbleMove); 
+                targetWin.removeEventListener('mouseup', onBubbleEnd); 
+                targetWin.removeEventListener('touchmove', onBubbleMove); 
+                targetWin.removeEventListener('touchend', onBubbleEnd); 
+                if(!isDraggingBubble) { 
+                    openPopup(bubbleObj); 
+                } else {
+                    saveData();
+                }
+            }
+            
+            wrapper.addEventListener('mousedown', onBubbleStart); 
+            wrapper.addEventListener('touchstart', onBubbleStart, {passive:false});
+        }
+
+        function scheduleDrawLines() { if(!mainLoopId) mainLoopId = requestAnimationFrame(() => { drawConnections(); mainLoopId = null; }); }
+
+        function drawConnections() {
+            while (soloLinesLayer.querySelectorAll('line').length > 0) soloLinesLayer.removeChild(soloLinesLayer.lastChild);
+            gradDefsSolo.innerHTML = '';
+
+            for(let i=0; i<bubblesArray.length; i++) {
+                for(let j=i+1; j<bubblesArray.length; j++) {
+                    const b1 = bubblesArray[i]; const b2 = bubblesArray[j];
+                    const x1 = parseFloat(b1.wrapper.style.left); const y1 = parseFloat(b1.wrapper.style.top);
+                    const x2 = parseFloat(b2.wrapper.style.left); const y2 = parseFloat(b2.wrapper.style.top);
+                    
+                    let shouldConnect = false; let lineOpacity = "0.3";
+                    if(b1.area.id === b2.area.id) { shouldConnect = true; lineOpacity = "0.6"; }
+                    else if((b1.scores && b1.scores[b2.area.id] > 0) || (b2.scores && b2.scores[b1.area.id] > 0)) { shouldConnect = true; lineOpacity = "0.4"; }
+
+                    if(shouldConnect) {
+                        const line = getDoc().createElementNS("http://www.w3.org/2000/svg", "line");
+                        line.setAttribute("x1", x1); line.setAttribute("y1", y1); line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+                        const gradId = `grad_${b1.id}_${b2.id}`;
+                        const grad = getDoc().createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+                        grad.setAttribute("id", gradId); grad.setAttribute("x1", "0%"); grad.setAttribute("y1", "0%"); grad.setAttribute("x2", "100%"); grad.setAttribute("y2", "100%");
+                        const stop1 = getDoc().createElementNS("http://www.w3.org/2000/svg", "stop"); stop1.setAttribute("offset", "0%"); stop1.setAttribute("stop-color", b1.area.color);
+                        const stop2 = getDoc().createElementNS("http://www.w3.org/2000/svg", "stop"); stop2.setAttribute("offset", "100%"); stop2.setAttribute("stop-color", b2.area.color);
+                        grad.appendChild(stop1); grad.appendChild(stop2); gradDefsSolo.appendChild(grad);
+                        line.setAttribute("stroke", `url(#${gradId})`); line.setAttribute("class", "connection-line"); line.style.opacity = lineOpacity;
+                        soloLinesLayer.appendChild(line);
+                    }
+                }
             }
         }
 
-        function showToast(text) {
-            toastText.innerText = text;
+        viewport.addEventListener('dblclick', (e) => {
+            if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
+            const rect = viewport.getBoundingClientRect();
+            const clickX = (e.clientX - rect.left - worldX) / scale;
+            const clickY = (e.clientY - rect.top - worldY) / scale;
+            pendingCreationCoords = { x: clickX, y: clickY };
+            openPopup(null);
+        });
+
+        function buildColorList() {
+            colorList.innerHTML = '';
+            lifeAreas.forEach(area => {
+                const container = getDoc().createElement('div');
+                container.className = 'color-option-container';
+                if(area.id === activeArea.id) container.classList.add('active-container');
+                
+                const opt = getDoc().createElement('div');
+                opt.className = 'color-option';
+                opt.style.backgroundColor = area.color;
+                opt.style.color = area.color;
+                if(area.id === activeArea.id) opt.classList.add('selected');
+                
+                const label = getDoc().createElement('span');
+                label.className = 'area-label';
+                label.innerText = area.name;
+
+                opt.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    activeArea = area;
+                    morphDock.style.setProperty('--dock-glow', area.color);
+                    colorList.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                    colorList.querySelectorAll('.color-option-container').forEach(c => c.classList.remove('active-container'));
+                    opt.classList.add('selected');
+                    container.classList.add('active-container');
+                    showToast(`Área ativa: ${area.name}`);
+                });
+
+                container.appendChild(opt);
+                container.appendChild(label);
+                colorList.appendChild(container);
+            });
+        }
+        buildColorList();
+
+        morphDock.addEventListener('click', (e) => {
+            if(e.target === morphDock || morphDock.contains(e.target) && !e.target.classList.contains('color-option')) {
+                morphDock.classList.toggle('open');
+            }
+        });
+
+        function openPopup(bubble) {
+            currentBubble = bubble;
+            if (bubble) {
+                popupTitle.innerText = "Editar Ideia";
+                popupInput.value = bubble.tooltip.innerText;
+                activeArea = bubble.area;
+                morphDock.style.setProperty('--dock-glow', activeArea.color);
+                buildColorList();
+                btnDelete.style.display = 'block';
+            } else {
+                popupTitle.innerText = "Nova Ideia";
+                popupInput.value = "";
+                btnDelete.style.display = 'none';
+            }
+            popupOverlay.classList.add('active');
+            setTimeout(() => popupInput.focus(), 150);
+        }
+
+        async function analyzeFullContext(text) {
+            const lower = text.toLowerCase();
+            let scores = {};
+            let matchedArea = activeArea;
+            let maxScore = 0;
+
+            lifeAreas.forEach(area => {
+                let score = 0;
+                area.keywords.forEach(kw => { if(lower.includes(kw)) score += 2; });
+                scores[area.id] = score;
+                if(score > maxScore) { maxScore = score; matchedArea = area; }
+            });
+
+            const profile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
+            const apiKey = profile.geminiKey || "";
+
+            if (apiKey && text.length > 3) {
+                try {
+                    aiBadge.className = "ai-badge ai-active";
+                    aiBadgeText.innerText = "IA Analisando...";
+                    const prompt = `Analise o texto abaixo e determine a qual área da vida ele pertence estritamente entre as opções: ${lifeAreas.map(a => a.id + ' (' + a.name + ')').join(', ')}. Retorne apenas o id da área. Texto: "${text}"`;
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    const data = await res.json();
+                    const aiResult = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
+                    const found = lifeAreas.find(a => aiResult && aiResult.includes(a.id));
+                    if(found) matchedArea = found;
+                } catch(e) { console.error(e); }
+                aiBadge.className = "ai-badge";
+                aiBadgeText.innerText = "IA Conectada";
+            }
+            return { area: matchedArea, scores };
+        }
+
+        btnSave.addEventListener('click', async () => {
+            const text = popupInput.value.trim();
+            if(!text) { showToast("Escreva algo na ideia."); return; }
+            
+            btnSave.innerText = "Salvando...";
+            const analysis = await analyzeFullContext(text);
+            btnSave.innerText = "Salvar";
+
+            if (currentBubble) {
+                currentBubble.tooltip.innerText = text;
+                currentBubble.area = analysis.area;
+                currentBubble.circle.style.backgroundColor = analysis.area.color;
+                currentBubble.circle.style.boxShadow = `0 0 10px ${analysis.area.color}, 0 0 25px ${analysis.area.color}90`;
+                currentBubble.scores = analysis.scores;
+                showToast("Ideia atualizada!");
+            } else if (pendingCreationCoords) {
+                createBubble(pendingCreationCoords.x, pendingCreationCoords.y, analysis.area, text, null, analysis.scores);
+                showToast("Nova ideia criada!");
+                pendingCreationCoords = null;
+            }
+            popupOverlay.classList.remove('active');
+            scheduleDrawLines();
+            saveData();
+        });
+
+        btnDelete.addEventListener('click', () => {
+            if (currentBubble) {
+                bubblesArray = bubblesArray.filter(b => b !== currentBubble);
+                currentBubble.wrapper.remove();
+                currentBubble = null;
+                popupOverlay.classList.remove('active');
+                scheduleDrawLines();
+                saveData();
+                showToast("Ideia excluída.");
+            }
+        });
+
+        function showToast(msg) {
+            toastText.innerText = msg;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
+
+        function saveData() {
+            try {
+                const dataToSave = bubblesArray.map(b => ({
+                    id: b.id,
+                    x: parseFloat(b.wrapper.style.left),
+                    y: parseFloat(b.wrapper.style.top),
+                    areaId: b.area.id,
+                    text: b.tooltip.innerText,
+                    scores: b.scores
+                }));
+                localStorage.setItem('nexusBubbles', JSON.stringify(dataToSave));
+                
+                if (window.firebaseDbModules && window.getCurrentUserId) {
+                    const { db, ref, set } = window.firebaseDbModules;
+                    const userId = window.getCurrentUserId();
+                    if(userId && userId !== "default_user") {
+                        set(ref(db, 'users/' + userId + '/bubbles'), dataToSave);
+                    }
+                }
+            } catch(e) { console.error("Erro ao salvar:", e); }
+        }
+
+        function loadData() {
+            try {
+                const localData = JSON.parse(localStorage.getItem('nexusBubbles'));
+                if(localData && Array.isArray(localData)) {
+                    localData.forEach(item => {
+                        const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
+                        createBubble(item.x, item.y, area, item.text, item.id, item.scores);
+                    });
+                    scheduleDrawLines();
+                }
+
+                if (window.firebaseDbModules && window.getCurrentUserId) {
+                    const { db, ref, onValue } = window.firebaseDbModules;
+                    const userId = window.getCurrentUserId();
+                    if(userId && userId !== "default_user") {
+                        onValue(ref(db, 'users/' + userId + '/bubbles'), (snapshot) => {
+                            const firebaseData = snapshot.val();
+                            if(firebaseData && Array.isArray(firebaseData)) {
+                                bubblesArray.forEach(b => b.wrapper.remove());
+                                bubblesArray = [];
+                                firebaseData.forEach(item => {
+                                    const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
+                                    createBubble(item.x, item.y, area, item.text, item.id, item.scores);
+                                });
+                                scheduleDrawLines();
+                            }
+                        }, { onlyOnce: true });
+                    }
+                }
+            } catch(e) { console.error("Erro ao carregar:", e); }
+        }
+
+        window.addEventListener('load', () => {
+            loadData();
+            loadProfileData();
+            buildNewsUI();
+            fetchAllNews();
+            
+            if(bubblesArray.length === 0) {
+                createBubble(-100, -50, lifeAreas[0], "Cuidar da saúde e foco diário", 1);
+                createBubble(120, 80, lifeAreas[1], "Estudar Inteligência Artificial", 2);
+                scheduleDrawLines();
+            }
+        });
     </script>
 </body>
 </html>
+```[cite: 1]
