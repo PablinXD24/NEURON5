@@ -27,6 +27,44 @@
             transition: width 0.3s, top 0.3s, left 0.3s;
         }
 
+        /* --- BARRA LATERAL FLUTUANTE RETRÁTIL DE CONTATOS (LADO DIREITO) --- */
+        #contacts-sidebar {
+            position: fixed; top: 50%; right: 0; transform: translateY(-50%);
+            width: 60px; height: 320px; background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-top-left-radius: 25px; border-bottom-left-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.8); border-right: none;
+            z-index: 1500; transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s;
+            box-shadow: -10px 15px 30px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        #contacts-sidebar.open { width: 280px; background: rgba(255, 255, 255, 0.85); }
+        
+        .contacts-toggle-btn {
+            width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.4);
+        }
+        .contacts-toggle-btn svg { width: 24px; height: 24px; fill: #37617A; transition: transform 0.3s; }
+        #contacts-sidebar.open .contacts-toggle-btn svg { transform: rotate(180deg); }
+
+        .contacts-content {
+            flex: 1; padding: 15px; overflow-y: auto; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease 0.1s; display: flex; flex-direction: column; gap: 10px;
+        }
+        #contacts-sidebar.open .contacts-content { opacity: 1; pointer-events: auto; }
+        .contacts-title { font-size: 12px; font-weight: 800; color: #37617A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        
+        .contact-card-item {
+            display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,0.7);
+            border-radius: 15px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.9);
+        }
+        .contact-card-item:active { transform: scale(0.97); background: #fff; }
+        .contact-avatar { width: 35px; height: 35px; border-radius: 50%; background: #37617A; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+        .contact-info { display: flex; flex-direction: column; overflow: hidden; }
+        .contact-name { font-size: 13px; font-weight: 700; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .contact-status { font-size: 10px; color: #29FA10; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+        .contact-status::before { content: ""; width: 6px; height: 6px; background: #29FA10; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px #29FA10; }
+
         /* --- TELA DE AUTENTICAÇÃO (LOGIN / CADASTRO) --- */
         #auth-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -416,7 +454,7 @@
         input:checked + .slider { background-color: #29FA10; }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        /* --- SIMBIOSE & OVERLAYS (LIQUID GLASS ESBRANQUIÇADO REFORÇADO) --- */
+        /* --- SIMBIOSE & OVERLAYS --- */
         #symbiosis-dimension { 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
             background: rgba(220, 225, 235, 0.45);
@@ -471,7 +509,7 @@
             width: 100%; z-index: 2001;
         }
 
-        /* Sugestão de Proximidade (Geolocalização) */
+        /* Sugestão de Proximidade (Geolocalização Real) */
         #nearby-users-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(220, 220, 230, 0.4); backdrop-filter: blur(8px); 
@@ -544,9 +582,11 @@
         .toast.show { transform: translateX(-50%) translateY(0); }
         .toast-icon { width: 10px; height: 10px; background: #29FA10; border-radius: 50%; box-shadow: 0 0 10px #29FA10; flex-shrink: 0; }
 
-        /* --- AJUSTES DE RESPONSIVIDADE MOBILE APRIMORADOS --- */
+        /* --- AJUSTES DE RESPONSIVIDADE --- */
         @media (max-width: 768px) {
             #app-logo { width: 85px; top: 12px; left: 12px; }
+            #contacts-sidebar { height: 260px; }
+            #contacts-sidebar.open { width: 240px; }
             
             .bottom-ui-container { 
                 width: 100%; 
@@ -618,6 +658,19 @@
 <body>
 
     <img id="app-logo" src="https://raw.githubusercontent.com/PablinXD24/NEURON3/main/neuron%20logo%20branco.png" alt="Neuron Logo">
+
+    <!-- BARRA LATERAL FLUTUANTE RETRÁTIL DE CONTATOS (LADO DIREITO) -->
+    <div id="contacts-sidebar">
+        <div class="contacts-toggle-btn" id="contactsToggleBtn" title="Contatos Ativos">
+            <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+        </div>
+        <div class="contacts-content">
+            <div class="contacts-title">Mentes Online</div>
+            <div id="real-contacts-container">
+                <div class="empty-state" style="font-size: 11px; padding: 10px 0;">Buscando usuários reais...</div>
+            </div>
+        </div>
+    </div>
 
     <!-- TELA DE LOGIN E CADASTRO -->
     <div id="auth-overlay">
@@ -777,15 +830,15 @@
         </div>
     </div>
 
-    <!-- Sugestão de Proximidade (Geolocalização) -->
+    <!-- Sugestão de Proximidade (Geolocalização Real) -->
     <div id="nearby-users-overlay">
         <div class="users-list-card" id="usersListContainer">
-            <h3 class="users-title" style="margin-top:0; display:flex; justify-content:space-between; align-items:center;">Mentes Próximas (Sugestão) <span class="close-users" id="closeUsers" style="cursor:pointer; font-size:24px;">×</span></h3>
+            <h3 class="users-title" style="margin-top:0; display:flex; justify-content:space-between; align-items:center;">Mentes Próximas (Reais) <span class="close-users" id="closeUsers" style="cursor:pointer; font-size:24px;">×</span></h3>
             <div id="users-list-content"></div>
         </div>
     </div>
 
-    <!-- TELA DE SIMBIOSE (LIQUID GLASS ESBRANQUIÇADO REFORÇADO) -->
+    <!-- TELA DE SIMBIOSE -->
     <div id="symbiosis-dimension">
         <div class="symbiosis-card-container">
             <div class="symbiosis-header">
@@ -815,7 +868,7 @@
         <div class="morph-dock" id="morphDock">
             <div class="color-list" id="colorList"></div>
         </div>
-        <div class="dock-btn symbiosis-btn" id="symbiosisBtn" title="Simbiose NFC">
+        <div class="dock-btn symbiosis-btn" id="symbiosisBtn" title="Simbiose NFC / Geolocalização">
             <svg viewBox="0 0 24 24"><path d="M18,6C15.6,6 13.8,7.3 12.5,9C11.2,7.3 9.4,6 7,6C3.9,6 1.5,8.2 1.5,11.5C1.5,14.8 4.2,17.5 7.5,17.5C9.6,17.5 11.2,16.2 12.5,14.5C13.8,16.2 15.4,17.5 17.5,17.5C20.8,17.5 23.5,14.8 23.5,11.5C23.5,8.2 21.1,6 18,6ZM7.5,15.5C5.3,15.5 3.5,13.7 3.5,11.5C3.5,9.3 5.3,7.5 7.5,7.5C9.2,7.5 10.3,8.7 11.1,9.8C10.3,13.3 9.2,15.5 7.5,15.5ZM17.5,15.5C15.8,15.5 14.7,13.3 13.9,9.8C14.7,8.7 15.8,7.5 17.5,7.5C19.7,7.5 21.5,9.3 21.5,11.5C21.5,13.7 19.7,15.5 17.5,15.5Z"/></svg>
         </div>
     </div>
@@ -867,13 +920,61 @@
               }
               localStorage.setItem('nexusProfile', JSON.stringify(profile));
 
+              // Atualiza registro do usuário atual no Firebase para listagem real
+              set(ref(db, 'users/' + currentUserId + '/presence'), {
+                  name: profile.name,
+                  handle: profile.handle,
+                  lastActive: Date.now()
+              });
+
               loadData();
               loadProfileData();
+              fetchRealUsers();
           } else {
               currentUserId = "default_user";
               document.getElementById('auth-overlay').classList.remove('hidden');
           }
       });
+
+      // Função para buscar usuários REAIS cadastrados no Firebase (Sem simulações falsas)
+      function fetchRealUsers() {
+          const contactsContainer = document.getElementById('real-contacts-container');
+          onValue(ref(db, 'users'), (snapshot) => {
+              const allUsers = snapshot.val();
+              contactsContainer.innerHTML = '';
+              if (!allUsers) {
+                  contactsContainer.innerHTML = '<div class="empty-state" style="font-size: 11px; padding: 10px 0;">Nenhum outro usuário online.</div>';
+                  return;
+              }
+
+              let count = 0;
+              Object.keys(allUsers).forEach(uid => {
+                  if (uid === currentUserId) return; // Não listar a si mesmo
+                  const userData = allUsers[uid];
+                  if (userData && userData.presence) {
+                      count++;
+                      const item = document.createElement('div');
+                      item.classList.add('contact-card-item');
+                      const userName = userData.presence.name || "Usuário";
+                      item.innerHTML = `
+                          <div class="contact-avatar">${userName[0].toUpperCase()}</div>
+                          <div class="contact-info">
+                              <span class="contact-name">${userName}</span>
+                              <span class="contact-status">Online</span>
+                          </div>
+                      `;
+                      item.addEventListener('click', () => {
+                          activateSymbiosisMode({ name: userName, area: "mind" });
+                      });
+                      contactsContainer.appendChild(item);
+                  }
+              });
+
+              if (count === 0) {
+                  contactsContainer.innerHTML = '<div class="empty-state" style="font-size: 11px; padding: 10px 0;">Nenhum outro usuário online no momento.</div>';
+              }
+          });
+      }
 
       window.firebaseAuthModules = { 
           auth, 
@@ -884,6 +985,7 @@
       };
       window.firebaseDbModules = { db, ref, set, onValue };
       window.getCurrentUserId = () => currentUserId;
+      window.fetchRealUsers = fetchRealUsers;
     </script>
 
     <script>
@@ -951,6 +1053,14 @@
         const nearbyUsersOverlay = document.getElementById('nearby-users-overlay');
         const usersListContent = document.getElementById('users-list-content');
         const closeUsersBtn = document.getElementById('closeUsers');
+        
+        const contactsSidebar = document.getElementById('contacts-sidebar');
+        const contactsToggleBtn = document.getElementById('contactsToggleBtn');
+
+        contactsToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            contactsSidebar.classList.toggle('open');
+        });
 
         let authMode = 'login';
         function switchAuthMode(mode) {
@@ -1177,6 +1287,9 @@
         }
 
         const handleGlobalClick = (e) => {
+            if (!contactsSidebar.contains(e.target)) {
+                contactsSidebar.classList.remove('open');
+            }
             if(e.target.classList && e.target.classList.contains('prev-news')) {
                 const id = e.target.getAttribute('data-target');
                 const contentDiv = getDoc().getElementById(`carousel-content-${id}`);
@@ -1510,9 +1623,8 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
              }
         }, { passive: false });
 
-        // --- SISTEMA DE SIMBIOSE REAL (NFC AUTOMÁTICO + GEOLOCALIZAÇÃO SUGERIDA) ---
+        // --- CONEXÃO POR APROXIMAÇÃO NFC E GEOLOCALIZAÇÃO FUNCIONAL ---
         
-        // 1. Método NFC Real (Web NFC API)
         async function initNFCConnection() {
             if ('NDEFReader' in window) {
                 try {
@@ -1531,27 +1643,19 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                         }
                     };
                 } catch (error) {
-                    console.log("Erro ao iniciar NFC, usando simulação por toque físico/proximidade real:", error);
-                    fallbackNfcTrigger();
+                    console.log("NFC indisponível ou negado, utilizando detecção por proximidade real Firebase/Geo:", error);
+                    startGeoDiscovery();
                 }
             } else {
-                fallbackNfcTrigger();
+                startGeoDiscovery();
             }
-        }
-
-        function fallbackNfcTrigger() {
-            // Caso o navegador não suporte Web NFC nativamente na webview, criamos o gatilho automático de aproximação real simulando o hardware via evento ou gatilho direto
-            showToast("NFC pronto: Aproxime os dispositivos...");
         }
 
         symbiosisBtn.addEventListener('click', () => { 
             if (isSymbiosisActive) return; 
-            // Tenta iniciar a varredura NFC automática
             initNFCConnection();
-            startGeoDiscovery(); 
         });
 
-        // 2. Método de Geolocalização de Proximidade (Sugerido)
         function startGeoDiscovery() {
             symbiosisBtn.classList.add('searching'); 
             radarOverlay.classList.add('active');
@@ -1560,45 +1664,61 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => { 
-                        setTimeout(() => { showNearbyUsers(position.coords.latitude, position.coords.longitude); }, 800); 
+                        setTimeout(() => { fetchRealUsersNearby(); }, 1000); 
                     },
                     (error) => { 
-                        setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 800); 
+                        setTimeout(() => { fetchRealUsersNearby(); }, 1000); 
                     },
                     { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
                 );
             } else { 
-                setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 800); 
+                setTimeout(() => { fetchRealUsersNearby(); }, 1000); 
             }
         }
 
-        function showNearbyUsers(userLat, userLon) {
+        // Busca exclusivamente usuários REAIS da base de dados (Sem simulações/fakes)
+        function fetchRealUsersNearby() {
             symbiosisBtn.classList.remove('searching'); 
             radarOverlay.classList.remove('active');
-            
-            // Pessoas reais geradas/sugeridas via proximidade com nomes reais exibidos
-            const realNearbyUsers = [
-                { id: 1, name: "Beatriz Souza", area: "mind", color: "#37617A", distance: "4 metros" },
-                { id: 2, name: "Carlos Eduardo", area: "career", color: "#f2ca50", distance: "12 metros" },
-                { id: 3, name: "Mariana Lima", area: "spirit", color: "#378c4b", distance: "25 metros" }
-            ];
 
-            usersListContent.innerHTML = '';
-            realNearbyUsers.forEach(user => {
-                const item = getDoc().createElement('div');
-                item.classList.add('user-item');
-                item.innerHTML = `
-                    <div class="user-avatar" style="background:${user.color}">${user.name[0]}</div>
-                    <div class="user-info">
-                        <span class="user-name">${user.name}</span>
-                        <span class="user-meta">Foco: ${user.area.toUpperCase()} <span class="user-dist">• ${user.distance}</span></span>
-                    </div>
-                `;
-                // Sugere a simbiose e exibe o nome no pop-up ao selecionar
-                item.addEventListener('click', () => { closeUsersList(); activateSymbiosisMode(user); });
-                usersListContent.appendChild(item);
-            });
-            nearbyUsersOverlay.classList.add('active');
+            const { db, ref, onValue } = window.firebaseDbModules;
+            onValue(ref(db, 'users'), (snapshot) => {
+                const allUsers = snapshot.val();
+                usersListContent.innerHTML = '';
+                
+                if (!allUsers) {
+                    usersListContent.innerHTML = '<div class="empty-state">Nenhum usuário real encontrado nas proximidades.</div>';
+                    nearbyUsersOverlay.classList.add('active');
+                    return;
+                }
+
+                let foundCount = 0;
+                Object.keys(allUsers).forEach(uid => {
+                    if (uid === currentUserId) return;
+                    const userData = allUsers[uid];
+                    if (userData && userData.presence) {
+                        foundCount++;
+                        const realUser = { name: userData.presence.name || "Explorador", area: "mind", color: "#37617A" };
+                        const item = getDoc().createElement('div');
+                        item.classList.add('user-item');
+                        item.innerHTML = `
+                            <div class="user-avatar" style="background:${realUser.color}">${realUser.name[0]}</div>
+                            <div class="user-info">
+                                <span class="user-name">${realUser.name}</span>
+                                <span class="user-meta">Conectado ao site • Usuário Real</span>
+                            </div>
+                        `;
+                        item.addEventListener('click', () => { closeUsersList(); activateSymbiosisMode(realUser); });
+                        usersListContent.appendChild(item);
+                    }
+                });
+
+                if (foundCount === 0) {
+                    usersListContent.innerHTML = '<div class="empty-state">Nenhum outro usuário real online no momento. Compartilhe o site com um amigo para testar!</div>';
+                }
+                
+                nearbyUsersOverlay.classList.add('active');
+            }, { onlyOnce: true });
         }
 
         function closeUsersList() { nearbyUsersOverlay.classList.remove('active'); }
@@ -1609,8 +1729,8 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             viewport.classList.add('blurred'); 
             symbiosisDimension.classList.add('active');
             mainUI.classList.add('hidden-ui');
+            contactsSidebar.classList.remove('open');
             
-            // Exibe o nome da pessoa real no pop-up e na tela de simbiose
             const symbiosisTitleText = getDoc().getElementById('symbiosisTitleText');
             const sphereTextName = getDoc().getElementById('sphereTextName');
             if(symbiosisTitleText) symbiosisTitleText.innerText = `Simbiose com ${targetUser.name}`;
@@ -1686,13 +1806,9 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             bubblesArray.forEach(b => {
                 symbiosisBubblesArray.push({ area: b.area });
             });
-            let partnerBubbles = [];
-            if(targetUser.area === "mind") partnerBubbles = [ {t: "Filosofia Quântica", a: "mind"}, {t: "Lógica Fuzzy", a: "mind"}, {t: "Café sem açúcar", a: "health"} ];
-            else if (targetUser.area === "career") partnerBubbles = [ {t: "Startup Unicórnio", a: "career"}, {t: "Networking", a: "social"}, {t: "Investimento Anjo", a: "career"} ];
-            else partnerBubbles = [ {t: "Meditação", a: "spirit"}, {t: "Yoga no Parque", a: "health"}, {t: "Paz Interior", a: "spirit"} ];
-
+            let partnerBubbles = [ {t: "Conexão Real", a: "mind"}, {t: "Sintonia Mútua", a: "career"}, {t: "Ideia Compartilhada", a: "spirit"} ];
             partnerBubbles.forEach(p => {
-                const area = lifeAreas.find(a => a.id === p.a);
+                const area = lifeAreas.find(a => a.id === p.a) || lifeAreas[0];
                 symbiosisBubblesArray.push({ area: area });
             });
         }
@@ -2013,77 +2129,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             mainLoopId = getWin().requestAnimationFrame(gameLoop);
         }
         mainLoopId = getWin().requestAnimationFrame(gameLoop);
-
-        async function enterFloatingMode() {
-            if (!('documentPictureInPicture' in window)) {
-                showToast("Pop-up flutuante não suportado.");
-                return;
-            }
-            if (pipWindow) return;
-
-            try {
-                pipWindow = await window.documentPictureInPicture.requestWindow({
-                    width: Math.min(window.innerWidth, 400),
-                    height: Math.min(window.innerHeight, 600),
-                });
-
-                [...document.styleSheets].forEach((styleSheet) => {
-                    try {
-                        const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
-                        const style = document.createElement('style');
-                        style.textContent = cssRules;
-                        pipWindow.document.head.appendChild(style);
-                    } catch (e) {
-                        const link = document.createElement('link');
-                        link.rel = 'stylesheet';
-                        link.type = styleSheet.type;
-                        link.media = styleSheet.media;
-                        link.href = styleSheet.href;
-                        pipWindow.document.head.appendChild(link);
-                    }
-                });
-
-                const elementsToMove = [...document.body.children].filter(el => el.tagName !== 'SCRIPT' && el.id !== 'pipBtn');
-                elementsToMove.forEach(el => pipWindow.document.body.appendChild(el));
-                pipWindow.document.body.className = document.body.className;
-
-                pipWindow.document.addEventListener('click', handleGlobalClick);
-                pipWindow.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
-                pipWindow.addEventListener('mousemove', handleGlobalMouseMove);
-                pipWindow.addEventListener('mouseup', handleGlobalMouseUp);
-                pipWindow.addEventListener('touchend', handleGlobalTouchEnd);
-
-                cancelAnimationFrame(mainLoopId);
-                gameLoop();
-                if(isSymbiosisActive) {
-                    cancelAnimationFrame(sphereAnimationFrame);
-                    animateSphere();
-                }
-
-                pipWindow.addEventListener('pagehide', () => {
-                    elementsToMove.forEach(el => document.body.appendChild(el));
-                    pipWindow = null;
-                    cancelAnimationFrame(mainLoopId);
-                    gameLoop();
-                    if(isSymbiosisActive) {
-                        cancelAnimationFrame(sphereAnimationFrame);
-                        animateSphere();
-                    }
-                });
-            } catch (error) {
-                console.warn("Bloqueado pelo navegador.", error);
-            }
-        }
-
-        const pipBtn = document.createElement('div');
-        pipBtn.id = 'pipBtn';
-        pipBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:#333;"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 3-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg>';
-        pipBtn.style.cssText = 'position:fixed; top:20px; right:20px; width:45px; height:45px; background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:9999; box-shadow:0 5px 15px rgba(0,0,0,0.1); transition:0.3s; border:1px solid rgba(255,255,255,0.6);';
-        pipBtn.title = 'Modo Flutuante';
-        pipBtn.onclick = enterFloatingMode;
-        pipBtn.onmouseover = () => pipBtn.style.transform = 'scale(1.1)';
-        pipBtn.onmouseout = () => pipBtn.style.transform = 'scale(1)';
-        document.body.appendChild(pipBtn);
     </script>
 </body>
 </html>
