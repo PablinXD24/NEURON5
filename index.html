@@ -426,43 +426,32 @@
         #symbiosis-dimension.active { display: flex; opacity: 1; pointer-events: auto; }
         
         .symbiosis-header { 
-            position: absolute; top: 30px; left: 0; width: 100%; 
+            position: absolute; top: 20px; left: 0; width: 100%; 
             display: flex; justify-content: space-between; align-items: center; 
             padding: 0 20px; box-sizing: border-box; pointer-events: none; z-index: 2001; 
         }
         .symbiosis-title { color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; font-size: 12px; }
+        .header-actions { display: flex; gap: 8px; pointer-events: auto; }
         .header-btn { 
             background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); 
             padding: 8px 12px; border-radius: 20px; cursor: pointer; backdrop-filter: blur(5px); 
-            font-weight: 600; font-size: 11px; pointer-events: auto; margin-left: 5px;
+            font-weight: 600; font-size: 11px;
         }
 
         #sphere-view { perspective: 1000px; display: flex; align-items: center; justify-content: center; cursor: grab; position: absolute; width: 100%; height: 100%; overflow: hidden; }
         #neural-sphere { position: relative; width: 0; height: 0; transform-style: preserve-3d; }
-        
-        /* Ajuste estético da Esfera: Bolinhas idênticas ao mundo principal */
-        .sphere-node { 
-            position: absolute; 
-            width: 28px; 
-            height: 28px; 
-            border-radius: 50%; 
-            top: 0; 
-            left: 0; 
-            transform: translate(-50%, -50%); 
-            animation-name: floatVertical; 
-            animation-timing-function: ease-in-out; 
-            animation-iteration-count: infinite; 
-            will-change: transform, opacity; 
-        }
-        
+        .sphere-node { position: absolute; width: 28px; height: 28px; border-radius: 50%; top: 0; left: 0; transform: translate(-50%, -50%); box-shadow: 0 0 15px currentColor; will-change: transform, opacity; cursor: pointer; }
+        .sphere-node:hover .message-tooltip { opacity: 1; }
         .sphere-text { 
-            position: absolute; top: 0; left: 0; color: white; font-size: 16px; 
-            font-weight: 300; transform: translate(-50%, -50%); text-align: center;
-            text-shadow: 0 0 20px rgba(41, 250, 16, 0.8); pointer-events: none; opacity: 0.8; letter-spacing: 3px; 
-            width: 100%;
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); color: white; font-size: 14px; 
+            font-weight: 600; text-align: center;
+            text-shadow: 0 0 20px rgba(41, 250, 16, 0.8); pointer-events: none; opacity: 0.9; letter-spacing: 2px; 
+            white-space: nowrap; z-index: 2001;
         }
         
-        #symbiosis-map-container { position: absolute; width: 100%; height: 100%; opacity: 0; pointer-events: none; display: none; }
+        #symbiosis-map-container { position: absolute; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+        #symbiosis-map-container.active-view { opacity: 1; pointer-events: auto; }
+        #sphere-view.hidden-view { opacity: 0; pointer-events: none; }
 
         /* Lista de Usuários */
         #nearby-users-overlay { 
@@ -550,32 +539,116 @@
                 box-sizing: border-box; 
                 max-width: 100vw;
             }
-            .dock-btn { width: 44px; height: 44px; }
-            .dock-btn svg { width: 19px; height: 19px; }
-            .morph-dock.open { width: calc(100vw - 110px); height: 65px; justify-content: flex-start; padding: 0; }
-            .morph-ai-bar.open { width: calc(100vw - 75px); height: 50px; }
-            .morph-dock.open .color-list { padding: 0 10px; width: auto; justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            .color-option { width: 32px; height: 32px; margin-right: 4px; }
+            .dock-btn {
+                width: 44px;
+                height: 44px;
+            }
+            .dock-btn svg {
+                width: 19px;
+                height: 19px;
+            }
+            .morph-dock.open { 
+                width: calc(100vw - 110px); 
+                height: 65px; 
+                justify-content: flex-start; 
+                padding: 0; 
+            }
+            .morph-ai-bar.open { 
+                width: calc(100vw - 75px); 
+                height: 50px;
+            }
+            .morph-dock.open .color-list { 
+                padding: 0 10px; 
+                width: auto; 
+                justify-content: flex-start; 
+                overflow-x: auto; 
+                -webkit-overflow-scrolling: touch; 
+            }
+            .color-option { 
+                width: 32px;
+                height: 32px;
+                margin-right: 4px; 
+            }
             
-            .profile-modal { flex-direction: column; overflow-y: auto; height: 92vh; width: 95vw; border-radius: 25px; }
-            .profile-sidebar { width: 100%; padding: 20px 15px; border-right: none; border-bottom: 1px solid #eee; box-sizing: border-box; height: auto; flex-shrink: 0; }
-            .profile-content { overflow: visible; }
-            .profile-nav { overflow-x: auto; padding: 12px 15px; justify-content: flex-start; gap: 15px; }
-            .nav-item { font-size: 13px; padding-bottom: 6px; }
-            .tab-content-area { padding: 15px; }
-            .neural-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .edit-form { grid-template-columns: 1fr; gap: 10px; }
-            .form-group.full { grid-column: span 1; }
-            .save-btn { grid-column: span 1; padding: 12px; font-size: 15px; }
+            .profile-modal { 
+                flex-direction: column; 
+                overflow-y: auto; 
+                height: 92vh; 
+                width: 95vw;
+                border-radius: 25px;
+            }
+            .profile-sidebar { 
+                width: 100%; 
+                padding: 20px 15px; 
+                border-right: none; 
+                border-bottom: 1px solid #eee; 
+                box-sizing: border-box; 
+                height: auto; 
+                flex-shrink: 0; 
+            }
+            .profile-content { 
+                overflow: visible; 
+            }
+            .profile-nav { 
+                overflow-x: auto; 
+                padding: 12px 15px; 
+                justify-content: flex-start; 
+                gap: 15px;
+            }
+            .nav-item {
+                font-size: 13px;
+                padding-bottom: 6px;
+            }
+            .tab-content-area {
+                padding: 15px;
+            }
+            .neural-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 10px; 
+            }
+            .edit-form { 
+                grid-template-columns: 1fr; 
+                gap: 10px;
+            }
+            .form-group.full { 
+                grid-column: span 1; 
+            }
+            .save-btn {
+                grid-column: span 1;
+                padding: 12px;
+                font-size: 15px;
+            }
             
-            .popup-card { width: 90%; margin-top: -10%; padding: 20px; border-radius: 20px; }
-            #popupInput { height: 70px; padding: 10px; font-size: 13px; }
-            .users-list-card { width: 92%; max-height: 75vh; padding: 18px; border-radius: 20px; }
+            .popup-card { 
+                width: 90%;
+                margin-top: -10%; 
+                padding: 20px;
+                border-radius: 20px;
+            }
+            #popupInput {
+                height: 70px;
+                padding: 10px;
+                font-size: 13px;
+            }
+            .users-list-card {
+                width: 92%;
+                max-height: 75vh;
+                padding: 18px;
+                border-radius: 20px;
+            }
             
-            #sphere-view { transform: scale(0.7); }
-            .sphere-text { font-size: 13px; letter-spacing: 1.5px; }
-            .symbiosis-header { top: 15px; padding: 0 12px; }
-            .header-btn { padding: 6px 10px; font-size: 10px; }
+            .sphere-text { 
+                font-size: 12px; 
+                letter-spacing: 1px; 
+            }
+            .symbiosis-header {
+                top: 15px;
+                padding: 0 12px;
+            }
+            .header-btn {
+                padding: 6px 10px;
+                font-size: 10px;
+            }
         }
     </style>
 </head>
@@ -755,8 +828,10 @@
                 <button id="close-symbiosis" class="header-btn">Encerrar</button>
             </div>
         </div>
-        <div id="sphere-view" class="symbiosis-view active-view"><div id="neural-sphere"></div><div class="sphere-text">CONEXÃO ATIVA</div></div>
-        <div id="symbiosis-map-container" class="symbiosis-view hidden-view"></div>
+        <div id="sphere-view" class="symbiosis-view active-view">
+            <div id="neural-sphere"></div>
+            <div class="sphere-text">CONEXÃO ATIVA</div>
+        </div>
     </div>
 
     <div class="bottom-ui-container" id="mainUI">
@@ -773,7 +848,7 @@
         <div class="morph-dock" id="morphDock">
             <div class="color-list" id="colorList"></div>
         </div>
-        <div class="dock-btn" id="symbiosisBtn" title="Simbiose">
+        <div class="dock-btn symbiosis-btn" id="symbiosisBtn" title="Simbiose">
             <svg viewBox="0 0 24 24"><path d="M18,6C15.6,6 13.8,7.3 12.5,9C11.2,7.3 9.4,6 7,6C3.9,6 1.5,8.2 1.5,11.5C1.5,14.8 4.2,17.5 7.5,17.5C9.6,17.5 11.2,16.2 12.5,14.5C13.8,16.2 15.4,17.5 17.5,17.5C20.8,17.5 23.5,14.8 23.5,11.5C23.5,8.2 21.1,6 18,6ZM7.5,15.5C5.3,15.5 3.5,13.7 3.5,11.5C3.5,9.3 5.3,7.5 7.5,7.5C9.2,7.5 10.3,8.7 11.1,9.8C10.3,13.3 9.2,15.5 7.5,15.5ZM17.5,15.5C15.8,15.5 14.7,13.3 13.9,9.8C14.7,8.7 15.8,7.5 17.5,7.5C19.7,7.5 21.5,9.3 21.5,11.5C21.5,13.7 19.7,15.5 17.5,15.5Z"/></svg>
         </div>
     </div>
@@ -1468,16 +1543,11 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
 
         symbiosisBtn.addEventListener('click', () => { if (isSymbiosisActive) return; startDiscovery(); });
 
-        /* Tempo de pesquisa reduzido drasticamente para ser extremamente rápido (ajustado para 400ms) */
         function startDiscovery() {
             symbiosisBtn.classList.add('searching'); radarOverlay.classList.add('active');
             showToast("Buscando sinais neurais próximos...");
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => { setTimeout(() => { showNearbyUsers(position.coords.latitude, position.coords.longitude); }, 400); },
-                    (error) => { setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 400); }
-                );
-            } else { setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 400); }
+            // Ajuste no tempo de pesquisa para ser rápido (400ms)
+            setTimeout(() => { showNearbyUsers(-23.55, -46.63); }, 400);
         }
 
         function showNearbyUsers(userLat, userLon) {
@@ -1521,21 +1591,21 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             neuralSphere.innerHTML = '';
             spherePoints = [];
             const count = symbiosisBubblesArray.length;
-            const radius = getWin().innerWidth < 600 ? 140 : 180;
+            const radius = getWin().innerWidth < 600 ? 130 : 160;
 
             symbiosisBubblesArray.forEach((bubble, i) => {
                 const node = getDoc().createElement('div');
                 node.classList.add('sphere-node');
                 node.style.backgroundColor = bubble.area.color;
-                node.style.boxShadow = `0 0 10px ${bubble.area.color}, 0 0 25px ${bubble.area.color}90`;
-                node.style.animationDuration = bubble.animationDuration || `${(Math.random()*3+4).toFixed(2)}s`;
-                
+                node.style.color = bubble.area.color;
+                node.style.boxShadow = `0 0 15px ${bubble.area.color}, 0 0 30px ${bubble.area.color}`;
+
                 const tooltip = getDoc().createElement('div');
                 tooltip.classList.add('message-tooltip');
                 tooltip.innerText = bubble.text;
                 node.appendChild(tooltip);
 
-                const y = 1 - (i / (count - 1)) * 2;
+                const y = 1 - (i / (Math.max(1, count - 1))) * 2;
                 const r = Math.sqrt(1 - y * y);
                 const theta = i * 2.4; 
 
@@ -1576,6 +1646,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             isSymbiosisActive = false;
             viewport.classList.remove('blurred'); symbiosisDimension.classList.remove('active');
             mainUI.classList.remove('hidden-ui');
+            neuralSphere.innerHTML = '';
             symbiosisBubblesArray = [];
             getWin().cancelAnimationFrame(sphereAnimationFrame);
             viewport.style.pointerEvents = 'auto';
@@ -1586,8 +1657,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             bubblesArray.forEach(b => {
                 symbiosisBubblesArray.push({
                     area: b.area,
-                    text: b.tooltip.innerText,
-                    animationDuration: b.circle.style.animationDuration
+                    text: b.tooltip.innerText
                 });
             });
             let partnerBubbles = [];
@@ -1599,8 +1669,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 const area = lifeAreas.find(a => a.id === p.a);
                 symbiosisBubblesArray.push({
                     area: area,
-                    text: p.t,
-                    animationDuration: `${(Math.random()*3+4).toFixed(2)}s`
+                    text: p.t
                 });
             });
         }
@@ -1612,107 +1681,35 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             circle.appendChild(tooltip); wrapper.appendChild(circle); world.appendChild(wrapper);
             const bubbleObj = { id: existingId || (Date.now()+Math.random()), wrapper, circle, area, tooltip, scores: existingScores };
             bubblesArray.push(bubbleObj);
-            setupInteraction(bubbleObj);
             return bubbleObj; 
-        }
-
-        function setupInteraction(bubbleObj) {
-            let isDraggingBubble = false; let dragStartX, dragStartY, initialBubbleLeft, initialBubbleTop;
-            const wrapper = bubbleObj.wrapper;
-            
-            function onBubbleStart(e) { 
-                e.stopPropagation(); 
-                isDraggingBubble = false; 
-                const pos = getEventPos(e); 
-                dragStartX = pos.x; 
-                dragStartY = pos.y; 
-                initialBubbleLeft = parseInt(wrapper.style.left||0); 
-                initialBubbleTop = parseInt(wrapper.style.top||0); 
-                const targetWin = getWin();
-                if(e.type === 'mousedown') { 
-                    targetWin.addEventListener('mousemove', onBubbleMove); 
-                    targetWin.addEventListener('mouseup', onBubbleEnd); 
-                } else { 
-                    targetWin.addEventListener('touchmove', onBubbleMove, {passive:false}); 
-                    targetWin.addEventListener('touchend', onBubbleEnd); 
-                }
-            }
-
-            function onBubbleMove(e) {
-                const pos = getEventPos(e);
-                const dx = pos.x - dragStartX;
-                const dy = pos.y - dragStartY;
-                if(Math.hypot(dx, dy) > 6) {
-                    isDraggingBubble = true;
-                    wrapper.style.left = `${initialBubbleLeft + (dx / scale)}px`;
-                    wrapper.style.top = `${initialBubbleTop + (dy / scale)}px`;
-                }
-            }
-
-            function onBubbleEnd(e) {
-                const targetWin = getWin();
-                targetWin.removeEventListener('mousemove', onBubbleMove);
-                targetWin.removeEventListener('mouseup', onBubbleEnd);
-                targetWin.removeEventListener('touchmove', onBubbleMove);
-                targetWin.removeEventListener('touchend', onBubbleEnd);
-                
-                if(!isDraggingBubble) {
-                    openPopup(bubbleObj);
-                } else {
-                    saveData();
-                }
-            }
-
-            wrapper.addEventListener('mousedown', onBubbleStart);
-            wrapper.addEventListener('touchstart', onBubbleStart, {passive: false});
         }
 
         function openPopup(bubble) {
             currentBubble = bubble;
-            popupTitle.innerText = `Editar Ideia (${bubble.area.name})`;
-            popupCard.style.borderColor = bubble.area.color;
+            popupTitle.innerText = bubble.area.name;
+            popupCard.style.borderTopColor = bubble.area.color;
             popupInput.value = bubble.tooltip.innerText;
             aiBadge.className = "ai-badge ai-active";
-            aiBadgeText.innerText = `Área: ${bubble.area.name}`;
-            btnDelete.style.display = 'block';
+            aiBadgeText.innerText = "Sinal Sincronizado";
             popupOverlay.classList.add('active');
-            setTimeout(() => popupInput.focus(), 150);
-        }
-
-        function closePopup() {
-            popupOverlay.classList.remove('active');
-            currentBubble = null;
-            popupInput.value = "";
+            setTimeout(() => popupInput.focus(), 100);
         }
 
         btnSave.addEventListener('click', () => {
-            const text = popupInput.value.trim();
-            if(!text) { showToast("Escreva algo na ideia."); return; }
             if(currentBubble) {
-                currentBubble.tooltip.innerText = text;
-                saveData();
-                showToast("Ideia atualizada!");
-            } else if(pendingCreationCoords) {
-                createBubble(pendingCreationCoords.x, pendingCreationCoords.y, activeArea, text);
-                saveData();
-                showToast("Nova ideia criada!");
-                pendingCreationCoords = null;
+                currentBubble.tooltip.innerText = popupInput.value;
+                popupOverlay.classList.remove('active');
+                showToast("Ideia atualizada com sucesso!");
             }
-            closePopup();
         });
 
         btnDelete.addEventListener('click', () => {
             if(currentBubble) {
                 currentBubble.wrapper.remove();
-                bubblesArray = bubblesArray.filter(b => b.id !== currentBubble.id);
-                saveData();
+                bubblesArray = bubblesArray.filter(b => b !== currentBubble);
+                popupOverlay.classList.remove('active');
                 showToast("Ideia excluída.");
-                closePopup();
             }
-        });
-
-        popupOverlay.addEventListener('click', (e) => {
-            if(e.target === popupOverlay) closePopup();
         });
 
         function showToast(text) {
@@ -1721,132 +1718,13 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        viewport.addEventListener('dblclick', (e) => {
-            if (isSymbiosisActive || profileOverlay.classList.contains('active')) return;
-            if (e.target === viewport || e.target === world || e.target.id === 'solo-lines') {
-                const rect = world.getBoundingClientRect();
-                const x = (e.clientX - rect.left) / scale;
-                const y = (e.clientY - rect.top) / scale;
-                pendingCreationCoords = { x, y };
-                currentBubble = null;
-                popupTitle.innerText = `Nova Ideia (${activeArea.name})`;
-                popupCard.style.borderColor = activeArea.color;
-                popupInput.value = "";
-                aiBadge.className = "ai-badge ai-active";
-                aiBadgeText.innerText = `Área: ${activeArea.name}`;
-                btnDelete.style.display = 'none';
-                popupOverlay.classList.add('active');
-                setTimeout(() => popupInput.focus(), 150);
-            }
-        });
-
-        function initDockColors() {
-            colorList.innerHTML = '';
-            lifeAreas.forEach((area, idx) => {
-                const container = getDoc().createElement('div');
-                container.className = 'color-option-container';
-                if(idx === 0) container.classList.add('active-container');
-
-                const option = getDoc().createElement('div');
-                option.className = 'color-option';
-                option.style.backgroundColor = area.color;
-                option.style.color = area.color;
-                if(idx === 0) option.classList.add('selected');
-
-                const label = getDoc().createElement('div');
-                label.className = 'area-label';
-                label.innerText = area.name;
-
-                option.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    activeArea = area;
-                    morphDock.style.setProperty('--dock-glow', area.color);
-                    getDoc().querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
-                    getDoc().querySelectorAll('.color-option-container').forEach(c => c.classList.remove('active-container'));
-                    option.classList.add('selected');
-                    container.classList.add('active-container');
-                    morphDock.classList.remove('open');
-                });
-
-                container.appendChild(option);
-                container.appendChild(label);
-                colorList.appendChild(container);
-            });
-        }
-
-        morphDock.addEventListener('click', (e) => {
-            if(e.target === morphDock || morphDock.contains(e.target) && e.target === morphDock.querySelector('.color-list') === false && !e.target.classList.contains('color-option')) {
-                morphDock.classList.toggle('open');
-            }
-        });
-
-        function saveData() {
-            const userId = window.getCurrentUserId ? window.getCurrentUserId() : "default_user";
-            const dataToSave = bubblesArray.map(b => ({
-                id: b.id,
-                x: parseInt(b.wrapper.style.left),
-                y: parseInt(b.wrapper.style.top),
-                text: b.tooltip.innerText,
-                areaId: b.area.id,
-                scores: b.scores || {}
-            }));
-            localStorage.setItem(`nexusBubbles_${userId}`, JSON.stringify(dataToSave));
-            
-            if(window.firebaseDbModules) {
-                const { db, ref, set } = window.firebaseDbModules;
-                set(ref(db, `users/${userId}/bubbles`), dataToSave).catch(err => console.error(err));
-            }
-        }
-
         function loadData() {
-            const userId = window.getCurrentUserId ? window.getCurrentUserId() : "default_user";
-            const localData = localStorage.getItem(`nexusBubbles_${userId}`);
-            if(localData) {
-                try {
-                    const parsed = JSON.parse(localData);
-                    buildBubblesFromData(parsed);
-                } catch(e) { console.error(e); }
-            }
-
-            if(window.firebaseDbModules) {
-                const { db, ref, onValue } = window.firebaseDbModules;
-                onValue(ref(db, `users/${userId}/bubbles`), (snapshot) => {
-                    const val = snapshot.val();
-                    if(val) {
-                        buildBubblesFromData(val);
-                    }
-                });
-            }
-        }
-
-        function buildBubblesFromData(data) {
-            bubblesArray.forEach(b => b.wrapper.remove());
-            bubblesArray = [];
-            data.forEach(item => {
-                const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
-                createBubble(item.x, item.y, area, item.text, item.id, item.scores);
-            });
-        }
-
-        window.onload = () => {
-            initDockColors();
+            // Mock de carregamento inicial
+            createBubble(100, 100, lifeAreas[0], "Fazer treino de força focado em hipertrofia");
+            createBubble(-150, 200, lifeAreas[1], "Estudar arquitetura de microsserviços");
             buildNewsUI();
             fetchAllNews();
-            
-            worldX = window.innerWidth / 2 - 100;
-            worldY = window.innerHeight / 2 - 100;
-            updateWorldTransform();
-
-            if(!localStorage.getItem(`nexusBubbles_default_user`)) {
-                createBubble(-50, -50, lifeAreas[0], "Manter rotina de treinos e alimentação saudável.");
-                createBubble(150, -100, lifeAreas[1], "Estudar Gestão de TI e arquitetura de sistemas.");
-                createBubble(-100, 100, lifeAreas[3], "Planejar expansão de projetos no GitHub.");
-                saveData();
-            } else {
-                loadData();
-            }
-            loadProfileData();
-        };
+        }
     </script>
 </body>
 </html>
