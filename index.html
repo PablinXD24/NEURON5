@@ -271,50 +271,6 @@
         .color-option-container:hover .area-label,
         .color-option-container.active-container .area-label { opacity: 1; visibility: visible; }
 
-        /* --- NOVO MÉTODO MOBILE: BOLINHA EXPANSÍVEL ACIMA --- */
-        .mobile-expandable-fab {
-            display: none; /* Ativado via CSS mobile */
-            position: relative;
-            flex-shrink: 0;
-        }
-        .mobile-fab-main {
-            width: 52px; height: 52px; border-radius: 50%;
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(20px) saturate(200%);
-            border: 2px solid var(--dock-glow);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.15), 0 0 15px var(--dock-glow);
-            transition: transform 0.3s, background 0.3s;
-        }
-        .mobile-fab-main:active { transform: scale(0.92); }
-        .mobile-fab-main .active-dot-indicator {
-            width: 24px; height: 24px; border-radius: 50%; background: var(--dock-glow);
-            box-shadow: 0 0 10px var(--dock-glow); transition: background 0.3s;
-        }
-        .mobile-fab-options {
-            position: absolute; bottom: 65px; left: 50%; transform: translateX(-50%) scale(0);
-            transform-origin: bottom center;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(25px);
-            border-radius: 24px; padding: 12px 8px;
-            display: flex; flex-direction: column-reverse; gap: 10px; align-items: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.8);
-            opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-            z-index: 1200;
-        }
-        .mobile-expandable-fab.open .mobile-fab-options {
-            transform: translateX(-50%) scale(1);
-            opacity: 1; pointer-events: auto;
-        }
-        .mobile-fab-option-item {
-            width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
-            border: 2px solid transparent; transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .mobile-fab-option-item:active { transform: scale(0.85); }
-        .mobile-fab-option-item.selected { transform: scale(1.15); border-color: #333; box-shadow: 0 0 12px currentColor; }
-
         .symbiosis-btn.searching { background: rgba(255, 255, 255, 0.8); border-color: #29FA10; animation: pulse-green 1.5s infinite; }
         .symbiosis-btn.searching svg { fill: #29FA10; }
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(41, 250, 16, 0); } 100% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0); } }
@@ -628,8 +584,12 @@
 
         /* --- AJUSTES DE RESPONSIVIDADE --- */
         @media (max-width: 1920px) {
-            .bottom-ui-container { bottom: 35px; }
-            #contacts-sidebar { top: 28%; }
+            .bottom-ui-container {
+                bottom: 35px;
+            }
+            #contacts-sidebar {
+                top: 28%;
+            }
         }
 
         @media (max-width: 768px) {
@@ -641,22 +601,31 @@
                 width: 100%; 
                 justify-content: center; 
                 gap: 8px; 
-                bottom: 20px; 
+                bottom: 65px; /* Ajustado para cima para celulares (evitando conflito com barras de navegação do OS) */
                 padding: 0 10px; 
                 box-sizing: border-box; 
                 max-width: 100vw;
             }
             .dock-btn { width: 42px; height: 42px; }
             .dock-btn svg { width: 18px; height: 18px; }
-            
-            /* Esconde o seletor desktop antigo no mobile e exibe o novo seletor expansível */
-            .morph-dock { display: none !important; }
-            .mobile-expandable-fab { display: block !important; }
-
+            .morph-dock.open { 
+                width: calc(100vw - 110px); 
+                height: 55px; 
+                justify-content: flex-start; 
+                padding: 0; 
+            }
             .morph-ai-bar.open { 
                 width: calc(100vw - 75px); 
                 height: 45px;
             }
+            .morph-dock.open .color-list { 
+                padding: 0 10px; 
+                width: auto; 
+                justify-content: flex-start; 
+                overflow-x: auto; 
+                -webkit-overflow-scrolling: touch; 
+            }
+            .color-option { width: 30px; height: 30px; margin-right: 4px; }
             
             .profile-modal { 
                 flex-direction: column; 
@@ -908,13 +877,6 @@
         <div class="morph-dock" id="morphDock">
             <div class="color-list" id="colorList"></div>
         </div>
-        <!-- NOVO MÉTODO MOBILE: BOLINHA EXPANSÍVEL -->
-        <div class="mobile-expandable-fab" id="mobileFabContainer">
-            <div class="mobile-fab-main" id="mobileFabMain" title="Selecionar Área">
-                <div class="active-dot-indicator" id="mobileActiveIndicator"></div>
-            </div>
-            <div class="mobile-fab-options" id="mobileFabOptions"></div>
-        </div>
         <div class="dock-btn symbiosis-btn" id="symbiosisBtn" title="Simbiose NFC / Geolocalização">
             <svg viewBox="0 0 24 24"><path d="M18,6C15.6,6 13.8,7.3 12.5,9C11.2,7.3 9.4,6 7,6C3.9,6 1.5,8.2 1.5,11.5C1.5,14.8 4.2,17.5 7.5,17.5C9.6,17.5 11.2,16.2 12.5,14.5C13.8,16.2 15.4,17.5 17.5,17.5C20.8,17.5 23.5,14.8 23.5,11.5C23.5,8.2 21.1,6 18,6ZM7.5,15.5C5.3,15.5 3.5,13.7 3.5,11.5C3.5,9.3 5.3,7.5 7.5,7.5C9.2,7.5 10.3,8.7 11.1,9.8C10.3,13.3 9.2,15.5 7.5,15.5ZM17.5,15.5C15.8,15.5 14.7,13.3 13.9,9.8C14.7,8.7 15.8,7.5 17.5,7.5C19.7,7.5 21.5,9.3 21.5,11.5C21.5,13.7 19.7,15.5 17.5,15.5Z"/></svg>
         </div>
@@ -1069,11 +1031,6 @@
         const morphDock = document.getElementById('morphDock');
         const colorList = document.getElementById('colorList');
         
-        const mobileFabContainer = document.getElementById('mobileFabContainer');
-        const mobileFabMain = document.getElementById('mobileFabMain');
-        const mobileFabOptions = document.getElementById('mobileFabOptions');
-        const mobileActiveIndicator = document.getElementById('mobileActiveIndicator');
-
         const morphAiBar = document.getElementById('morphAiBar');
         const aiQuickInput = document.getElementById('aiQuickInput');
         const aiSendBtn = document.getElementById('aiSendBtn');
@@ -1353,9 +1310,6 @@
         const handleGlobalClick = (e) => {
             if (!contactsSidebar.contains(e.target)) {
                 contactsSidebar.classList.remove('open');
-            }
-            if (!mobileFabContainer.contains(e.target)) {
-                mobileFabContainer.classList.remove('open');
             }
             if(e.target.classList && e.target.classList.contains('prev-news')) {
                 const id = e.target.getAttribute('data-target');
@@ -2125,64 +2079,34 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             }
         });
         
-        // Configuração de seletores (Desktop e Mobile Expansível)
         morphDock.addEventListener('click', () => { morphDock.classList.toggle('open'); });
-
-        mobileFabMain.addEventListener('click', (e) => {
-            e.stopPropagation();
-            mobileFabContainer.classList.toggle('open');
-        });
         
         lifeAreas.forEach((area, index) => { 
-            // 1. Desktop Option
             const container = getDoc().createElement('div'); container.classList.add('color-option-container'); 
             const dot = getDoc().createElement('div'); dot.classList.add('color-option'); 
             dot.style.backgroundColor = area.color; 
             dot.style.color = area.color; 
             const label = getDoc().createElement('div'); label.classList.add('area-label'); label.innerText = area.name; 
-
-            // 2. Mobile Option (Bolinha que aparece acima)
-            const mobileDot = getDoc().createElement('div');
-            mobileDot.classList.add('mobile-fab-option-item');
-            mobileDot.style.backgroundColor = area.color;
-            mobileDot.style.color = area.color;
-            mobileDot.title = area.name;
             
             if(index === 0) { 
                 dot.classList.add('selected'); 
                 container.classList.add('active-container'); 
-                mobileDot.classList.add('selected');
                 activeArea = area; 
                 morphDock.style.setProperty('--dock-glow', area.color); 
-                mobileFabContainer.style.setProperty('--dock-glow', area.color);
-                mobileActiveIndicator.style.backgroundColor = area.color;
             } 
             
-            const selectThisArea = (e) => {
-                e.stopPropagation();
-                // Atualiza Desktop
+            dot.addEventListener('click', (e) => { 
+                e.stopPropagation(); 
                 getDoc().querySelectorAll('.color-option-container').forEach(c => c.classList.remove('active-container'));
                 container.classList.add('active-container');
+
                 getDoc().querySelectorAll('.color-option').forEach(d => d.classList.remove('selected')); 
                 dot.classList.add('selected'); 
-
-                // Atualiza Mobile
-                getDoc().querySelectorAll('.mobile-fab-option-item').forEach(d => d.classList.remove('selected'));
-                mobileDot.classList.add('selected');
-                mobileActiveIndicator.style.backgroundColor = area.color;
-                mobileFabContainer.classList.remove('open');
-
                 activeArea = area; 
                 morphDock.style.setProperty('--dock-glow', area.color); 
-                mobileFabContainer.style.setProperty('--dock-glow', area.color);
-            };
-
-            dot.addEventListener('click', selectThisArea);
-            mobileDot.addEventListener('click', selectThisArea);
+            }); 
             
-            container.classList.add('active-container'); // helper
             container.appendChild(label); container.appendChild(dot); colorList.appendChild(container); 
-            mobileFabOptions.appendChild(mobileDot);
         });
         
         let lastTap = 0;
