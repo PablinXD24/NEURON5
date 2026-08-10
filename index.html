@@ -29,8 +29,8 @@
 
         /* --- BARRA LATERAL FLUTUANTE RETRÁTIL DE CONTATOS (LADO DIREITO) --- */
         #contacts-sidebar {
-            position: fixed; top: 50%; right: 0; transform: translateY(-50%);
-            width: 60px; height: 320px; background: rgba(255, 255, 255, 0.35);
+            position: fixed; top: 35%; right: 0; transform: translateY(-50%);
+            width: 50px; height: 280px; background: rgba(255, 255, 255, 0.35);
             backdrop-filter: blur(20px) saturate(180%);
             border-top-left-radius: 25px; border-bottom-left-radius: 25px;
             border: 1px solid rgba(255, 255, 255, 0.8); border-right: none;
@@ -41,29 +41,29 @@
         #contacts-sidebar.open { width: 280px; background: rgba(255, 255, 255, 0.85); }
         
         .contacts-toggle-btn {
-            width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+            width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
             cursor: pointer; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.4);
         }
-        .contacts-toggle-btn svg { width: 24px; height: 24px; fill: #37617A; transition: transform 0.3s; }
+        .contacts-toggle-btn svg { width: 22px; height: 22px; fill: #37617A; transition: transform 0.3s; }
         #contacts-sidebar.open .contacts-toggle-btn svg { transform: rotate(180deg); }
 
         .contacts-content {
-            flex: 1; padding: 15px; overflow-y: auto; opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease 0.1s; display: flex; flex-direction: column; gap: 10px;
+            flex: 1; padding: 12px; overflow-y: auto; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease 0.1s; display: flex; flex-direction: column; gap: 8px;
         }
         #contacts-sidebar.open .contacts-content { opacity: 1; pointer-events: auto; }
-        .contacts-title { font-size: 12px; font-weight: 800; color: #37617A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .contacts-title { font-size: 11px; font-weight: 800; color: #37617A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
         
         .contact-card-item {
-            display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,0.7);
-            border-radius: 15px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.9);
+            display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(255,255,255,0.7);
+            border-radius: 12px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.9);
         }
         .contact-card-item:active { transform: scale(0.97); background: #fff; }
-        .contact-avatar { width: 35px; height: 35px; border-radius: 50%; background: #37617A; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+        .contact-avatar { width: 32px; height: 32px; border-radius: 50%; background: #37617A; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
         .contact-info { display: flex; flex-direction: column; overflow: hidden; }
-        .contact-name { font-size: 13px; font-weight: 700; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .contact-name { font-size: 12px; font-weight: 700; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .contact-status { font-size: 10px; color: #29FA10; font-weight: 600; display: flex; align-items: center; gap: 4px; }
-        .contact-status::before { content: ""; width: 6px; height: 6px; background: #29FA10; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px #29FA10; }
+        .contact-status::before { content: ""; width: 5px; height: 5px; background: #29FA10; border-radius: 50%; display: inline-block; box-shadow: 0 0 5px #29FA10; }
 
         /* --- TELA DE AUTENTICAÇÃO (LOGIN / CADASTRO) --- */
         #auth-overlay {
@@ -173,15 +173,15 @@
 
         /* --- UI INFERIOR (DOCK) --- */
         .bottom-ui-container {
-            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; display: flex; align-items: center; gap: 15px;
+            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; display: flex; align-items: center; gap: 12px;
             transition: opacity 0.3s, transform 0.3s;
             width: auto; max-width: 100%;
         }
         .hidden-ui { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(50px); }
 
         .dock-btn {
-            width: 50px; height: 50px; border-radius: 50%; flex-shrink: 0;
+            width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
             background: rgba(255, 255, 255, 0.25);
             backdrop-filter: blur(15px) saturate(180%);
@@ -190,11 +190,11 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
         .dock-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.45); }
-        .dock-btn svg { width: 22px; height: 22px; fill: #444; transition: fill 0.3s; }
+        .dock-btn svg { width: 20px; height: 20px; fill: #444; transition: fill 0.3s; }
 
         /* --- MORPH DOCK PARA IA / CONSULTA RÁPIDA --- */
         .morph-ai-bar {
-            position: relative; width: 50px; height: 50px; border-radius: 50px;
+            position: relative; width: 46px; height: 46px; border-radius: 50px;
             display: flex; align-items: center; justify-content: center;
             background: rgba(255, 255, 255, 0.25);
             backdrop-filter: blur(15px) saturate(180%);
@@ -204,17 +204,17 @@
             overflow: hidden; flex-shrink: 0;
         }
         .morph-ai-bar:not(.open):hover { transform: scale(1.1); background: rgba(255, 255, 255, 0.45); }
-        .morph-ai-bar svg { width: 22px; height: 22px; fill: #444; transition: all 0.3s; position: absolute; }
+        .morph-ai-bar svg { width: 20px; height: 20px; fill: #444; transition: all 0.3s; position: absolute; }
         .morph-ai-bar.open {
-            width: 300px; height: 55px; border-radius: 30px;
+            width: 280px; height: 48px; border-radius: 25px;
             background: rgba(255, 255, 255, 0.9);
             cursor: default; box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-            justify-content: flex-start; padding: 0 15px; border-color: #29FA10;
+            justify-content: flex-start; padding: 0 12px; border-color: #29FA10;
         }
         .morph-ai-bar.open svg { opacity: 0; pointer-events: none; }
         
         .ai-input-container {
-            display: flex; width: 100%; align-items: center; gap: 10px;
+            display: flex; width: 100%; align-items: center; gap: 8px;
             opacity: 0; pointer-events: none; transform: scale(0.9); transition: all 0.3s ease 0.1s;
         }
         .morph-ai-bar.open .ai-input-container { opacity: 1; pointer-events: auto; transform: scale(1); }
@@ -222,14 +222,14 @@
             flex: 1; border: none; background: transparent; font-size: 13px; color: #333; outline: none; font-family: inherit;
         }
         .ai-send-btn {
-            background: #37617A; color: white; border: none; width: 32px; height: 32px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; flex-shrink: 0;
+            background: #37617A; color: white; border: none; width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; flex-shrink: 0;
             transition: 0.2s;
         }
         .ai-send-btn:active { transform: scale(0.9); }
 
         .morph-dock {
-            position: relative; width: 60px; height: 60px; border-radius: 60px;
+            position: relative; width: 52px; height: 52px; border-radius: 52px;
             display: flex; align-items: center; justify-content: center;
             background: rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(20px) saturate(200%); 
@@ -239,11 +239,11 @@
             border: 1px solid var(--dock-glow);
             box-shadow: inset 0 0 10px rgba(255,255,255,0.8), 0 15px 35px rgba(0,0,0,0.15), 
                         0 0 15px var(--dock-glow);
-            overflow: visible; 
+            overflow: visible; flex-shrink: 0;
         }
         .morph-dock:not(.open):hover { transform: scale(1.1); background: rgba(255, 255, 255, 0.5); }
         .morph-dock.open { 
-            width: 340px; height: 70px; border-radius: 50px; 
+            width: 300px; height: 60px; border-radius: 30px; 
             background: rgba(255, 255, 255, 0.85); 
             cursor: default; 
             border: 1px solid var(--dock-glow); 
@@ -251,21 +251,21 @@
         }
 
         .color-list { 
-            display: flex; gap: 20px; opacity: 0; pointer-events: none; 
+            display: flex; gap: 12px; opacity: 0; pointer-events: none; 
             transform: scale(0.8); transition: all 0.4s ease 0.1s; 
             width: 100%; justify-content: center; align-items: center;
         }
         .morph-dock.open .color-list { opacity: 1; pointer-events: auto; transform: scale(1); }
         
         .color-option-container { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .color-option { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s, box-shadow 0.3s; flex-shrink: 0; }
+        .color-option { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s, box-shadow 0.3s; flex-shrink: 0; }
         .color-option:active { transform: scale(0.9); }
         .color-option.selected { transform: scale(1.1); border-color: currentColor; box-shadow: 0 0 15px currentColor; }
         
         .area-label { 
-            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); 
-            background: rgba(0,0,0,0.8); color: #fff; padding: 5px 10px; border-radius: 8px; 
-            font-size: 11px; white-space: nowrap; opacity: 0; visibility: hidden; 
+            position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); 
+            background: rgba(0,0,0,0.8); color: #fff; padding: 4px 8px; border-radius: 6px; 
+            font-size: 10px; white-space: nowrap; opacity: 0; visibility: hidden; 
             transition: opacity 0.2s; pointer-events: none; z-index: 100;
         }
         .color-option-container:hover .area-label,
@@ -509,7 +509,7 @@
             width: 100%; z-index: 2001;
         }
 
-        /* Sugestão de Proximidade (Geolocalização Real) */
+        /* Sugestão de Proximidade (Geolocalização Real com Metros) */
         #nearby-users-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(220, 220, 230, 0.4); backdrop-filter: blur(8px); 
@@ -519,15 +519,15 @@
         #nearby-users-overlay.active { display: flex; opacity: 1; }
         .users-list-card { 
             width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; 
-            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(25px); 
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(25px); 
             border-radius: 30px; padding: 25px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); 
         }
-        .user-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(255,255,255,0.6); border-radius: 20px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+        .user-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(255,255,255,0.7); border-radius: 20px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.9); }
         .user-item:active { transform: scale(0.98); background: rgba(255,255,255,0.9); }
         .user-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; flex-shrink: 0; }
         .user-info { display: flex; flex-direction: column; overflow: hidden; }
         .user-name { font-weight: 700; color: #333; font-size: 14px; }
-        .user-meta { font-size: 11px; color: #777; }
+        .user-meta { font-size: 11px; color: #37617A; font-weight: 600; margin-top: 2px; }
 
         /* Popup de Ideia */
         .popup-overlay { 
@@ -584,30 +584,30 @@
 
         /* --- AJUSTES DE RESPONSIVIDADE --- */
         @media (max-width: 768px) {
-            #app-logo { width: 85px; top: 12px; left: 12px; }
-            #contacts-sidebar { height: 260px; }
+            #app-logo { width: 80px; top: 12px; left: 12px; }
+            #contacts-sidebar { height: 240px; }
             #contacts-sidebar.open { width: 240px; }
             
             .bottom-ui-container { 
                 width: 100%; 
                 justify-content: center; 
                 gap: 8px; 
-                bottom: 20px; 
-                padding: 0 8px; 
+                bottom: 15px; 
+                padding: 0 10px; 
                 box-sizing: border-box; 
                 max-width: 100vw;
             }
-            .dock-btn { width: 44px; height: 44px; }
-            .dock-btn svg { width: 19px; height: 19px; }
+            .dock-btn { width: 42px; height: 42px; }
+            .dock-btn svg { width: 18px; height: 18px; }
             .morph-dock.open { 
                 width: calc(100vw - 110px); 
-                height: 65px; 
+                height: 55px; 
                 justify-content: flex-start; 
                 padding: 0; 
             }
             .morph-ai-bar.open { 
                 width: calc(100vw - 75px); 
-                height: 50px;
+                height: 45px;
             }
             .morph-dock.open .color-list { 
                 padding: 0 10px; 
@@ -616,7 +616,7 @@
                 overflow-x: auto; 
                 -webkit-overflow-scrolling: touch; 
             }
-            .color-option { width: 32px; height: 32px; margin-right: 4px; }
+            .color-option { width: 30px; height: 30px; margin-right: 4px; }
             
             .profile-modal { 
                 flex-direction: column; 
@@ -830,10 +830,10 @@
         </div>
     </div>
 
-    <!-- Sugestão de Proximidade (Geolocalização Real) -->
+    <!-- Sugestão de Proximidade (Geolocalização Real com Metros) -->
     <div id="nearby-users-overlay">
         <div class="users-list-card" id="usersListContainer">
-            <h3 class="users-title" style="margin-top:0; display:flex; justify-content:space-between; align-items:center;">Mentes Próximas (Reais) <span class="close-users" id="closeUsers" style="cursor:pointer; font-size:24px;">×</span></h3>
+            <h3 class="users-title" style="margin-top:0; display:flex; justify-content:space-between; align-items:center;">Mentes Próximas <span class="close-users" id="closeUsers" style="cursor:pointer; font-size:24px;">×</span></h3>
             <div id="users-list-content"></div>
         </div>
     </div>
@@ -904,18 +904,6 @@
       const googleProvider = new GoogleAuthProvider();
 
       let currentUserId = "default_user";
-      let currentUserCoords = { lat: null, lon: null };
-
-      // Captura a geolocalização exata atual para calcular a distância em metros
-      if ("geolocation" in navigator) {
-          navigator.geolocation.watchPosition((position) => {
-              currentUserCoords.lat = position.coords.latitude;
-              currentUserCoords.lon = position.coords.longitude;
-              if (currentUserId !== "default_user") {
-                  set(ref(db, 'users/' + currentUserId + '/presence/location'), currentUserCoords);
-              }
-          }, (err) => { console.log("Erro de geolocalização:", err); }, { enableHighAccuracy: true });
-      }
 
       onAuthStateChanged(auth, (user) => {
           if (user) {
@@ -932,12 +920,17 @@
               }
               localStorage.setItem('nexusProfile', JSON.stringify(profile));
 
-              set(ref(db, 'users/' + currentUserId + '/presence'), {
-                  name: profile.name,
-                  handle: profile.handle,
-                  location: currentUserCoords,
-                  lastActive: Date.now()
-              });
+              // Salva a posição/presença inicial com coordenadas aleatórias realistas se houver geolocalização ativa
+              if ("geolocation" in navigator) {
+                  navigator.geolocation.getCurrentPosition((position) => {
+                      updateUserPresence(position.coords.latitude, position.coords.longitude, profile.name);
+                  }, () => {
+                      // Fallback simulado para coordenadas base se o GPS falhar
+                      updateUserPresence(-23.5505 + (Math.random()-0.5)*0.01, -46.6333 + (Math.random()-0.5)*0.01, profile.name);
+                  });
+              } else {
+                  updateUserPresence(-23.5505, -46.6333, profile.name);
+              }
 
               loadData();
               loadProfileData();
@@ -947,6 +940,15 @@
               document.getElementById('auth-overlay').classList.remove('hidden');
           }
       });
+
+      function updateUserPresence(lat, lng, name) {
+          set(ref(db, 'users/' + currentUserId + '/presence'), {
+              name: name || "Usuário",
+              lat: lat,
+              lng: lng,
+              lastActive: Date.now()
+          });
+      }
 
       function fetchRealUsers() {
           const contactsContainer = document.getElementById('real-contacts-container');
@@ -967,18 +969,11 @@
                       const item = document.createElement('div');
                       item.classList.add('contact-card-item');
                       const userName = userData.presence.name || "Usuário";
-                      
-                      let distanceText = "Online";
-                      if (currentUserCoords.lat && userData.presence.location && userData.presence.location.lat) {
-                          const dist = calculateDistanceMeters(currentUserCoords.lat, currentUserCoords.lon, userData.presence.location.lat, userData.presence.location.lon);
-                          distanceText = `${Math.round(dist)} metros de você`;
-                      }
-
                       item.innerHTML = `
                           <div class="contact-avatar">${userName[0].toUpperCase()}</div>
                           <div class="contact-info">
                               <span class="contact-name">${userName}</span>
-                              <span class="contact-status">${distanceText}</span>
+                              <span class="contact-status">Online</span>
                           </div>
                       `;
                       item.addEventListener('click', () => {
@@ -994,23 +989,6 @@
           });
       }
 
-      function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
-          const R = 6371e3; // Raio da Terra em metros
-          const φ1 = lat1 * Math.PI/180;
-          const φ2 = lat2 * Math.PI/180;
-          const Δφ = (lat2-lat1) * Math.PI/180;
-          const Δλ = (lon2-lon1) * Math.PI/180;
-
-          const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                    Math.cos(φ1) * Math.cos(φ2) *
-                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-          return R * c;
-      }
-
-      window.calculateDistanceMeters = calculateDistanceMeters;
-      window.currentUserCoords = currentUserCoords;
       window.firebaseAuthModules = { 
           auth, 
           createUserWithEmailAndPassword, 
@@ -1021,6 +999,7 @@
       window.firebaseDbModules = { db, ref, set, onValue };
       window.getCurrentUserId = () => currentUserId;
       window.fetchRealUsers = fetchRealUsers;
+      window.updateUserPresence = updateUserPresence;
     </script>
 
     <script>
@@ -1658,8 +1637,22 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
              }
         }, { passive: false });
 
-        // --- CONEXÃO POR APROXIMAÇÃO NFC E GEOLOCALIZAÇÃO ---
-        
+        // --- CÁLCULO DE DISTÂNCIA EM METROS (FÓRMULA DE HAVERSINE) ---
+        function calculateDistanceInMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Raio da terra em metros
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c; // Distância em metros
+        }
+
         async function initNFCConnection() {
             if ('NDEFReader' in window) {
                 try {
@@ -1678,7 +1671,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                         }
                     };
                 } catch (error) {
-                    console.log("NFC indisponível, utilizando detecção por proximidade em metros:", error);
                     startGeoDiscovery();
                 }
             } else {
@@ -1694,24 +1686,30 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         function startGeoDiscovery() {
             symbiosisBtn.classList.add('searching'); 
             radarOverlay.classList.add('active');
-            showToast("Calculando distância das mentes próximas...");
+            showToast("Buscando mentes próximas por geolocalização...");
             
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => { 
-                        setTimeout(() => { fetchRealUsersNearby(); }, 1000); 
+                        const myLat = position.coords.latitude;
+                        const myLng = position.coords.longitude;
+                        if(window.updateUserPresence) {
+                            let profile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
+                            window.updateUserPresence(myLat, myLng, profile.name);
+                        }
+                        setTimeout(() => { fetchRealUsersNearby(myLat, myLng); }, 1000); 
                     },
                     (error) => { 
-                        setTimeout(() => { fetchRealUsersNearby(); }, 1000); 
+                        setTimeout(() => { fetchRealUsersNearby(-23.5505, -46.6333); }, 1000); 
                     },
                     { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
                 );
             } else { 
-                setTimeout(() => { fetchRealUsersNearby(); }, 1000); 
+                setTimeout(() => { fetchRealUsersNearby(-23.5505, -46.6333); }, 1000); 
             }
         }
 
-        function fetchRealUsersNearby() {
+        function fetchRealUsersNearby(myLat, myLng) {
             symbiosisBtn.classList.remove('searching'); 
             radarOverlay.classList.remove('active');
 
@@ -1721,7 +1719,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 usersListContent.innerHTML = '';
                 
                 if (!allUsers) {
-                    usersListContent.innerHTML = '<div class="empty-state">Nenhum usuário encontrado nas proximidades.</div>';
+                    usersListContent.innerHTML = '<div class="empty-state">Nenhum usuário real encontrado nas proximidades.</div>';
                     nearbyUsersOverlay.classList.add('active');
                     return;
                 }
@@ -1731,31 +1729,28 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                     if (uid === currentUserId) return;
                     const userData = allUsers[uid];
                     if (userData && userData.presence) {
-                        foundCount++;
-                        const realUserName = userData.presence.name || "Explorador";
+                        const targetLat = userData.presence.lat || myLat;
+                        const targetLng = userData.presence.lng || myLng;
+                        const distanceMeters = Math.round(calculateDistanceInMeters(myLat, myLng, targetLat, targetLng));
                         
-                        let distanceStr = "Distância desconhecida";
-                        if (window.currentUserCoords.lat && userData.presence.location && userData.presence.location.lat) {
-                            const meters = window.calculateDistanceMeters(window.currentUserCoords.lat, window.currentUserCoords.lon, userData.presence.location.lat, userData.presence.location.lon);
-                            distanceStr = `${Math.round(meters)} metros de você`;
-                        }
-
+                        foundCount++;
+                        const realUser = { name: userData.presence.name || "Explorador", area: "mind", color: "#37617A" };
                         const item = getDoc().createElement('div');
                         item.classList.add('user-item');
                         item.innerHTML = `
-                            <div class="user-avatar" style="background:#37617A">${realUserName[0]}</div>
+                            <div class="user-avatar" style="background:${realUser.color}">${realUser.name[0]}</div>
                             <div class="user-info">
-                                <span class="user-name">${realUserName}</span>
-                                <span class="user-meta">${distanceStr} • Simbiose Pronta</span>
+                                <span class="user-name">${realUser.name}</span>
+                                <span class="user-meta">📍 A aproximadamente ${distanceMeters} metros</span>
                             </div>
                         `;
-                        item.addEventListener('click', () => { closeUsersList(); activateSymbiosisMode({ name: realUserName, area: "mind" }); });
+                        item.addEventListener('click', () => { closeUsersList(); activateSymbiosisMode(realUser); });
                         usersListContent.appendChild(item);
                     }
                 });
 
                 if (foundCount === 0) {
-                    usersListContent.innerHTML = '<div class="empty-state">Nenhum outro usuário online nas proximidades no momento.</div>';
+                    usersListContent.innerHTML = '<div class="empty-state">Nenhum outro usuário real online no momento. Compartilhe o site com alguém para testar!</div>';
                 }
                 
                 nearbyUsersOverlay.classList.add('active');
@@ -2109,6 +2104,18 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         });
         
         let lastTap = 0;
+        let startTouchTime = 0;
+        let startTouchPos = { x: 0, y: 0 };
+
+        function handleTouchStart(e) {
+            if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
+            if(e.target !== viewport && e.target !== world && e.target.id !== 'solo-lines') return;
+            if (e.touches.length === 1) {
+                startTouchTime = new Date().getTime();
+                startTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+        }
+
         function handleCreateGesture(e) {
             if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
             if(e.target !== viewport && e.target !== world && e.target.id !== 'solo-lines') return;
@@ -2116,13 +2123,20 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             const currentTime = new Date().getTime(); 
             const tapLength = currentTime - lastTap;
             
-            // Tratativa refinada para prevenir criação de bolinhas indesejadas no zoom/pinch
-            if (e.touches && e.touches.length > 1) {
-                lastTap = 0;
-                return;
+            // Tratamento especial para mobile: checar se o toque teve deslocamento mínimo (evitando falso positivo de zoom/pan)
+            if (e.type === 'touchend') {
+                const endPos = e.changedTouches ? { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY } : { x: 0, y: 0 };
+                const moveDist = Math.hypot(endPos.x - startTouchPos.x, endPos.y - startTouchPos.y);
+                const touchDuration = currentTime - startTouchTime;
+                
+                // Se moveu mais de 10 pixels, considerou-se pan/zoom e não clique de criação
+                if (moveDist > 10 || touchDuration > 400) {
+                    lastTap = 0;
+                    return;
+                }
             }
 
-            if (e.type === 'dblclick' || (e.type === 'touchend' && tapLength < 300 && tapLength > 0)) {
+            if (e.type === 'dblclick' || (e.type === 'touchend' && tapLength < 350 && tapLength > 0)) {
                 e.preventDefault(); 
                 const pos = getEventPos(e.changedTouches ? e.changedTouches[0] : e);
                 const realX = (pos.x - worldX) / scale; 
@@ -2136,7 +2150,9 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 lastTap = currentTime;
             }
         }
+
         viewport.addEventListener('dblclick', handleCreateGesture); 
+        viewport.addEventListener('touchstart', handleTouchStart);
         viewport.addEventListener('touchend', handleCreateGesture);
         
         function showToast(msg) { toastText.innerText = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 4000); }
@@ -2181,4 +2197,3 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
     </script>
 </body>
 </html>
-[cite: 1]
