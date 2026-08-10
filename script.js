@@ -189,6 +189,7 @@ let currentSymbiosisView = 'sphere';
 let worldX = 0, worldY = 0, scale = 1, isPanning = false, startPanX = 0, startPanY = 0;
 let initialPinchDist = 0;
 let initialScale = 1;
+let mainLoopId;
 let sphereAnimationFrame;
 
 function updateWorldTransform() {
@@ -205,6 +206,7 @@ window.switchTab = function(tabName, evt) {
 };
 
 let allNewsData = {};
+let allNewsFetched = false;
 
 function stripHtml(html) {
     let tmp = getDoc().createElement("DIV");
@@ -911,109 +913,102 @@ function setupInteraction(bubbleObj) {
     }
     function onBubbleMove(e) { 
         isDraggingBubble = true; 
-        const pos = getEventPos(e);
-        wrapper.style.left = `${initialBubbleLeft + (pos.x - dragStartX)}px`;
-        wrapper.style.top = `${initialBubbleTop + (pos.y - dragStartY)}px`;
-        drawConnections();
+        e.stopPropagation(); 
+        const pos = getEventPos(e); 
+        const dx = (pos.x - dragStartX) / scale; 
+        const dy = (pos.y - dragStartY) / scale; 
+        wrapper.style.left = `${initialBubbleLeft + dx}px`; 
+        wrapper.style.top = `${initialBubbleTop + dy}px`; 
     }
-    function onBubbleEnd(e) {
+    function onBubbleEnd(e) { 
+        e.stopPropagation(); 
         const targetWin = getWin();
-        targetWin.removeEventListener('mousemove', onBubbleMove); targetWin.removeEventListener('mouseup', onBubbleEnd);
-        targetWin.removeEventListener('touchmove', onBubbleMove); targetWin.removeEventListener('touchend', onBubbleEnd);
-        if(!isDraggingBubble) {
-            openPopup(bubbleObj);
-        } else {
-            saveData();
-        }
-        isDraggingBubble = false;
+        targetWin.removeEventListener('mousemove', onBubbleMove); 
+        targetWin.removeEventListener('mouseup', onBubbleEnd); 
+        targetWin.removeEventListener('touchmove', onBubbleMove); 
+        targetWin.removeEventListener('touchend', onBubbleEnd); 
+        
+        if (!isDraggingBubble) { 
+            openPopup(bubbleObj); 
+        } else { 
+            saveData(); 
+        } 
     }
     wrapper.addEventListener('mousedown', onBubbleStart);
     wrapper.addEventListener('touchstart', onBubbleStart, {passive: false});
 }
 
-function openPopup(bubble) {
-    currentBubble = bubble;
-    popupTitle.innerText = bubble.area.name;
-    popupCard.style.borderTopColor = bubble.area.color;
-    popupInput.value = bubble.tooltip.innerText;
-    aiBadge.className = "ai-badge ai-active";
-    aiBadgeText.innerText = "IA Ativa & Analisando";
+function openPopup(bubbleObj) {
+    currentBubble = bubbleObj;
+    popupTitle.innerText = `Ideia (${bubbleObj.area.name})`;
+    popupCard.style.borderTopColor = bubbleObj.area.color;
+    popupInput.value = bubbleObj.tooltip.innerText;
     popupOverlay.classList.add('active');
+    aiBadge.className = "ai-badge ai-active";
+    aiBadgeText.innerText = "IA Ativa & Sincronizada";
     setTimeout(() => popupInput.focus(), 100);
 }
 
-function closePopupModal() {
-    popupOverlay.classList.remove('active');
-    currentBubble = null;
-    pendingCreationCoords = null;
-}
-
 btnSave.addEventListener('click', async () => {
+    if(!currentBubble) return;
     const text = popupInput.value.trim();
-    if(!text) { showToast("Digite algum pensamento."); return; }
+    currentBubble.tooltip.innerText = text;
     
-    showToast("Analisando contexto com IA...");
+    aiBadge.className = "ai-badge";
+    aiBadgeText.innerText = "Analisando contexto IA...";
+    
     const analysis = await analyzeFullContext(text);
-    
-    if(currentBubble) {
-        currentBubble.tooltip.innerText = text;
-        currentBubble.scores = analysis.scores;
-        if(analysis.primaryArea && analysis.primaryArea.id !== currentBubble.area.id) {
-            currentBubble.area = analysis.primaryArea;
-            currentBubble.circle.style.backgroundColor = analysis.primaryArea.color;
-            currentBubble.circle.style.boxShadow = `0 0 10px ${analysis.primaryArea.color}, 0 0 25px ${analysis.primaryArea.color}90`;
-        }
-        showToast("Ideia atualizada!");
-    } else if(pendingCreationCoords) {
-        createBubble(pendingCreationCoords.x, pendingCreationCoords.y, analysis.primaryArea, text, null, analysis.scores);
-        showToast("Ideia criada com sucesso!");
+    currentBubble.scores = analysis.scores;
+    if(analysis.detectedArea) {
+        currentBubble.area = analysis.detectedArea;
+        currentBubble.circle.style.backgroundColor = currentBubble.area.color;
+        currentBubble.circle.style.boxShadow = `0 0 10px ${currentBubble.area.color}, 0 0 25px ${currentBubble.area.color}90`;
+        popupCard.style.borderTopColor = currentBubble.area.color;
     }
     
+    aiBadge.className = "ai-badge ai-active";
+    aiBadgeText.innerText = "IA Sincronizada";
+    
+    popupOverlay.classList.remove('active');
     saveData();
-    closePopupModal();
-    drawConnections();
+    showToast("Ideia atualizada e sincronizada com a IA!");
 });
 
 btnDelete.addEventListener('click', () => {
-    if(currentBubble) {
-        currentBubble.wrapper.remove();
-        bubblesArray = bubblesArray.filter(b => b !== currentBubble);
-        saveData();
-        drawConnections();
-        showToast("Ideia excluída.");
-    }
-    closePopupModal();
-});
-
-popupOverlay.addEventListener('click', (e) => {
-    if(e.target === popupOverlay) closePopupModal();
+    if(!currentBubble) return;
+    world.removeChild(currentBubble.wrapper);
+    bubblesArray = bubblesArray.filter(b => b !== currentBubble);
+    currentBubble = null;
+    popupOverlay.classList.remove('active');
+    saveData();
+    showToast("Ideia excluída.");
 });
 
 async function analyzeFullContext(text) {
-    const lower = text.toLowerCase();
-    const scores = { health: 0, mind: 0, social: 0, career: 0, spirit: 0 };
-    let maxScore = 0;
-    let primary = activeArea;
-
-    lifeAreas.forEach(area => {
-        let matchCount = 0;
-        area.keywords.forEach(kw => {
-            if(lower.includes(kw)) matchCount++;
-        });
-        scores[area.id] = matchCount;
-        if(matchCount > maxScore) {
-            maxScore = matchCount;
-            primary = area;
-        }
+    const textLower = text.toLowerCase();
+    let scores = {};
+    lifeAreas.forEach(a => {
+        let count = 0;
+        a.keywords.forEach(kw => { if(textLower.includes(kw)) count++; });
+        scores[a.id] = count * 2;
     });
 
-    const profile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
-    const apiKey = profile.geminiKey;
+    let detectedArea = null;
+    let maxScore = -1;
+    lifeAreas.forEach(a => {
+        if(scores[a.id] > maxScore) {
+            maxScore = scores[a.id];
+            detectedArea = a;
+        }
+    });
+    if(maxScore <= 0) detectedArea = activeArea;
 
+    const profile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
+    const apiKey = profile.geminiKey || "";
     if(apiKey) {
         try {
-            const prompt = `Analise o texto a seguir e atribua relevância de 0 a 5 para cada uma destas 5 áreas da vida: health (Saúde), mind (Mente), social (Relacionamentos), career (Carreira), spirit (Espiritual).
-Retorne APENAS um JSON válido no formato: {"health":0,"mind":0,"social":0,"career":0,"spirit":0}.
+            const prompt = `Analise o texto a seguir e atribua relevância de 0 a 10 para cada uma das seguintes áreas da vida: saúde, mente, social, carreira, espirit.
+Retorne APENAS um objeto JSON válido no formato: {"saude": 0, "mente": 0, "social": 0, "carreira": 0, "espirit": 0}
 Texto: "${text}"`;
 
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
@@ -1024,42 +1019,140 @@ Texto: "${text}"`;
             const data = await response.json();
             const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if(rawText) {
-                const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-                if(jsonMatch) {
-                    const parsed = JSON.parse(jsonMatch[0]);
-                    Object.keys(scores).forEach(k => { if(parsed[k] !== undefined) scores[k] = parsed[k]; });
-                    let highest = -1;
-                    Object.keys(scores).forEach(k => {
-                        if(scores[k] > highest) { highest = scores[k]; primary = lifeAreas.find(a => a.id === k); }
-                    });
-                }
+                const jsonClean = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+                const aiScores = JSON.parse(jsonClean);
+                scores = {
+                    health: aiScores.saude || scores.health || 0,
+                    mind: aiScores.mente || scores.mind || 0,
+                    social: aiScores.social || scores.social || 0,
+                    career: aiScores.carreira || scores.career || 0,
+                    spirit: aiScores.espirit || scores.spirit || 0
+                };
             }
-        } catch(err) {
-            console.error("Erro na analise da Gemini API:", err);
+        } catch(e) {
+            console.error("Erro na análise IA externa:", e);
         }
     }
 
-    return { primaryArea: primary, scores };
+    return { scores, detectedArea };
 }
 
-viewport.addEventListener('dblclick', (e) => {
+viewport.addEventListener('dblclick', async (e) => {
     if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
     if(e.target !== viewport && e.target !== world && e.target.id !== 'solo-lines') return;
+
     const rect = world.getBoundingClientRect();
     const x = (e.clientX - rect.left) / scale;
     const y = (e.clientY - rect.top) / scale;
-    pendingCreationCoords = { x, y };
-    popupTitle.innerText = "Nova Ideia (" + activeArea.name + ")";
-    popupCard.style.borderTopColor = activeArea.color;
-    aiBadge.className = "ai-badge ai-active";
-    aiBadgeText.innerText = "IA Pronta";
-    popupInput.value = "";
-    popupOverlay.classList.add('active');
-    setTimeout(() => popupInput.focus(), 100);
+
+    const newBubble = createBubble(x, y, activeArea, "Nova Ideia Neural");
+    openPopup(newBubble);
+    saveData();
 });
 
+function initMorphDock() {
+    lifeAreas.forEach((area, index) => {
+        const container = getDoc().createElement('div');
+        container.classList.add('color-option-container');
+        if(index === 0) container.classList.add('active-container');
+
+        const option = getDoc().createElement('div');
+        option.classList.add('color-option');
+        if(index === 0) option.classList.add('selected');
+        option.style.backgroundColor = area.color;
+        option.style.color = area.color;
+
+        const label = getDoc().createElement('div');
+        label.classList.add('area-label');
+        label.innerText = area.name;
+
+        option.addEventListener('click', (e) => {
+            e.stopPropagation();
+            getDoc().querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+            getDoc().querySelectorAll('.color-option-container').forEach(el => el.classList.remove('active-container'));
+            option.classList.add('selected');
+            container.classList.add('active-container');
+            activeArea = area;
+            morphDock.style.setProperty('--dock-glow', area.color);
+            showToast(`Foco alterado para: ${area.name}`);
+        });
+
+        container.appendChild(option);
+        container.appendChild(label);
+        colorList.appendChild(container);
+    });
+
+    morphDock.addEventListener('click', (e) => {
+        e.stopPropagation();
+        morphDock.classList.toggle('open');
+    });
+
+    document.addEventListener('click', () => {
+        morphDock.classList.remove('open');
+    });
+}
+
+function saveData() {
+    const dataToSave = bubblesArray.map(b => ({
+        id: b.id,
+        x: parseInt(b.wrapper.style.left),
+        y: parseInt(b.wrapper.style.top),
+        areaId: b.area.id,
+        text: b.tooltip.innerText,
+        scores: b.scores || {}
+    }));
+    
+    localStorage.setItem('nexusCosmosData', JSON.stringify(dataToSave));
+
+    const userId = window.getCurrentUserId();
+    if (userId && userId !== "default_user") {
+        const { db, ref, set } = window.firebaseDbModules;
+        set(ref(db, 'users/' + userId + '/cosmos'), dataToSave).catch(err => console.error("Erro Firebase save:", err));
+    }
+}
+
+function loadData() {
+    const userId = window.getCurrentUserId();
+    if (userId && userId !== "default_user") {
+        const { db, ref, onValue } = window.firebaseDbModules;
+        onValue(ref(db, 'users/' + userId + '/cosmos'), (snapshot) => {
+            const serverData = snapshot.val();
+            if (serverData) {
+                restoreCosmos(serverData);
+            } else {
+                loadLocalCosmos();
+            }
+        }, { onlyOnce: true });
+    } else {
+        loadLocalCosmos();
+    }
+}
+
+function loadLocalCosmos() {
+    const saved = localStorage.getItem('nexusCosmosData');
+    if (saved) {
+        try {
+            restoreCosmos(JSON.parse(saved));
+        } catch(e) { console.error(e); }
+    } else {
+        createBubble(window.innerWidth / 2 - 50, window.innerHeight / 2 - 50, lifeAreas[0], "Bem-vindo ao Neuron! Dê duplo clique para criar ideias.");
+        createBubble(window.innerWidth / 2 + 100, window.innerHeight / 2 + 50, lifeAreas[1], "Explore conexões e simbiose neural.");
+        saveData();
+    }
+}
+
+function restoreCosmos(dataArray) {
+    bubblesArray.forEach(b => b.wrapper.remove());
+    bubblesArray = [];
+    
+    dataArray.forEach(item => {
+        const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
+        createBubble(item.x, item.y, area, item.text, item.id, item.scores);
+    });
+}
+
 function drawConnections() {
-    while(soloLinesLayer.querySelectorAll('line').length > 0) {
+    while (soloLinesLayer.querySelectorAll('line').length > 0) {
         soloLinesLayer.removeChild(soloLinesLayer.lastChild);
     }
     gradDefsSolo.innerHTML = '';
@@ -1069,166 +1162,64 @@ function drawConnections() {
             const b1 = bubblesArray[i];
             const b2 = bubblesArray[j];
 
-            const x1 = parseFloat(b1.wrapper.style.left);
-            const y1 = parseFloat(b1.wrapper.style.top);
-            const x2 = parseFloat(b2.wrapper.style.left);
-            const y2 = parseFloat(b2.wrapper.style.top);
+            const x1 = parseInt(b1.wrapper.style.left);
+            const y1 = parseInt(b1.wrapper.style.top);
+            const x2 = parseInt(b2.wrapper.style.left);
+            const y2 = parseInt(b2.wrapper.style.top);
 
             let shouldConnect = false;
-            let strokeWidth = "2.5px";
-            let opacity = "0.8";
+            let strokeColor = "#ffffff";
 
             if (b1.area.id === b2.area.id) {
                 shouldConnect = true;
-                strokeWidth = "3px";
+                strokeColor = b1.area.color;
             } else if (b1.scores && b2.scores) {
-                const s1 = b1.scores[b2.area.id] || 0;
-                const s2 = b2.scores[b1.area.id] || 0;
-                if(s1 > 0 || s2 > 0) {
+                const score1 = b1.scores[b2.area.id] || 0;
+                const score2 = b2.scores[b1.area.id] || 0;
+                if (score1 > 2 || score2 > 2) {
                     shouldConnect = true;
-                    strokeWidth = (1.5 + Math.max(s1, s2)) + "px";
+                    strokeColor = score1 > score2 ? b1.area.color : b2.area.color;
                 }
             }
 
             if (shouldConnect) {
-                const gradId = `grad_${b1.id}_${b2.id}`;
-                const grad = getDoc().createElementNS("http://www.w3.org/2000/svg", "linearGradient");
-                grad.setAttribute("id", gradId);
-                grad.setAttribute("x1", `${x1}px`); grad.setAttribute("y1", `${y1}px`);
-                grad.setAttribute("x2", `${x2}px`); grad.setAttribute("y2", `${y2}px`);
-                grad.setAttribute("gradientUnits", "userSpaceOnUse");
-
-                const stop1 = getDoc().createElementNS("http://www.w3.org/2000/svg", "stop");
-                stop1.setAttribute("offset", "0%"); stop1.setAttribute("stop-color", b1.area.color);
-                const stop2 = getDoc().createElementNS("http://www.w3.org/2000/svg", "stop");
-                stop2.setAttribute("offset", "100%"); stop2.setAttribute("stop-color", b2.area.color);
-
-                grad.appendChild(stop1); grad.appendChild(grad2 = stop2);
-                gradDefsSolo.appendChild(grad);
-
-                const line = getDoc().createElementNS("http://www.w3.org/2000/svg", "line");
-                line.setAttribute("x1", x1); line.setAttribute("y1", y1);
-                line.setAttribute("x2", x2); line.setAttribute("y2", y2);
-                line.setAttribute("stroke", `url(#${gradId})`);
-                line.setAttribute("class", "connection-line");
-                line.style.strokeWidth = strokeWidth;
-                line.style.opacity = opacity;
-
+                const line = getDoc().createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', strokeColor);
+                line.setAttribute('class', 'connection-line');
                 soloLinesLayer.appendChild(line);
             }
         }
     }
 }
 
-function saveData() {
-    const dataToSave = bubblesArray.map(b => ({
-        id: b.id,
-        x: parseFloat(b.wrapper.style.left),
-        y: parseFloat(b.wrapper.style.top),
-        areaId: b.area.id,
-        text: b.tooltip.innerText,
-        scores: b.scores || {}
-    }));
-    
-    const uid = window.getCurrentUserId();
-    const { db, ref, set } = window.firebaseDbModules;
-    set(ref(db, 'users/' + uid + '/bubbles'), dataToSave).catch(err => {
-        localStorage.setItem('nexusBubbles', JSON.stringify(dataToSave));
-    });
-}
-
-function loadData() {
-    const uid = window.getCurrentUserId();
-    const { db, ref, onValue } = window.firebaseDbModules;
-    
-    onValue(ref(db, 'users/' + uid + '/bubbles'), (snapshot) => {
-        const data = snapshot.val();
-        world.querySelectorAll('.circle-wrapper').forEach(el => el.remove());
-        bubblesArray = [];
-
-        if (data) {
-            data.forEach(item => {
-                const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
-                createBubble(item.x, item.y, area, item.text, item.id, item.scores);
-            });
-        } else {
-            const localData = JSON.parse(localStorage.getItem('nexusBubbles'));
-            if(localData) {
-                localData.forEach(item => {
-                    const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
-                    createBubble(item.x, item.y, area, item.text, item.id, item.scores);
-                });
-            } else {
-                createBubble(window.innerWidth / 2 - 100, window.innerHeight / 2 - 50, lifeAreas[0], "Exemplo: Cuidar da saúde física");
-                createBubble(window.innerWidth / 2 + 100, window.innerHeight / 2 + 50, lifeAreas[1], "Exemplo: Estudar gestão e tecnologia");
-            }
+function startMainLoop() {
+    function loop() {
+        if (!isSymbiosisActive) {
+            drawConnections();
         }
-        drawConnections();
-    }, (error) => {
-        const localData = JSON.parse(localStorage.getItem('nexusBubbles'));
-        if(localData) {
-            localData.forEach(item => {
-                const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
-                createBubble(item.x, item.y, area, item.text, item.id, item.scores);
-            });
-        }
-        drawConnections();
-    });
+        mainLoopId = getWin().requestAnimationFrame(loop);
+    }
+    loop();
 }
 
-function buildColorList() {
-    colorList.innerHTML = '';
-    lifeAreas.forEach((area, index) => {
-        const container = getDoc().createElement('div');
-        container.className = 'color-option-container';
-        if(index === 0) container.classList.add('active-container');
-
-        const label = getDoc().createElement('div');
-        label.className = 'area-label';
-        label.innerText = area.name;
-
-        const option = getDoc().createElement('div');
-        option.className = 'color-option';
-        if(index === 0) option.classList.add('selected');
-        option.style.backgroundColor = area.color;
-        option.style.color = area.color;
-
-        option.addEventListener('click', (e) => {
-            e.stopPropagation();
-            activeArea = area;
-            morphDock.style.setProperty('--dock-glow', area.color);
-            colorList.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
-            colorList.querySelectorAll('.color-option-container').forEach(cont => cont.classList.remove('active-container'));
-            option.classList.add('selected');
-            container.classList.add('active-container');
-            showToast(`Foco alterado para: ${area.name}`);
-        });
-
-        container.appendChild(label);
-        container.appendChild(option);
-        colorList.appendChild(container);
-    });
-}
-
-morphDock.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if(!morphDock.classList.contains('open')) {
-        morphDock.classList.add('open');
-    }
-});
-
-document.addEventListener('click', (e) => {
-    if(!morphDock.contains(e.target)) {
-        morphDock.classList.remove('open');
-    }
-});
-
-function showToast(text) {
-    toastText.innerText = text;
+function showToast(message) {
+    toastText.innerText = message;
     toast.classList.add('show');
-    setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
 }
 
-buildColorList();
-buildNewsUI();
-fetchAllNews();
+window.addEventListener('load', () => {
+    initMorphDock();
+    worldX = window.innerWidth / 2 - window.innerWidth / 2;
+    worldY = window.innerHeight / 2 - window.innerHeight / 2;
+    updateWorldTransform();
+    startMainLoop();
+    buildNewsUI();
+    fetchAllNews();
+});
