@@ -1,3 +1,55 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyABMVB4pYyQMil8XaQu2zf6_siHlDMCgRE",
+  authDomain: "neuron5.firebaseapp.com",
+  projectId: "neuron5",
+  storageBucket: "neuron5.firebasestorage.app",
+  messagingSenderId: "45038955818",
+  appId: "1:45038955818:web:856c83eaa31dfbc747c253"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+
+let currentUserId = "default_user";
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUserId = user.uid;
+        document.getElementById('auth-overlay').classList.add('hidden');
+        
+        let profile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
+        if(user.email && !profile.name) {
+            profile.name = user.displayName || user.email.split('@')[0];
+            profile.handle = "@" + user.email.split('@')[0];
+        }
+        if(user.photoURL && !profile.avatarUrl) {
+            profile.avatarUrl = user.photoURL;
+        }
+        localStorage.setItem('nexusProfile', JSON.stringify(profile));
+
+        loadData();
+        loadProfileData();
+    } else {
+        currentUserId = "default_user";
+        document.getElementById('auth-overlay').classList.remove('hidden');
+    }
+});
+
+window.firebaseAuthModules = { 
+    auth, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    signInWithPopup, 
+    googleProvider 
+};
+window.firebaseDbModules = { db, ref, set, onValue };
+window.getCurrentUserId = () => currentUserId;
+
 let pipWindow = null;
 const getWin = () => pipWindow || window;
 const getDoc = () => pipWindow ? pipWindow.document : document;
@@ -137,7 +189,6 @@ let currentSymbiosisView = 'sphere';
 let worldX = 0, worldY = 0, scale = 1, isPanning = false, startPanX = 0, startPanY = 0;
 let initialPinchDist = 0;
 let initialScale = 1;
-let mainLoopId;
 let sphereAnimationFrame;
 
 function updateWorldTransform() {
@@ -154,7 +205,6 @@ window.switchTab = function(tabName, evt) {
 };
 
 let allNewsData = {};
-let allNewsFetched = false;
 
 function stripHtml(html) {
     let tmp = getDoc().createElement("DIV");
@@ -861,140 +911,111 @@ function setupInteraction(bubbleObj) {
     }
     function onBubbleMove(e) { 
         isDraggingBubble = true; 
-        e.preventDefault(); 
-        const pos = getEventPos(e); 
-        const dx = (pos.x - dragStartX) / scale; 
-        const dy = (pos.y - dragStartY) / scale; 
-        wrapper.style.left = `${initialBubbleLeft + dx}px`; 
-        wrapper.style.top = `${initialBubbleTop + dy}px`; 
+        const pos = getEventPos(e);
+        wrapper.style.left = `${initialBubbleLeft + (pos.x - dragStartX)}px`;
+        wrapper.style.top = `${initialBubbleTop + (pos.y - dragStartY)}px`;
+        drawConnections();
     }
-    function onBubbleEnd(e) { 
+    function onBubbleEnd(e) {
         const targetWin = getWin();
         targetWin.removeEventListener('mousemove', onBubbleMove); targetWin.removeEventListener('mouseup', onBubbleEnd);
         targetWin.removeEventListener('touchmove', onBubbleMove); targetWin.removeEventListener('touchend', onBubbleEnd);
-        if (!isDraggingBubble) { openPopup(bubbleObj); } 
-        else { saveToFirebase(); }
-        isDraggingBubble = false; 
+        if(!isDraggingBubble) {
+            openPopup(bubbleObj);
+        } else {
+            saveData();
+        }
+        isDraggingBubble = false;
     }
     wrapper.addEventListener('mousedown', onBubbleStart);
-    wrapper.addEventListener('touchstart', onBubbleStart, { passive: false });
+    wrapper.addEventListener('touchstart', onBubbleStart, {passive: false});
 }
 
-function initMorphDock() {
-    colorList.innerHTML = '';
-    lifeAreas.forEach(area => {
-        const container = getDoc().createElement('div');
-        container.className = 'color-option-container';
-        if(area.id === activeArea.id) container.classList.add('active-container');
-
-        const option = getDoc().createElement('div');
-        option.classList.add('color-option');
-        option.style.backgroundColor = area.color;
-        option.style.color = area.color;
-        if(area.id === activeArea.id) option.classList.add('selected');
-
-        const label = getDoc().createElement('div');
-        label.classList.add('area-label');
-        label.innerText = area.name;
-
-        option.addEventListener('click', (e) => {
-            e.stopPropagation();
-            activeArea = area;
-            morphDock.style.setProperty('--dock-glow', area.color);
-            getDoc().querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
-            getDoc().querySelectorAll('.color-option-container').forEach(el => el.classList.remove('active-container'));
-            option.classList.add('selected');
-            container.classList.add('active-container');
-            morphDock.classList.remove('open');
-        });
-
-        container.appendChild(option);
-        container.appendChild(label);
-        colorList.appendChild(container);
-    });
-
-    morphDock.addEventListener('click', (e) => {
-        if (!morphDock.classList.contains('open')) {
-            e.stopPropagation();
-            morphDock.classList.add('open');
-        }
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!morphDock.contains(e.target)) {
-            morphDock.classList.remove('open');
-        }
-    });
+function openPopup(bubble) {
+    currentBubble = bubble;
+    popupTitle.innerText = bubble.area.name;
+    popupCard.style.borderTopColor = bubble.area.color;
+    popupInput.value = bubble.tooltip.innerText;
+    aiBadge.className = "ai-badge ai-active";
+    aiBadgeText.innerText = "IA Ativa & Analisando";
+    popupOverlay.classList.add('active');
+    setTimeout(() => popupInput.focus(), 100);
 }
-initMorphDock();
 
-let doubleClickTimer = null;
-viewport.addEventListener('dblclick', (e) => {
-    if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
-    if(e.target !== viewport && e.target !== world && e.target.id !== 'solo-lines') return;
-    const rect = viewport.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-    const worldCoordX = (clickX - worldX) / scale;
-    const worldCoordY = (clickY - worldY) / scale;
-    pendingCreationCoords = { x: worldCoordX, y: worldCoordY };
-    openPopup(null);
+function closePopupModal() {
+    popupOverlay.classList.remove('active');
+    currentBubble = null;
+    pendingCreationCoords = null;
+}
+
+btnSave.addEventListener('click', async () => {
+    const text = popupInput.value.trim();
+    if(!text) { showToast("Digite algum pensamento."); return; }
+    
+    showToast("Analisando contexto com IA...");
+    const analysis = await analyzeFullContext(text);
+    
+    if(currentBubble) {
+        currentBubble.tooltip.innerText = text;
+        currentBubble.scores = analysis.scores;
+        if(analysis.primaryArea && analysis.primaryArea.id !== currentBubble.area.id) {
+            currentBubble.area = analysis.primaryArea;
+            currentBubble.circle.style.backgroundColor = analysis.primaryArea.color;
+            currentBubble.circle.style.boxShadow = `0 0 10px ${analysis.primaryArea.color}, 0 0 25px ${analysis.primaryArea.color}90`;
+        }
+        showToast("Ideia atualizada!");
+    } else if(pendingCreationCoords) {
+        createBubble(pendingCreationCoords.x, pendingCreationCoords.y, analysis.primaryArea, text, null, analysis.scores);
+        showToast("Ideia criada com sucesso!");
+    }
+    
+    saveData();
+    closePopupModal();
+    drawConnections();
 });
 
-function openPopup(bubbleObj) {
-    currentBubble = bubbleObj;
-    if (bubbleObj) {
-        popupTitle.innerText = "Editar Ideia";
-        popupInput.value = bubbleObj.tooltip.innerText;
-        btnDelete.style.display = "block";
-        updateAiBadgeState(bubbleObj.scores);
-    } else {
-        popupTitle.innerText = "Nova Ideia";
-        popupInput.value = "";
-        btnDelete.style.display = "none";
-        updateAiBadgeState(null);
+btnDelete.addEventListener('click', () => {
+    if(currentBubble) {
+        currentBubble.wrapper.remove();
+        bubblesArray = bubblesArray.filter(b => b !== currentBubble);
+        saveData();
+        drawConnections();
+        showToast("Ideia excluída.");
     }
-    popupOverlay.classList.add('active');
-    setTimeout(() => popupInput.focus(), 150);
-}
+    closePopupModal();
+});
 
-function updateAiBadgeState(scores) {
-    if (!scores) {
-        aiBadge.className = "ai-badge";
-        aiBadgeText.innerText = "Aguardando IA...";
-        return;
-    }
-    const highest = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
-    if(scores[highest] > 0.4) {
-        const foundArea = lifeAreas.find(la => la.id === highest);
-        aiBadge.className = "ai-badge ai-active";
-        aiBadgeText.innerText = ` IA Conectada: ${foundArea ? foundArea.name : highest}`;
-    } else {
-        aiBadge.className = "ai-badge";
-        aiBadgeText.innerText = "IA: Contexto neutro";
-    }
-}
+popupOverlay.addEventListener('click', (e) => {
+    if(e.target === popupOverlay) closePopupModal();
+});
 
 async function analyzeFullContext(text) {
     const lower = text.toLowerCase();
-    let scores = {};
-    lifeAreas.forEach(a => scores[a.id] = 0.1);
-    
+    const scores = { health: 0, mind: 0, social: 0, career: 0, spirit: 0 };
+    let maxScore = 0;
+    let primary = activeArea;
+
     lifeAreas.forEach(area => {
+        let matchCount = 0;
         area.keywords.forEach(kw => {
-            if (lower.includes(kw)) {
-                scores[area.id] += 0.4;
-            }
+            if(lower.includes(kw)) matchCount++;
         });
+        scores[area.id] = matchCount;
+        if(matchCount > maxScore) {
+            maxScore = matchCount;
+            primary = area;
+        }
     });
 
     const profile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
     const apiKey = profile.geminiKey;
 
-    if (apiKey && text.length > 3) {
+    if(apiKey) {
         try {
-            const prompt = `Analise o texto a seguir e atribua relevância de 0.0 a 1.0 para cada uma destas 5 áreas da vida: health, mind, social, career, spirit. Responda estritamente em formato JSON puro, contendo chaves para cada área. Texto: "${text}"`;
-            
+            const prompt = `Analise o texto a seguir e atribua relevância de 0 a 5 para cada uma destas 5 áreas da vida: health (Saúde), mind (Mente), social (Relacionamentos), career (Carreira), spirit (Espiritual).
+Retorne APENAS um JSON válido no formato: {"health":0,"mind":0,"social":0,"career":0,"spirit":0}.
+Texto: "${text}"`;
+
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1003,70 +1024,42 @@ async function analyzeFullContext(text) {
             const data = await response.json();
             const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if(rawText) {
-                const cleanedJson = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
-                const parsed = JSON.parse(cleanedJson);
-                Object.keys(parsed).forEach(k => {
-                    if(scores[k] !== undefined) scores[k] = Math.max(scores[k], parseFloat(parsed[k]));
-                });
+                const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+                if(jsonMatch) {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    Object.keys(scores).forEach(k => { if(parsed[k] !== undefined) scores[k] = parsed[k]; });
+                    let highest = -1;
+                    Object.keys(scores).forEach(k => {
+                        if(scores[k] > highest) { highest = scores[k]; primary = lifeAreas.find(a => a.id === k); }
+                    });
+                }
             }
-        } catch(e) {
-            console.log("Erro ao consultar Gemini API, usando fallback local.", e);
+        } catch(err) {
+            console.error("Erro na analise da Gemini API:", err);
         }
     }
 
-    const bestAreaId = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
-    const chosenArea = lifeAreas.find(a => a.id === bestAreaId) || activeArea;
-    return { area: chosenArea, scores };
+    return { primaryArea: primary, scores };
 }
 
-popupInput.addEventListener('input', async () => {
-    const text = popupInput.value.trim();
-    if (text.length > 2) {
-        const result = await analyzeFullContext(text);
-        updateAiBadgeState(result.scores);
-    } else {
-        updateAiBadgeState(null);
-    }
+viewport.addEventListener('dblclick', (e) => {
+    if(isSymbiosisActive || profileOverlay.classList.contains('active')) return;
+    if(e.target !== viewport && e.target !== world && e.target.id !== 'solo-lines') return;
+    const rect = world.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / scale;
+    const y = (e.clientY - rect.top) / scale;
+    pendingCreationCoords = { x, y };
+    popupTitle.innerText = "Nova Ideia (" + activeArea.name + ")";
+    popupCard.style.borderTopColor = activeArea.color;
+    aiBadge.className = "ai-badge ai-active";
+    aiBadgeText.innerText = "IA Pronta";
+    popupInput.value = "";
+    popupOverlay.classList.add('active');
+    setTimeout(() => popupInput.focus(), 100);
 });
 
-btnSave.addEventListener('click', async () => {
-    const text = popupInput.value.trim();
-    if (!text) { showToast("Escreva algo na ideia."); return; }
-
-    popupOverlay.classList.remove('active');
-    showToast("Processando com IA e salvando...");
-
-    const analysis = await analyzeFullContext(text);
-
-    if (currentBubble) {
-        currentBubble.tooltip.innerText = text;
-        currentBubble.area = analysis.area;
-        currentBubble.circle.style.backgroundColor = analysis.area.color;
-        currentBubble.circle.style.boxShadow = `0 0 10px ${analysis.area.color}, 0 0 25px ${analysis.area.color}90`;
-        currentBubble.scores = analysis.scores;
-        showToast("Ideia atualizada com sucesso!");
-    } else if (pendingCreationCoords) {
-        createBubble(pendingCreationCoords.x, pendingCreationCoords.y, analysis.area, text, null, analysis.scores);
-        showToast("Nova ideia mapeada!");
-        pendingCreationCoords = null;
-    }
-    saveToFirebase();
-    redrawLines();
-});
-
-btnDelete.addEventListener('click', () => {
-    if (currentBubble) {
-        currentBubble.wrapper.remove();
-        bubblesArray = bubblesArray.filter(b => b !== currentBubble);
-        popupOverlay.classList.remove('active');
-        saveToFirebase();
-        redrawLines();
-        showToast("Ideia excluída.");
-    }
-});
-
-function redrawLines() {
-    while (soloLinesLayer.querySelectorAll('line').length > 0) {
+function drawConnections() {
+    while(soloLinesLayer.querySelectorAll('line').length > 0) {
         soloLinesLayer.removeChild(soloLinesLayer.lastChild);
     }
     gradDefsSolo.innerHTML = '';
@@ -1075,22 +1068,29 @@ function redrawLines() {
         for (let j = i + 1; j < bubblesArray.length; j++) {
             const b1 = bubblesArray[i];
             const b2 = bubblesArray[j];
-            
+
+            const x1 = parseFloat(b1.wrapper.style.left);
+            const y1 = parseFloat(b1.wrapper.style.top);
+            const x2 = parseFloat(b2.wrapper.style.left);
+            const y2 = parseFloat(b2.wrapper.style.top);
+
             let shouldConnect = false;
+            let strokeWidth = "2.5px";
+            let opacity = "0.8";
+
             if (b1.area.id === b2.area.id) {
                 shouldConnect = true;
+                strokeWidth = "3px";
             } else if (b1.scores && b2.scores) {
-                if (b1.scores[b2.area.id] > 0.4 || b2.scores[b1.area.id] > 0.4) {
+                const s1 = b1.scores[b2.area.id] || 0;
+                const s2 = b2.scores[b1.area.id] || 0;
+                if(s1 > 0 || s2 > 0) {
                     shouldConnect = true;
+                    strokeWidth = (1.5 + Math.max(s1, s2)) + "px";
                 }
             }
 
             if (shouldConnect) {
-                const x1 = parseInt(b1.wrapper.style.left);
-                const y1 = parseInt(b1.wrapper.style.top);
-                const x2 = parseInt(b2.wrapper.style.left);
-                const y2 = parseInt(b2.wrapper.style.top);
-
                 const gradId = `grad_${b1.id}_${b2.id}`;
                 const grad = getDoc().createElementNS("http://www.w3.org/2000/svg", "linearGradient");
                 grad.setAttribute("id", gradId);
@@ -1103,89 +1103,132 @@ function redrawLines() {
                 const stop2 = getDoc().createElementNS("http://www.w3.org/2000/svg", "stop");
                 stop2.setAttribute("offset", "100%"); stop2.setAttribute("stop-color", b2.area.color);
 
-                grad.appendChild(stop1); grad.appendChild(stop2);
+                grad.appendChild(stop1); grad.appendChild(grad2 = stop2);
                 gradDefsSolo.appendChild(grad);
 
                 const line = getDoc().createElementNS("http://www.w3.org/2000/svg", "line");
                 line.setAttribute("x1", x1); line.setAttribute("y1", y1);
                 line.setAttribute("x2", x2); line.setAttribute("y2", y2);
                 line.setAttribute("stroke", `url(#${gradId})`);
-                line.classList.add("connection-line");
+                line.setAttribute("class", "connection-line");
+                line.style.strokeWidth = strokeWidth;
+                line.style.opacity = opacity;
+
                 soloLinesLayer.appendChild(line);
             }
         }
     }
 }
 
-function showToast(text) {
-    toastText.innerText = text;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3500);
-}
-
-function saveToFirebase() {
-    try {
-        const { db, ref, set } = window.firebaseDbModules;
-        const currentUserId = window.getCurrentUserId();
-        if(!currentUserId || currentUserId === "default_user") return;
-
-        const dataToSave = bubblesArray.map(b => ({
-            id: b.id,
-            x: parseInt(b.wrapper.style.left),
-            y: parseInt(b.wrapper.style.top),
-            areaId: b.area.id,
-            text: b.tooltip.innerText,
-            scores: b.scores
-        }));
-        set(ref(db, `users/${currentUserId}/bubbles`), dataToSave);
-    } catch(e) {
-        console.error("Erro ao salvar no Firebase:", e);
-    }
+function saveData() {
+    const dataToSave = bubblesArray.map(b => ({
+        id: b.id,
+        x: parseFloat(b.wrapper.style.left),
+        y: parseFloat(b.wrapper.style.top),
+        areaId: b.area.id,
+        text: b.tooltip.innerText,
+        scores: b.scores || {}
+    }));
+    
+    const uid = window.getCurrentUserId();
+    const { db, ref, set } = window.firebaseDbModules;
+    set(ref(db, 'users/' + uid + '/bubbles'), dataToSave).catch(err => {
+        localStorage.setItem('nexusBubbles', JSON.stringify(dataToSave));
+    });
 }
 
 function loadData() {
-    try {
-        const { db, ref, onValue } = window.firebaseDbModules;
-        const currentUserId = window.getCurrentUserId();
-        if(!currentUserId) return;
+    const uid = window.getCurrentUserId();
+    const { db, ref, onValue } = window.firebaseDbModules;
+    
+    onValue(ref(db, 'users/' + uid + '/bubbles'), (snapshot) => {
+        const data = snapshot.val();
+        world.querySelectorAll('.circle-wrapper').forEach(el => el.remove());
+        bubblesArray = [];
 
-        onValue(ref(db, `users/${currentUserId}/bubbles`), (snapshot) => {
-            const data = snapshot.val();
-            bubblesArray.forEach(b => b.wrapper.remove());
-            bubblesArray = [];
-            
-            if (data) {
-                data.forEach(item => {
+        if (data) {
+            data.forEach(item => {
+                const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
+                createBubble(item.x, item.y, area, item.text, item.id, item.scores);
+            });
+        } else {
+            const localData = JSON.parse(localStorage.getItem('nexusBubbles'));
+            if(localData) {
+                localData.forEach(item => {
                     const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
                     createBubble(item.x, item.y, area, item.text, item.id, item.scores);
                 });
             } else {
-                createBubble(window.innerWidth / 2 - 100, window.innerHeight / 2 - 50, lifeAreas[0], "Bem-vindo ao Neuron! Dê duplo clique para criar ideias.");
-                createBubble(window.innerWidth / 2 + 100, window.innerHeight / 2 + 50, lifeAreas[1], "Explore a IA e conecte suas áreas da vida.");
+                createBubble(window.innerWidth / 2 - 100, window.innerHeight / 2 - 50, lifeAreas[0], "Exemplo: Cuidar da saúde física");
+                createBubble(window.innerWidth / 2 + 100, window.innerHeight / 2 + 50, lifeAreas[1], "Exemplo: Estudar gestão e tecnologia");
             }
-            redrawLines();
-            if(!allNewsFetched) {
-                allNewsFetched = true;
-                buildNewsUI();
-                fetchAllNews();
-            }
-        }, { onlyOnce: true });
-    } catch(e) {
-        console.error("Erro ao carregar dados do Firebase:", e);
-        if(bubblesArray.length === 0) {
-            createBubble(window.innerWidth / 2 - 100, window.innerHeight / 2 - 50, lifeAreas[0], "Bem-vindo ao Neuron!");
-            redrawLines();
         }
-        if(!allNewsFetched) {
-            allNewsFetched = true;
-            buildNewsUI();
-            fetchAllNews();
+        drawConnections();
+    }, (error) => {
+        const localData = JSON.parse(localStorage.getItem('nexusBubbles'));
+        if(localData) {
+            localData.forEach(item => {
+                const area = lifeAreas.find(a => a.id === item.areaId) || lifeAreas[0];
+                createBubble(item.x, item.y, area, item.text, item.id, item.scores);
+            });
         }
-    }
+        drawConnections();
+    });
 }
 
-function mainLoop() {
-    redrawLines();
-    mainLoopId = requestAnimationFrame(mainLoop);
+function buildColorList() {
+    colorList.innerHTML = '';
+    lifeAreas.forEach((area, index) => {
+        const container = getDoc().createElement('div');
+        container.className = 'color-option-container';
+        if(index === 0) container.classList.add('active-container');
+
+        const label = getDoc().createElement('div');
+        label.className = 'area-label';
+        label.innerText = area.name;
+
+        const option = getDoc().createElement('div');
+        option.className = 'color-option';
+        if(index === 0) option.classList.add('selected');
+        option.style.backgroundColor = area.color;
+        option.style.color = area.color;
+
+        option.addEventListener('click', (e) => {
+            e.stopPropagation();
+            activeArea = area;
+            morphDock.style.setProperty('--dock-glow', area.color);
+            colorList.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+            colorList.querySelectorAll('.color-option-container').forEach(cont => cont.classList.remove('active-container'));
+            option.classList.add('selected');
+            container.classList.add('active-container');
+            showToast(`Foco alterado para: ${area.name}`);
+        });
+
+        container.appendChild(label);
+        container.appendChild(option);
+        colorList.appendChild(container);
+    });
 }
-mainLoop();
+
+morphDock.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if(!morphDock.classList.contains('open')) {
+        morphDock.classList.add('open');
+    }
+});
+
+document.addEventListener('click', (e) => {
+    if(!morphDock.contains(e.target)) {
+        morphDock.classList.remove('open');
+    }
+});
+
+function showToast(text) {
+    toastText.innerText = text;
+    toast.classList.add('show');
+    setTimeout(() => { toast.classList.remove('show'); }, 3000);
+}
+
+buildColorList();
+buildNewsUI();
+fetchAllNews();
