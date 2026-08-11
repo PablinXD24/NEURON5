@@ -1060,7 +1060,7 @@
         const contactsSidebar = document.getElementById('contacts-sidebar');
         const contactsToggleBtn = document.getElementById('contactsToggleBtn');
 
-        // --- SISTEMA DA AGENTE DE VOZ NIA (ATUALIZADO COM FLUXO DE DIÁLOGO) ---
+        // --- SISTEMA DA AGENTE DE VOZ NIA (ATUALIZADO COM API DIFERENTE E FLUXO DE DIÁLOGO) ---
         const niaIndicator = document.getElementById('nia-status-indicator');
         const niaStatusText = document.getElementById('niaStatusText');
         let recognition = null;
@@ -1093,7 +1093,7 @@
             recognition = new SpeechRecognition();
             recognition.lang = 'pt-BR';
             recognition.continuous = true;
-            recognition.interimResults = true;
+            recognition.interimResults = false;
 
             recognition.onstart = () => {
                 isNiaActive = true;
@@ -1101,25 +1101,21 @@
             };
 
             recognition.onresult = (event) => {
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        const transcript = event.results[i][0].transcript.trim().toLowerCase();
-                        console.log("NIA capturou ("+niaState+"): ", transcript);
+                const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+                console.log("NIA capturou ("+niaState+"): ", transcript);
 
-                        if (niaState === 'IDLE') {
-                            if (transcript.includes('ei nia') || transcript.includes('hey nia') || transcript.includes('e nia') || transcript.includes('nia')) {
-                                niaState = 'WAITING_FOR_TASK';
-                                niaStatusText.innerText = "Ouvindo solicitação...";
-                                speakText("O que eu posso criar para você hoje?");
-                            }
-                        } else if (niaState === 'WAITING_FOR_TASK') {
-                            niaState = 'WAITING_FOR_CONTENT';
-                            processNiaTaskCreation(transcript);
-                        } else if (niaState === 'WAITING_FOR_CONTENT') {
-                            niaState = 'IDLE';
-                            processNiaContentAddition(transcript);
-                        }
+                if (niaState === 'IDLE') {
+                    if (transcript.includes('ei nia') || transcript.includes('hey nia') || transcript.includes('e nia')) {
+                        niaState = 'WAITING_FOR_TASK';
+                        niaStatusText.innerText = "Ouvindo solicitação...";
+                        speakText("O que eu posso criar para você hoje?");
                     }
+                } else if (niaState === 'WAITING_FOR_TASK') {
+                    niaState = 'WAITING_FOR_CONTENT';
+                    processNiaTaskCreation(transcript);
+                } else if (niaState === 'WAITING_FOR_CONTENT') {
+                    niaState = 'IDLE';
+                    processNiaContentAddition(transcript);
                 }
             };
 
@@ -1176,7 +1172,7 @@
         }
 
         function processNiaContentAddition(transcript) {
-            if (transcript.includes('nada') || transcript.includes('nenhum') || transcript.includes('não') || transcript.includes('finja') || transcript.includes('finaliza')) {
+            if (transcript.includes('nada') || transcript.includes('nenhum') || transcript.includes('não')) {
                 speakText("Finalizado.");
                 showToast("Processo finalizado.");
                 pendingCreatedBubble = null;
@@ -2317,3 +2313,4 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
     </script>
 </body>
 </html>
+```[cite: 1]
