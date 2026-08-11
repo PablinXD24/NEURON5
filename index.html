@@ -192,6 +192,21 @@
         .dock-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.45); }
         .dock-btn svg { width: 20px; height: 20px; fill: #444; transition: fill 0.3s; }
 
+        /* --- AGENTE NIA VOICE BUTTON --- */
+        .nia-btn.listening {
+            background: rgba(41, 250, 16, 0.3);
+            border-color: #29FA10;
+            animation: pulse-nia 1.5s infinite;
+        }
+        .nia-btn.listening svg {
+            fill: #29FA10;
+        }
+        @keyframes pulse-nia {
+            0% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(41, 250, 16, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0); }
+        }
+
         /* --- MORPH DOCK PARA IA / CONSULTA RÁPIDA --- */
         .morph-ai-bar {
             position: relative; width: 46px; height: 46px; border-radius: 50px;
@@ -227,21 +242,6 @@
             transition: 0.2s;
         }
         .ai-send-btn:active { transform: scale(0.9); }
-
-        /* --- ESTILOS DO AGENTE NIA --- */
-        .nia-btn.listening {
-            background: rgba(41, 250, 16, 0.25);
-            border-color: #29FA10;
-            animation: pulse-nia 1.5s infinite;
-        }
-        .nia-btn.listening svg {
-            fill: #29FA10;
-        }
-        @keyframes pulse-nia {
-            0% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0.7); }
-            70% { box-shadow: 0 0 0 12px rgba(41, 250, 16, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(41, 250, 16, 0); }
-        }
 
         .morph-dock {
             position: relative; width: 52px; height: 52px; border-radius: 52px;
@@ -883,7 +883,7 @@
             <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
         </div>
         
-        <!-- BOTÃO DA AGENTE DE VOZ NIA -->
+        <!-- BOTÃO DO AGENTE DE VOZ NIA -->
         <div class="dock-btn nia-btn" id="niaVoiceBtn" title="Ativar Agente NIA (Diga 'Hey NIA')">
             <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
         </div>
@@ -2182,7 +2182,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         
         function showToast(msg) { toastText.innerText = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 4000); }
 
-        /* --- IMPLEMENTAÇÃO DA AGENTE DE VOZ: NIA --- */
+        /* --- IMPLEMENTAÇÃO DA AGENTE DE VOZ NIA --- */
         const niaVoiceBtn = document.getElementById('niaVoiceBtn');
         let isNiaListening = false;
         let recognition = null;
@@ -2220,7 +2220,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 stopNiaListening();
             };
         } else {
-            niaVoiceBtn.style.display = 'none'; // Oculta se o navegador não suportar API de Voz
+            niaVoiceBtn.style.display = 'none'; 
         }
 
         function toggleNiaListening() {
@@ -2252,13 +2252,11 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         async function processNiaCommand(commandText) {
             showToast(`NIA processando comando...`);
             
-            // Gerar coordenadas aleatórias em torno do centro visível atual
             const randomOffsetX = (Math.random() - 0.5) * 300;
             const randomOffsetY = (Math.random() - 0.5) * 300;
             const spawnX = (-worldX + (window.innerWidth / 2) + randomOffsetX) / scale;
             const spawnY = (-worldY + (window.innerHeight / 2) + randomOffsetY) / scale;
 
-            // Analisar se há indicação de cor/área na frase (ex: "vermelha", "relacionamento", "saúde")
             let targetArea = activeArea;
             for (let area of lifeAreas) {
                 if (commandText.includes(area.id) || area.keywords.some(kw => commandText.includes(kw))) {
@@ -2267,7 +2265,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 }
             }
 
-            // Tratamento especial para cores/nomes comuns de solicitação
             if (commandText.includes("vermelha") || commandText.includes("vermelho")) {
                 targetArea = lifeAreas.find(a => a.id === 'social') || activeArea;
             } else if (commandText.includes("azul") || commandText.includes("intelecto")) {
@@ -2278,7 +2275,6 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 targetArea = lifeAreas.find(a => a.id === 'career') || activeArea;
             }
 
-            // Limpar o prefixo "hey nia" para usar o restante como o texto/título da bolinha
             let cleanContent = commandText
                 .replace(/hey nia/g, '')
                 .replace(/ei nia/g, '')
@@ -2291,11 +2287,9 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             if (!cleanContent) {
                 cleanContent = `Solicitação NIA (${targetArea.name})`;
             } else {
-                // Capitalizar primeira letra
                 cleanContent = cleanContent.charAt(0).toUpperCase() + cleanContent.slice(1);
             }
 
-            // Criar a nova bolinha/área automaticamente
             const analysis = await analyzeFullContext(cleanContent);
             const finalArea = analysis.dominant || targetArea;
 
