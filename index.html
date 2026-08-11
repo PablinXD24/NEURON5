@@ -34,6 +34,7 @@
             padding: 8px 16px; border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.9);
             box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;
             font-size: 12px; font-weight: 700; color: #37617A; transition: all 0.3s;
+            cursor: pointer;
         }
         #nia-status-indicator.listening { border-color: #29FA10; background: rgba(41, 250, 16, 0.15); color: #1b5e20; }
         .nia-dot { width: 8px; height: 8px; border-radius: 50%; background: #999; transition: 0.3s; }
@@ -644,7 +645,7 @@
     <img id="app-logo" src="https://raw.githubusercontent.com/PablinXD24/NEURON3/main/neuron%20logo%20branco.png" alt="Neuron Logo">
 
     <!-- INDICADOR DA AGENTE DE VOZ NIA -->
-    <div id="nia-status-indicator" title="Agente NIA em escuta">
+    <div id="nia-status-indicator" title="Clique para ativar a voz manualmente se necessário">
         <div class="nia-dot"></div>
         <span id="niaStatusText">Diga "Ei Nia"</span>
     </div>
@@ -1059,11 +1060,11 @@
         const contactsSidebar = document.getElementById('contacts-sidebar');
         const contactsToggleBtn = document.getElementById('contactsToggleBtn');
 
-        // --- SISTEMA DA AGENTE DE VOZ NIA ---
+        // --- SISTEMA DA AGENTE DE VOZ NIA (ATUALIZADO) ---
         const niaIndicator = document.getElementById('nia-status-indicator');
         const niaStatusText = document.getElementById('niaStatusText');
         let recognition = null;
-        let isNiaListening = false;
+        let isNiaActive = false;
         let waitingForNiaCommand = false;
 
         function initNiaVoiceAgent() {
@@ -1076,61 +1077,73 @@
             recognition = new SpeechRecognition();
             recognition.lang = 'pt-BR';
             recognition.continuous = true;
-            recognition.interimResults = false;
+            recognition.interimResults = true;
 
             recognition.onstart = () => {
-                isNiaListening = true;
+                isNiaActive = true;
+                niaIndicator.classList.add('listening');
+                niaStatusText.innerText = 'Escutando... ("Ei Nia")';
             };
 
             recognition.onresult = (event) => {
-                const last = event.results.length - 1;
-                const transcript = event.results[last][0].transcript.trim().toLowerCase();
-                console.log("NIA ouviu:", transcript);
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        const transcript = event.results[i][0].transcript.trim().toLowerCase();
+                        console.log("NIA capturou:", transcript);
 
-                if (!waitingForNiaCommand) {
-                    if (transcript.includes('ei nia') || transcript.includes('hey nia') || transcript.includes('ey nia') || transcript.includes('e nia')) {
-                        waitingForNiaCommand = true;
-                        niaIndicator.classList.add('listening');
-                        niaStatusText.innerText = "NIA ouvindo solicitação...";
-                        showToast("NIA ativada! Diga sua solicitação.");
+                        if (!waitingForNiaCommand) {
+                            if (transcript.includes('nia') || transcript.includes('linha') || transcript.includes('minha')) {
+                                waitingForNiaCommand = true;
+                                niaIndicator.classList.add('listening');
+                                niaStatusText.innerText = "NIA ativa! Diga o comando...";
+                                showToast("NIA ativada! Diga sua solicitação.");
+                            }
+                        } else {
+                            waitingForNiaCommand = false;
+                            niaIndicator.classList.remove('listening');
+                            niaStatusText.innerText = 'Diga "Ei Nia"';
+                            processNiaCommand(transcript);
+                        }
                     }
-                } else {
-                    waitingForNiaCommand = false;
-                    niaIndicator.classList.remove('listening');
-                    niaStatusText.innerText = 'Diga "Ei Nia"';
-                    processNiaCommand(transcript);
                 }
             };
 
             recognition.onerror = (event) => {
-                console.warn("Erro no reconhecimento de voz:", event.error);
-                restartNia();
+                console.warn("Aviso de reconhecimento de voz:", event.error);
             };
 
             recognition.onend = () => {
-                isNiaListening = false;
-                restartNia();
+                isNiaActive = false;
+                niaIndicator.classList.remove('listening');
+                niaStatusText.innerText = 'Clique para ativar a NIA';
+                // Reinício automático imediato para manter a escuta contínua
+                setTimeout(() => {
+                    startNia();
+                }, 500);
             };
 
-            try {
-                recognition.start();
-            } catch(e) {
-                console.error(e);
+            startNia();
+        }
+
+        function startNia() {
+            if (!isNiaActive && recognition) {
+                try {
+                    recognition.start();
+                } catch(e) {
+                    console.log("Reconhecimento já iniciado ou bloqueado por política de autoplay do browser.");
+                }
             }
         }
 
-        function restartNia() {
-            if (!isNiaListening && recognition) {
-                setTimeout(() => {
-                    try { recognition.start(); } catch(e){}
-                }, 1000);
-            }
-        }
+        // Permite ligar/ativar via toque caso o navegador bloqueie o microfone automático
+        niaIndicator.addEventListener('click', () => {
+            startNia();
+            showToast("NIA ativada manualmente. Diga 'Ei Nia'.");
+        });
 
         function processNiaCommand(command) {
             showToast(`NIA executando: "${command}"`);
             
-            // Identificar área solicitada com base em frases flexíveis
             let selectedArea = activeArea;
             lifeAreas.forEach(area => {
                 area.keywords.forEach(kw => {
@@ -1140,7 +1153,6 @@
                 });
             });
 
-            // Gerar bolinha automaticamente no centro da tela atual ou coordenada aleatória visível
             const randomOffsetX = (Math.random() - 0.5) * 300;
             const randomOffsetY = (Math.random() - 0.5) * 300;
             const realX = (-worldX + (window.innerWidth / 2) + randomOffsetX) / scale;
@@ -1148,7 +1160,7 @@
 
             createBubble(realX, realY, selectedArea, command, null, {});
             saveData();
-            showToast(`Bolinha criada em ${selectedArea.name}!`);
+            showToast(`Criado em ${selectedArea.name} via NIA!`);
         }
 
         window.addEventListener('load', () => {
