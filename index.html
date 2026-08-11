@@ -999,7 +999,7 @@
         const lifeAreas = [
             { id: 'health', name: 'Saúde & Físico', color: '#29FA10', keywords: ['saude', 'saúde', 'corpo', 'academia', 'treino', 'medico', 'consulta', 'atestado', 'falta', 'exame', 'remedio', 'vermelha', 'vermelho'] },
             { id: 'mind', name: 'Mente & Intelecto', color: '#37617A', keywords: ['estudar', 'livro', 'ler', 'curso', 'faculdade', 'mente', 'intelecto'] },
-            { id: 'social', name: 'Relacionamentos', color: '#f23839', keywords: ['amor', 'namorado', 'casamento', 'mae', 'pai', 'relacionamento', 'amigos'] },
+            { id: 'social', name: 'Relacionamentos', color: '#f23839', keywords: ['amor', 'namorado', 'casamento', 'mae', 'pai', 'relacionamento', 'amigos', 'relacionamento'] },
             { id: 'career', name: 'Carreira & Finanças', color: '#f2ca50', keywords: ['trabalho', 'emprego', 'dinheiro', 'salario', 'chefe', 'empresa', 'carreira', 'financas'] },
             { id: 'spirit', name: 'Espiritual & Emocional', color: '#378c4b', keywords: ['deus', 'fé', 'orar', 'meditar', 'paz', 'espiritual'] }
         ];
@@ -1060,12 +1060,26 @@
         const contactsSidebar = document.getElementById('contacts-sidebar');
         const contactsToggleBtn = document.getElementById('contactsToggleBtn');
 
-        // --- SISTEMA DA AGENTE DE VOZ NIA (ATUALIZADO) ---
+        // --- SISTEMA DA AGENTE DE VOZ NIA (ETAPAS E TEMPOS SEPARADOS) ---
         const niaIndicator = document.getElementById('nia-status-indicator');
         const niaStatusText = document.getElementById('niaStatusText');
         let recognition = null;
         let isNiaActive = false;
-        let waitingForNiaCommand = false;
+        
+        // Estados do fluxo de voz
+        // 0: Aguardando chamada ("Ei Nia")
+        // 1: Aguardando escolher a área/cor para criar a bolinha
+        // 2: Aguardando o conteúdo para colocar dentro da bolinha
+        let niaState = 0; 
+        let tempCreatedBubble = null;
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
 
         function initNiaVoiceAgent() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1082,27 +1096,66 @@
             recognition.onstart = () => {
                 isNiaActive = true;
                 niaIndicator.classList.add('listening');
-                niaStatusText.innerText = 'Escutando... ("Ei Nia")';
             };
 
             recognition.onresult = (event) => {
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
                         const transcript = event.results[i][0].transcript.trim().toLowerCase();
-                        console.log("NIA capturou:", transcript);
+                        console.log("NIA (Estado " + niaState + ") ouviu:", transcript);
 
-                        if (!waitingForNiaCommand) {
+                        if (niaState === 0) {
+                            // Aguardando chamar "Ei Nia"
                             if (transcript.includes('nia') || transcript.includes('linha') || transcript.includes('minha')) {
-                                waitingForNiaCommand = true;
+                                niaState = 1;
                                 niaIndicator.classList.add('listening');
-                                niaStatusText.innerText = "NIA ativa! Diga o comando...";
-                                showToast("NIA ativada! Diga sua solicitação.");
+                                niaStatusText.innerText = "Qual cor ou área?";
+                                showToast("NIA: Qual cor ou área deseja criar?");
+                                speakText("Qual cor ou área deseja criar?");
                             }
-                        } else {
-                            waitingForNiaCommand = false;
+                        } 
+                        else if (niaState === 1) {
+                            // Passo 2: Escolher cor/área e criar bolinha imediatamente
+                            let selectedArea = activeArea;
+                            lifeAreas.forEach(area => {
+                                area.keywords.forEach(kw => {
+                                    if (transcript.includes(kw)) {
+                                        selectedArea = area;
+                                    }
+                                });
+                            });
+
+                            const randomOffsetX = (Math.random() - 0.5) * 300;
+                            const randomOffsetY = (Math.random() - 0.5) * 300;
+                            const realX = (-worldX + (window.innerWidth / 2) + randomOffsetX) / scale;
+                            const realY = (-worldY + (window.innerHeight / 2) + randomOffsetY) / scale;
+
+                            tempCreatedBubble = createBubble(realX, realY, selectedArea, "Nova bolinha", null, {});
+                            saveData();
+
+                            // Passa para o passo 2: perguntar o conteúdo interno
+                            niaState = 2;
+                            niaStatusText.innerText = "O que adicionar dentro?";
+                            showToast(`Bolinha criada em ${selectedArea.name}! O que deseja adicionar dentro?`);
+                            speakText("O que deseja adicionar dentro da bolinha?");
+                        } 
+                        else if (niaState === 2) {
+                            // Passo 3: Adicionar conteúdo ou dizer "Só isso"
+                            if (transcript.includes('só isso') || transcript.includes('so isso') || transcript.includes('nada') || transcript.includes('fechar')) {
+                                showToast("Bolinha salva!");
+                                speakText("Ok, salvo.");
+                            } else if (tempCreatedBubble) {
+                                tempCreatedBubble.tooltip.innerText = transcript;
+                                saveData();
+                                showToast(`Conteúdo salvo: "${transcript}"`);
+                                speakText("Adicionado com sucesso.");
+                            }
+
+                            // Reseta o fluxo para aguardar novo "Ei Nia"
+                            niaState = 0;
+                            tempCreatedBubble = null;
                             niaIndicator.classList.remove('listening');
                             niaStatusText.innerText = 'Diga "Ei Nia"';
-                            processNiaCommand(transcript);
                         }
                     }
                 }
@@ -1115,8 +1168,6 @@
             recognition.onend = () => {
                 isNiaActive = false;
                 niaIndicator.classList.remove('listening');
-                niaStatusText.innerText = 'Clique para ativar a NIA';
-                // Reinício automático imediato para manter a escuta contínua
                 setTimeout(() => {
                     startNia();
                 }, 500);
@@ -1129,39 +1180,15 @@
             if (!isNiaActive && recognition) {
                 try {
                     recognition.start();
-                } catch(e) {
-                    console.log("Reconhecimento já iniciado ou bloqueado por política de autoplay do browser.");
-                }
+                } catch(e) {}
             }
         }
 
-        // Permite ligar/ativar via toque caso o navegador bloqueie o microfone automático
         niaIndicator.addEventListener('click', () => {
+            niaState = 0;
             startNia();
-            showToast("NIA ativada manualmente. Diga 'Ei Nia'.");
+            showToast("NIA reiniciada. Diga 'Ei Nia'.");
         });
-
-        function processNiaCommand(command) {
-            showToast(`NIA executando: "${command}"`);
-            
-            let selectedArea = activeArea;
-            lifeAreas.forEach(area => {
-                area.keywords.forEach(kw => {
-                    if (command.includes(kw)) {
-                        selectedArea = area;
-                    }
-                });
-            });
-
-            const randomOffsetX = (Math.random() - 0.5) * 300;
-            const randomOffsetY = (Math.random() - 0.5) * 300;
-            const realX = (-worldX + (window.innerWidth / 2) + randomOffsetX) / scale;
-            const realY = (-worldY + (window.innerHeight / 2) + randomOffsetY) / scale;
-
-            createBubble(realX, realY, selectedArea, command, null, {});
-            saveData();
-            showToast(`Criado em ${selectedArea.name} via NIA!`);
-        }
 
         window.addEventListener('load', () => {
             initNiaVoiceAgent();
