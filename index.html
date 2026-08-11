@@ -27,18 +27,18 @@
             transition: width 0.3s, top 0.3s, left 0.3s;
         }
 
-        /* --- INDICADOR DE VOZ NIA --- */
-        #nia-status-indicator {
+        /* --- NIA (AGENTE DE VOZ) INDICATOR --- */
+        #nia-indicator {
             position: fixed; top: 25px; right: 25px; z-index: 2500;
             background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px);
-            padding: 8px 16px; border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.9);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;
-            font-size: 12px; font-weight: 700; color: #37617A; transition: all 0.3s;
-            cursor: pointer;
+            border: 1px solid #29FA10; border-radius: 30px; padding: 8px 16px;
+            display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            font-size: 12px; font-weight: 700; color: #333; transition: all 0.3s;
         }
-        #nia-status-indicator.listening { border-color: #29FA10; background: rgba(41, 250, 16, 0.15); color: #1b5e20; }
-        .nia-dot { width: 8px; height: 8px; border-radius: 50%; background: #999; transition: 0.3s; }
-        #nia-status-indicator.listening .nia-dot { background: #29FA10; box-shadow: 0 0 10px #29FA10; animation: pulse-dot 1.2s infinite; }
+        #nia-indicator.listening { border-color: #f23839; background: rgba(255, 235, 238, 0.9); animation: pulse-red 1.5s infinite; }
+        .nia-dot { width: 8px; height: 8px; background: #29FA10; border-radius: 50%; box-shadow: 0 0 8px #29FA10; }
+        #nia-indicator.listening .nia-dot { background: #f23839; box-shadow: 0 0 8px #f23839; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(242, 56, 57, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(242, 56, 57, 0); } 100% { box-shadow: 0 0 0 0 rgba(242, 56, 57, 0); } }
 
         /* --- BARRA LATERAL FLUTUANTE RETRÁTIL DE CONTATOS (LADO DIREITO) --- */
         #contacts-sidebar {
@@ -597,8 +597,12 @@
 
         /* --- AJUSTES DE RESPONSIVIDADE --- */
         @media (max-width: 1920px) {
-            .bottom-ui-container { bottom: 35px; }
-            #contacts-sidebar { top: 28%; }
+            .bottom-ui-container {
+                bottom: 35px;
+            }
+            #contacts-sidebar {
+                top: 28%;
+            }
         }
 
         @media (max-width: 768px) {
@@ -607,18 +611,51 @@
             #contacts-sidebar.open { width: 240px; }
             
             .bottom-ui-container { 
-                width: 100%; justify-content: center; gap: 8px; 
-                bottom: 65px; padding: 0 10px; box-sizing: border-box; max-width: 100vw;
+                width: 100%; 
+                justify-content: center; 
+                gap: 8px; 
+                bottom: 65px; 
+                padding: 0 10px; 
+                box-sizing: border-box; 
+                max-width: 100vw;
             }
             .dock-btn { width: 42px; height: 42px; }
             .dock-btn svg { width: 18px; height: 18px; }
-            .morph-dock.open { width: calc(100vw - 110px); height: 55px; justify-content: flex-start; padding: 0; }
-            .morph-ai-bar.open { width: calc(100vw - 75px); height: 45px; }
-            .morph-dock.open .color-list { padding: 0 10px; width: auto; justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .morph-dock.open { 
+                width: calc(100vw - 110px); 
+                height: 55px; 
+                justify-content: flex-start; 
+                padding: 0; 
+            }
+            .morph-ai-bar.open { 
+                width: calc(100vw - 75px); 
+                height: 45px;
+            }
+            .morph-dock.open .color-list { 
+                padding: 0 10px; 
+                width: auto; 
+                justify-content: flex-start; 
+                overflow-x: auto; 
+                -webkit-overflow-scrolling: touch; 
+            }
             .color-option { width: 30px; height: 30px; margin-right: 4px; }
             
-            .profile-modal { flex-direction: column; overflow-y: auto; height: 92vh; width: 95vw; border-radius: 25px; }
-            .profile-sidebar { width: 100%; padding: 20px 15px; border-right: none; border-bottom: 1px solid #eee; box-sizing: border-box; height: auto; flex-shrink: 0; }
+            .profile-modal { 
+                flex-direction: column; 
+                overflow-y: auto; 
+                height: 92vh; 
+                width: 95vw;
+                border-radius: 25px;
+            }
+            .profile-sidebar { 
+                width: 100%; 
+                padding: 20px 15px; 
+                border-right: none; 
+                border-bottom: 1px solid #eee; 
+                box-sizing: border-box; 
+                height: auto; 
+                flex-shrink: 0; 
+            }
             .profile-content { overflow: visible; }
             .profile-nav { overflow-x: auto; padding: 12px 15px; justify-content: flex-start; gap: 15px; }
             .nav-item { font-size: 13px; padding-bottom: 6px; }
@@ -644,10 +681,10 @@
 
     <img id="app-logo" src="https://raw.githubusercontent.com/PablinXD24/NEURON3/main/neuron%20logo%20branco.png" alt="Neuron Logo">
 
-    <!-- INDICADOR DA AGENTE DE VOZ NIA -->
-    <div id="nia-status-indicator" title="Clique para ativar a voz manualmente se necessário">
+    <!-- NIA AGENTE DE VOZ STATUS INDICATOR -->
+    <div id="nia-indicator">
         <div class="nia-dot"></div>
-        <span id="niaStatusText">Diga "Ei Nia"</span>
+        <span id="nia-status-text">NIA: Diga "Ei Nia"</span>
     </div>
 
     <!-- BARRA LATERAL FLUTUANTE RETRÁTIL DE CONTATOS (LADO DIREITO) -->
@@ -997,11 +1034,11 @@
         const getDoc = () => pipWindow ? pipWindow.document : document;
 
         const lifeAreas = [
-            { id: 'health', name: 'Saúde & Físico', color: '#29FA10', keywords: ['saude', 'saúde', 'corpo', 'academia', 'treino', 'medico', 'consulta', 'atestado', 'falta', 'exame', 'remedio', 'vermelha', 'vermelho'] },
-            { id: 'mind', name: 'Mente & Intelecto', color: '#37617A', keywords: ['estudar', 'livro', 'ler', 'curso', 'faculdade', 'mente', 'intelecto'] },
+            { id: 'health', name: 'Saúde & Físico', color: '#29FA10', keywords: ['saude', 'saúde', 'corpo', 'academia', 'treino', 'medico', 'consulta', 'atestado', 'falta', 'exame', 'remedio', 'vermelha'] },
+            { id: 'mind', name: 'Mente & Intelecto', color: '#37617A', keywords: ['estudar', 'livro', 'ler', 'curso', 'faculdade', 'azul', 'mente'] },
             { id: 'social', name: 'Relacionamentos', color: '#f23839', keywords: ['amor', 'namorado', 'casamento', 'mae', 'pai', 'relacionamento', 'amigos'] },
-            { id: 'career', name: 'Carreira & Finanças', color: '#f2ca50', keywords: ['trabalho', 'emprego', 'dinheiro', 'salario', 'chefe', 'empresa', 'carreira', 'financas'] },
-            { id: 'spirit', name: 'Espiritual & Emocional', color: '#378c4b', keywords: ['deus', 'fé', 'orar', 'meditar', 'paz', 'espiritual'] }
+            { id: 'career', name: 'Carreira & Finanças', color: '#f2ca50', keywords: ['trabalho', 'emprego', 'dinheiro', 'salario', 'chefe', 'empresa', 'falta', 'amarela'] },
+            { id: 'spirit', name: 'Espiritual & Emocional', color: '#378c4b', keywords: ['deus', 'fé', 'orar', 'meditar', 'paz', 'verde'] }
         ];
 
         const viewport = document.getElementById('viewport');
@@ -1060,33 +1097,16 @@
         const contactsSidebar = document.getElementById('contacts-sidebar');
         const contactsToggleBtn = document.getElementById('contactsToggleBtn');
 
-        // --- SISTEMA DA AGENTE DE VOZ NIA (ATUALIZADO COM API DIFERENTE E FLUXO DE DIÁLOGO) ---
-        const niaIndicator = document.getElementById('nia-status-indicator');
-        const niaStatusText = document.getElementById('niaStatusText');
+        // --- NIA AGENTE DE VOZ (SPEECH RECOGNITION) ---
+        const niaIndicator = document.getElementById('nia-indicator');
+        const niaStatusText = document.getElementById('nia-status-text');
+        let niaListening = false;
         let recognition = null;
-        let isNiaActive = false;
-        let niaState = 'IDLE'; // 'IDLE', 'WAITING_FOR_TASK', 'WAITING_FOR_CONTENT'
-        let pendingCreatedBubble = null;
-
-        function speakText(text, callback) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'pt-BR';
-                utterance.rate = 1.0;
-                if (callback) {
-                    utterance.onend = callback;
-                }
-                window.speechSynthesis.speak(utterance);
-            } else {
-                if (callback) callback();
-            }
-        }
 
         function initNiaVoiceAgent() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                niaStatusText.innerText = "Voz não suportada";
+                niaStatusText.innerText = "NIA: Sem suporte de voz";
                 return;
             }
 
@@ -1096,99 +1116,88 @@
             recognition.interimResults = false;
 
             recognition.onstart = () => {
-                isNiaActive = true;
+                niaListening = true;
                 niaIndicator.classList.add('listening');
+                niaStatusText.innerText = "NIA: Ouvindo comando...";
             };
 
             recognition.onresult = (event) => {
-                const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-                console.log("NIA capturou ("+niaState+"): ", transcript);
+                const speechResult = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+                console.log("NIA ouviu:", speechResult);
 
-                if (niaState === 'IDLE') {
-                    if (transcript.includes('ei nia') || transcript.includes('hey nia') || transcript.includes('e nia')) {
-                        niaState = 'WAITING_FOR_TASK';
-                        niaStatusText.innerText = "Ouvindo solicitação...";
-                        speakText("O que eu posso criar para você hoje?");
-                    }
-                } else if (niaState === 'WAITING_FOR_TASK') {
-                    niaState = 'WAITING_FOR_CONTENT';
-                    processNiaTaskCreation(transcript);
-                } else if (niaState === 'WAITING_FOR_CONTENT') {
-                    niaState = 'IDLE';
-                    processNiaContentAddition(transcript);
+                if (speechResult.includes('ei nia') || speechResult.includes('hey nia') || speechResult.includes('enia') || niaIndicator.classList.contains('listening')) {
+                    processNiaCommand(speechResult);
                 }
             };
 
             recognition.onerror = (event) => {
-                console.warn("Aviso de reconhecimento de voz:", event.error);
+                console.warn("Erro no reconhecimento de voz:", event.error);
+                restartNia();
             };
 
             recognition.onend = () => {
-                isNiaActive = false;
-                niaIndicator.classList.remove('listening');
-                niaStatusText.innerText = 'Diga "Ei Nia"';
-                setTimeout(() => {
-                    startNia();
-                }, 500);
+                restartNia();
             };
 
-            startNia();
+            try {
+                recognition.start();
+            } catch(e) {
+                console.error(e);
+            }
         }
 
-        function startNia() {
-            if (!isNiaActive && recognition) {
+        function restartNia() {
+            niaListening = false;
+            niaIndicator.classList.remove('listening');
+            niaStatusText.innerText = "NIA: Diga 'Ei Nia'";
+            setTimeout(() => {
                 try {
-                    recognition.start();
+                    if(recognition) recognition.start();
                 } catch(e) {}
-            }
+            }, 1000);
         }
 
-        niaIndicator.addEventListener('click', () => {
-            startNia();
-            showToast("NIA ativada manualmente. Diga 'Ei Nia'.");
-        });
+        function processNiaCommand(command) {
+            showToast(`NIA acionada: "${command}"`);
+            
+            // Tratamento de Criação de Bolinhas / Áreas baseadas em voz
+            if (command.includes('gerar') || command.includes('criar') || command.includes('nova bolinha') || command.includes('criar bolinha')) {
+                let chosenArea = activeArea;
+                
+                if (command.includes('vermelha') || command.includes('relacionamento') || command.includes('amor')) {
+                    chosenArea = lifeAreas.find(a => a.id === 'social') || activeArea;
+                } else if (command.includes('verde') || command.includes('saúde') || command.includes('fisico')) {
+                    chosenArea = lifeAreas.find(a => a.id === 'health') || activeArea;
+                } else if (command.includes('azul') || command.includes('mente') || command.includes('intelecto')) {
+                    chosenArea = lifeAreas.find(a => a.id === 'mind') || activeArea;
+                } else if (command.includes('amarela') || command.includes('carreira') || command.includes('finanças')) {
+                    chosenArea = lifeAreas.find(a => a.id === 'career') || activeArea;
+                } else if (command.includes('espiritual') || command.includes('emocional')) {
+                    chosenArea = lifeAreas.find(a => a.id === 'spirit') || activeArea;
+                }
 
-        function processNiaTaskCreation(command) {
-            let selectedArea = activeArea;
-            lifeAreas.forEach(area => {
-                area.keywords.forEach(kw => {
-                    if (command.includes(kw)) {
-                        selectedArea = area;
-                    }
-                });
-            });
+                // Definir coordenadas centrais padrão ou aleatórias no mundo se acionado por voz
+                const randomX = -worldX + (window.innerWidth / 2) + (Math.random() * 100 - 50);
+                const randomY = -worldY + (window.innerHeight / 2) + (Math.random() * 100 - 50);
+                
+                let contentText = command.replace(/ei nia/g, '').replace(/gerar/g, '').replace(/criar/g, '').replace(/bolinha/g, '').trim();
+                if(!contentText) contentText = "Ideia gerada por NIA";
 
-            const randomOffsetX = (Math.random() - 0.5) * 300;
-            const randomOffsetY = (Math.random() - 0.5) * 300;
-            const realX = (-worldX + (window.innerWidth / 2) + randomOffsetX) / scale;
-            const realY = (-worldY + (window.innerHeight / 2) + randomOffsetY) / scale;
-
-            pendingCreatedBubble = createBubble(realX, realY, selectedArea, command, null, {});
-            saveData();
-            showToast(`Bolinha criada em ${selectedArea.name}!`);
-
-            niaStatusText.innerText = "Ouvindo conteúdo...";
-            speakText("O que vamos adicionar dentro da bolinha?");
-        }
-
-        function processNiaContentAddition(transcript) {
-            if (transcript.includes('nada') || transcript.includes('nenhum') || transcript.includes('não')) {
-                speakText("Finalizado.");
-                showToast("Processo finalizado.");
-                pendingCreatedBubble = null;
-            } else if (pendingCreatedBubble) {
-                pendingCreatedBubble.tooltip.innerText = transcript;
+                createBubble(randomX, randomY, chosenArea, contentText);
                 saveData();
-                speakText("Pronto, adicionado com sucesso.");
-                showToast(`Conteúdo adicionado: "${transcript}"`);
-                pendingCreatedBubble = null;
+                showToast(`Bolinha criada em ${chosenArea.name}!`);
+            } else if (command.includes('abrir perfil') || command.includes('meu perfil')) {
+                homeBtn.click();
+            } else if (command.includes('simbiose') || command.includes('radar')) {
+                symbiosisBtn.click();
+            } else {
+                // Consulta geral / Criação genérica com o texto falado
+                const randomX = -worldX + (window.innerWidth / 2);
+                const randomY = -worldY + (window.innerHeight / 2);
+                createBubble(randomX, randomY, activeArea, command.replace(/ei nia/g, '').trim());
+                saveData();
             }
-            niaStatusText.innerText = 'Diga "Ei Nia"';
         }
-
-        window.addEventListener('load', () => {
-            initNiaVoiceAgent();
-        });
 
         contactsToggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -2136,11 +2145,11 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
             lifeAreas.forEach(area => scores[area.id] = 0);
             
             const smartMap = {
-                health: ['saude', 'corpo', 'academia', 'treino', 'comer', 'peso', 'dormir', 'agua', 'corrida', 'medico', 'consulta', 'atestado', 'exame', 'remedio', 'dor', 'hospital', 'doente', 'vermelha', 'vermelho'],
-                mind: ['estudar', 'livro', 'ler', 'curso', 'faculdade', 'codigo', 'aprender', 'foco', 'projeto', 'programar', 'mente', 'intelecto'],
+                health: ['saude', 'corpo', 'academia', 'treino', 'comer', 'peso', 'dormir', 'agua', 'corrida', 'medico', 'consulta', 'atestado', 'exame', 'remedio', 'dor', 'hospital', 'doente', 'vermelha'],
+                mind: ['estudar', 'livro', 'ler', 'curso', 'faculdade', 'codigo', 'aprender', 'foco', 'projeto', 'programar', 'azul'],
                 social: ['amor', 'namorado', 'casamento', 'mae', 'pai', 'amigos', 'festa', 'encontro', 'familia', 'gente', 'relacionamento'],
-                career: ['trabalho', 'emprego', 'dinheiro', 'salario', 'projeto', 'chefe', 'empresa', 'negocio', 'vendas', 'financas', 'falta', 'atestado', 'ponto', 'cargo'],
-                spirit: ['deus', 'fé', 'orar', 'meditar', 'paz', 'universo', 'gratidao', 'alma', 'proposito', 'energia']
+                career: ['trabalho', 'emprego', 'dinheiro', 'salario', 'projeto', 'chefe', 'empresa', 'negocio', 'vendas', 'financas', 'falta', 'atestado', 'ponto', 'cargo', 'amarela'],
+                spirit: ['deus', 'fé', 'orar', 'meditar', 'paz', 'universo', 'gratidao', 'alma', 'proposito', 'energia', 'verde']
             };
 
             lifeAreas.forEach(area => {
@@ -2183,6 +2192,7 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
 
         window.addEventListener('load', () => { 
             loadProfileData(); 
+            initNiaVoiceAgent();
             
             if(!allNewsFetched) {
                 buildNewsUI();
@@ -2313,4 +2323,3 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
     </script>
 </body>
 </html>
-```[cite: 1]
