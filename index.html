@@ -601,7 +601,7 @@
                 width: 100%; 
                 justify-content: center; 
                 gap: 8px; 
-                bottom: 65px; 
+                bottom: 65px; /* Ajustado para cima para celulares (evitando conflito com barras de navegação do OS) */
                 padding: 0 10px; 
                 box-sizing: border-box; 
                 max-width: 100vw;
@@ -896,7 +896,7 @@
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-      import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+      import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
       import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
       const firebaseConfig = {
@@ -984,7 +984,7 @@
                           </div>
                       `;
                       item.addEventListener('click', () => {
-                          registerSymbiosisWithUser(uid, userName);
+                          registerSymbiosisRelationship(uid, userName);
                       });
                       contactsContainer.appendChild(item);
                   }
@@ -996,19 +996,21 @@
           });
       }
 
-      // Função para registrar a simbiose de forma privada apenas entre os dois usuários no banco de dados
-      window.registerSymbiosisWithUser = function(targetUid, targetName) {
-          const symbiosisRef = ref(db, 'symbioses');
-          const newSymbiosisRef = push(symbiosisRef);
-          set(newSymbiosisRef, {
+      function registerSymbiosisRelationship(targetUid, targetName) {
+          const symbiosisId = [currentUserId, targetUid].sort().join('_');
+          const symbiosisData = {
               user1: currentUserId,
               user2: targetUid,
+              user1Name: JSON.parse(localStorage.getItem('nexusProfile'))?.name || "Usuário",
+              user2Name: targetName,
               createdAt: Date.now()
-          }).then(() => {
-              activateSymbiosisMode({ uid: targetUid, name: targetName, area: "mind" });
+          };
+          set(ref(db, 'symbioses/' + symbiosisId), symbiosisData).then(() => {
+              activateSymbiosisMode({ name: targetName, area: "mind" });
           });
-      };
+      }
 
+      window.registerSymbiosisRelationship = registerSymbiosisRelationship;
       window.firebaseAuthModules = { 
           auth, 
           createUserWithEmailAndPassword, 
@@ -1753,17 +1755,20 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                         const distanceMeters = Math.round(calculateDistanceInMeters(myLat, myLng, targetLat, targetLng));
                         
                         foundCount++;
-                        const realUserName = userData.presence.name || "Explorador";
+                        const realUser = { uid: uid, name: userData.presence.name || "Explorador", area: "mind", color: "#37617A" };
                         const item = getDoc().createElement('div');
                         item.classList.add('user-item');
                         item.innerHTML = `
-                            <div class="user-avatar" style="background:#37617A">${realUserName[0]}</div>
+                            <div class="user-avatar" style="background:${realUser.color}">${realUser.name[0]}</div>
                             <div class="user-info">
-                                <span class="user-name">${realUserName}</span>
+                                <span class="user-name">${realUser.name}</span>
                                 <span class="user-meta">📍 A aproximadamente ${distanceMeters} metros</span>
                             </div>
                         `;
-                        item.addEventListener('click', () => { closeUsersList(); registerSymbiosisWithUser(uid, realUserName); });
+                        item.addEventListener('click', () => { 
+                            closeUsersList(); 
+                            registerSymbiosisRelationship(realUser.uid, realUser.name); 
+                        });
                         usersListContent.appendChild(item);
                     }
                 });
