@@ -1030,8 +1030,9 @@
         const getWin = () => pipWindow || window;
         const getDoc = () => pipWindow ? pipWindow.document : document;
 
-        // URL da API em Python hospedada no Render (Substitua pela sua URL real do Render)
+        // IMPORTANTE: Substitua pela URL real gerada pelo Render para o seu backend Flask
         const RENDER_API_URL = "https://seu-app-name.onrender.com/api/process-node";
+        
         const lifeAreas = [
             { id: 'health', name: 'Saúde & Bem-Estar', color: '#29FA10', keywords: ['saude', 'saúde', 'corpo', 'academia', 'treino', 'medico', 'consulta', 'atestado', 'falta', 'exame', 'remedio'] },
             { id: 'mind', name: 'Desenvolvimento Pessoal & Conhecimento', color: '#37617A', keywords: ['estudar', 'livro', 'ler', 'curso', 'faculdade'] },
