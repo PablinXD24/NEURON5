@@ -601,7 +601,7 @@
                 width: 100%; 
                 justify-content: center; 
                 gap: 8px; 
-                bottom: 65px; /* Ajustado para cima para celulares (evitando conflito com barras de navegação do OS) */
+                bottom: 65px; 
                 padding: 0 10px; 
                 box-sizing: border-box; 
                 max-width: 100vw;
@@ -1029,12 +1029,15 @@
         const getWin = () => pipWindow || window;
         const getDoc = () => pipWindow ? pipWindow.document : document;
 
+        // URL da API em Python hospedada no Render (Substitua pela sua URL real do Render)
+        const RENDER_API_URL = "https://seu-app.onrender.com/api/process-node";
+
         const lifeAreas = [
-            { id: 'health', name: 'Saúde & Físico', color: '#29FA10', keywords: ['saude', 'saúde', 'corpo', 'academia', 'treino', 'medico', 'consulta', 'atestado', 'falta', 'exame', 'remedio'] },
-            { id: 'mind', name: 'Mente & Intelecto', color: '#37617A', keywords: ['estudar', 'livro', 'ler', 'curso', 'faculdade'] },
-            { id: 'social', name: 'Relacionamentos', color: '#f23839', keywords: ['amor', 'namorado', 'casamento', 'mae', 'pai'] },
-            { id: 'career', name: 'Carreira & Finanças', color: '#f2ca50', keywords: ['trabalho', 'emprego', 'dinheiro', 'salario', 'chefe', 'empresa', 'falta'] },
-            { id: 'spirit', name: 'Espiritual & Emocional', color: '#378c4b', keywords: ['deus', 'fé', 'orar', 'meditar', 'paz'] }
+            { id: 'health', name: 'Saúde & Bem-Estar', color: '#29FA10', keywords: ['saude', 'saúde', 'corpo', 'academia', 'treino', 'medico', 'consulta', 'atestado', 'falta', 'exame', 'remedio'] },
+            { id: 'mind', name: 'Desenvolvimento Pessoal & Conhecimento', color: '#37617A', keywords: ['estudar', 'livro', 'ler', 'curso', 'faculdade'] },
+            { id: 'social', name: 'Relacionamentos & Social', color: '#f23839', keywords: ['amor', 'namorado', 'casamento', 'mae', 'pai'] },
+            { id: 'career', name: 'Finanças & Crescimento Material', color: '#f2ca50', keywords: ['trabalho', 'emprego', 'dinheiro', 'salario', 'chefe', 'empresa', 'falta'] },
+            { id: 'spirit', name: 'Carreira & Trabalho', color: '#378c4b', keywords: ['deus', 'fé', 'orar', 'meditar', 'paz'] }
         ];
 
         const viewport = document.getElementById('viewport');
@@ -1421,7 +1424,6 @@
             aiQuickInput.value = "";
             morphAiBar.classList.remove('open');
 
-            const userIdeas = bubblesArray.map(b => `[${b.area.name}]: ${b.tooltip.innerText}`).join("\n");
             const profile = JSON.parse(localStorage.getItem('nexusProfile')) || {};
             const apiKey = profile.geminiKey || ""; 
 
@@ -1436,6 +1438,7 @@
             }
 
             try {
+                const userIdeas = bubblesArray.map(b => `[${b.area.name}]: ${b.tooltip.innerText}`).join("\n");
                 const prompt = `Você é o assistente inteligente do sistema de mapeamento neural.
 Contexto das ideias salvas pelo usuário:
 ${userIdeas}
@@ -1964,32 +1967,26 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 return;
             }
 
+            aiBadgeText.innerText = "Processando com a API...";
+            aiBadge.classList.remove('ai-active');
+
+            const result = await analyzeFullContext(text); 
+            const assignedArea = result.dominant || activeArea;
+
             if (currentBubble) { 
                 currentBubble.tooltip.innerText = text; 
-                aiBadgeText.innerText = "Analisando com IA...";
-                aiBadge.classList.remove('ai-active');
-                
-                const result = await analyzeFullContext(text); 
                 currentBubble.scores = result.scores; 
-                if (result.dominant && result.dominant.id !== currentBubble.area.id) { 
-                    currentBubble.area = result.dominant; 
-                    currentBubble.circle.style.backgroundColor = result.dominant.color; 
-                    currentBubble.circle.style.boxShadow = `0 0 10px ${result.dominant.color}, 0 0 25px ${result.dominant.color}90`; 
+                if (assignedArea.id !== currentBubble.area.id) { 
+                    currentBubble.area = assignedArea; 
+                    currentBubble.circle.style.backgroundColor = assignedArea.color; 
+                    currentBubble.circle.style.boxShadow = `0 0 10px ${assignedArea.color}, 0 0 25px ${assignedArea.color}90`; 
                 } 
                 saveData(); 
             } else if (pendingCreationCoords) {
-                aiBadgeText.innerText = "Analisando com IA...";
-                aiBadge.classList.remove('ai-active');
-
-                const result = await analyzeFullContext(text);
-                const assignedArea = result.dominant || activeArea;
-                
                 const newBubble = createBubble(pendingCreationCoords.x, pendingCreationCoords.y, assignedArea, text, null, result.scores);
-                if (result.dominant) {
-                    newBubble.area = result.dominant;
-                    newBubble.circle.style.backgroundColor = result.dominant.color;
-                    newBubble.circle.style.boxShadow = `0 0 10px ${result.dominant.color}, 0 0 25px ${result.dominant.color}90`;
-                }
+                newBubble.area = assignedArea;
+                newBubble.circle.style.backgroundColor = assignedArea.color;
+                newBubble.circle.style.boxShadow = `0 0 10px ${assignedArea.color}, 0 0 25px ${assignedArea.color}90`;
                 saveData();
             }
             closePopup(); 
@@ -2012,10 +2009,10 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
                 const result = await analyzeFullContext(text); 
                 if(result.dominant) {
                     updatePopupStyle(result.dominant);
-                    aiBadgeText.innerText = `IA Ativa: ${result.dominant.name}`;
+                    aiBadgeText.innerText = `API Ativa: ${result.dominant.name}`;
                     aiBadge.classList.add('ai-active');
                 }
-            }, 500);
+            }, 600);
         });
 
         btnDelete.addEventListener('click', () => { 
@@ -2028,9 +2025,31 @@ Com base nas informações do usuário e no input: "${query}", responda de forma
         });
         popupOverlay.addEventListener('click', (e) => { if (e.target === popupOverlay) closePopup(); });
 
+        // INTEGRAÇÃO REAL COM A API DO RENDER
         async function analyzeFullContext(text) {
             if (!text || text.trim() === "") return { dominant: activeArea, scores: {} };
-            return fallbackKeywordAnalysis(text);
+            
+            try {
+                const existingNodesData = bubblesArray.map(b => ({ id: b.id, text: b.tooltip.innerText, area: b.area.name }));
+                const response = await fetch(RENDER_API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: text, existingNodes: existingNodesData })
+                });
+
+                if (!response.ok) throw new Error("Erro na comunicação com a API do Render");
+
+                const aiData = await response.json();
+                const matchedArea = lifeAreas.find(a => a.name === aiData.area) || activeArea;
+                
+                return { 
+                    dominant: matchedArea, 
+                    scores: { [matchedArea.id]: 5 } 
+                };
+            } catch (error) {
+                console.warn("API do Render indisponível, usando fallback local:", error);
+                return fallbackKeywordAnalysis(text);
+            }
         }
 
         function fallbackKeywordAnalysis(text) {
