@@ -3,14 +3,15 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from google import genai
 from google.genai import types
+import json
 
 app = Flask(__name__)
-CORS(app)  # Permite que o seu index.html faça requisições para este servidor
+CORS(app)  # Permite que o seu index.html faça requisições para este servidor[cite: 2]
 
-# Inicializa o cliente do Gemini (Certifique-se de configurar GEMINI_API_KEY nas variáveis de ambiente do Render)
+# Inicializa o cliente do Gemini (Certifique-se de configurar GEMINI_API_KEY nas variáveis de ambiente do Render)[cite: 2]
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-# As 5 Áreas da Vida padrão do sistema
+# As 5 Áreas da Vida padrão do sistema[cite: 2]
 LIFE_AREAS = [
     "Saúde & Bem-Estar",
     "Carreira & Trabalho",
@@ -23,9 +24,9 @@ LIFE_AREAS = [
 def process_node():
     data = request.json
     node_text = data.get("text", "")
-    existing_nodes = data.get("existingNodes", []) # Lista de {id, text, area} já criadas
+    existing_nodes = data.get("existingNodes", []) # Lista de {id, text, area} já criadas[cite: 2]
 
-    # Monta o prompt para o Gemini analisar o contexto, classificar e conectar
+    # Monta o prompt para o Gemini analisar o contexto, classificar e conectar[cite: 2]
     prompt = f"""
     Você é a IA central do sistema NEURON de mapeamento de pensamentos.
     Analise o seguinte pensamento/bolinha criada pelo usuário: "{node_text}"
@@ -55,11 +56,11 @@ def process_node():
             ),
         )
         
-        import json
         result = json.loads(response.text)
         return jsonify(result)
     except Exception as e:
-        return jsonify({"error": str.error}), 500
+        # Correção aplicada aqui: alterado de str.error para str(e)
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
